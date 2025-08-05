@@ -125,3 +125,37 @@ h2 {
   font-size: 20px;
   margin-bottom: 20px;
 }
+
+@media screen and (max-width: 600px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 10px;
+  }
+
+  .sidebar button {
+    flex: 1;
+    margin: 5px;
+    white-space: nowrap;
+    text-align: center;
+    font-size: 14px;
+  }
+
+  .main-content {
+    padding: 10px;
+  }
+
+  #question-box,
+  #learn-box {
+    font-size: 18px;
+  }
+
+  #options li {
+    font-size: 16px;
+  }
+}
