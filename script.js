@@ -1,3 +1,60 @@
+let decks = {};
+let currentDeck = [];
+let currentIndex = 0;
+let mode = 'jp-en';
+let score = { correct: 0, wrong: 0, skipped: 0 };
+let mistakes = JSON.parse(localStorage.getItem('mistakes') || '[]');
+let masteryMap = JSON.parse(localStorage.getItem('masteryMap') || '{}');
+
+window.onload = () => {
+  loadDecksFromManifest(); // Fetch from GitHub-hosted vocab_decks folder
+  updateScore();
+};
+
+async function loadDecksFromManifest() {
+  try {
+    const res = await fetch('vocab_decks/deck_manifest.json');
+    const deckFiles = await res.json();
+
+    for (const file of deckFiles) {
+      const res = await fetch(`vocab_decks/${file}`);
+      const text = await res.text();
+      const lines = text.split('\n').filter(Boolean);
+      const deck = lines.map(line => {
+        const [word, meaning, romaji] = line.split(',');
+        return { front: word.trim(), back: meaning.trim(), romaji: romaji?.trim() || '' };
+      });
+
+      const name = file.replace('.csv', '');
+      decks[name] = deck;
+    }
+
+    renderDeckButtons();
+  } catch (err) {
+    console.error('Error loading decks:', err);
+  }
+}
+
+function renderDeckButtons() {
+  const deckButtons = document.getElementById('deck-buttons');
+  deckButtons.innerHTML = '';
+
+  const names = Object.keys(decks).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  names.forEach(name => {
+    const btn = document.createElement('button');
+    btn.textContent = name;
+    btn.onclick = () => selectDeck(name);
+    deckButtons.appendChild(btn);
+  });
+}
+
+function selectDeck(name) {
+  currentDeck = decks[name];
+  currentIndex = 0;
+  document.getElementById('deck-select').classList.add('hidden');
+  document.getElementById('mode-select').classList.remove('hidden');
+}
+
 let allDecks = {}; // {deckName: [ {front, back, romaji} ]}
 let currentDeck = [];
 let currentDeckName = "";
