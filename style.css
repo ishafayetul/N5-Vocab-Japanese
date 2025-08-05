@@ -1,0 +1,127 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f9f9f9;
+  color: #333;
+}
+
+.container {
+  padding: 20px;
+  max-width: 800px;
+  margin: auto;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#score span {
+  margin: 0 10px;
+  font-weight: bold;
+}
+
+h2 {
+  margin-top: 40px;
+  margin-bottom: 10px;
+}
+
+#deck-buttons button,
+#mode-select button,
+#upload-section button,
+#practice button,
+#mistakes-section button {
+  margin: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  border: none;
+  background: #007bff;
+  color: white;
+  border-radius: 5px;
+  transition: background 0.2s;
+}
+
+#deck-buttons button:hover,
+#mode-select button:hover,
+#upload-section button:hover,
+#practice button:hover,
+#mistakes-section button:hover {
+  background: #0056b3;
+}
+
+#options {
+  list-style: none;
+  padding: 0;
+}
+
+#options li {
+  margin: 8px 0;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#options li:hover {
+  background: #eaeaea;
+}
+
+.correct {
+  background-color: #d4edda !important;
+}
+
+.wrong {
+  background-color: #f8d7da !important;
+}
+
+.hidden {
+  display: none;
+}
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 220px;
+  background-color: #2c3e50;
+  padding: 20px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar h2 {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.sidebar button {
+  background: #34495e;
+  border: none;
+  color: white;
+  padding: 10px;
+  margin-bottom: 10px;
+  text-align: left;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sidebar button:hover {
+  background: #1abc9c;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+}
+
+#learn-box {
+  font-size: 20px;
+  margin-bottom: 20px;
+}
