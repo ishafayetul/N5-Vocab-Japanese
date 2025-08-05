@@ -1,85 +1,80 @@
-let decks = {}; // {deckName: [{front: ..., back: ...}]}
+let allDecks = {}; // {deckName: [ {front, back, romaji} ]}
 let currentDeck = [];
+let currentDeckName = "";
 let currentIndex = 0;
 let mode = 'jp-en';
 let score = { correct: 0, wrong: 0, skipped: 0 };
+
 let mistakes = JSON.parse(localStorage.getItem('mistakes') || '[]');
 let masteryMap = JSON.parse(localStorage.getItem('masteryMap') || '{}');
 
 window.onload = () => {
-  loadDeckButtons();
-  loadDeleteDropdown();
+  loadDeckManifest();
   updateScore();
 };
 
 function showSection(id) {
   const allSections = [
-    'deck-select',
-    'upload-section',
-    'delete-deck-section',
-    'mistakes-section',
-    'practice',
-    'mode-select',
-    'learn'
+    'deck-select', 'upload-section', 'delete-deck-section',
+    'mistakes-section', 'practice', 'mode-select', 'learn'
   ];
-
   allSections.forEach(sec => {
     const el = document.getElementById(sec);
     if (el) el.classList.add('hidden');
   });
-
   const target = document.getElementById(id);
   if (target) target.classList.remove('hidden');
 }
 
+async function loadDeckManifest() {
+  try {
+    const res = await fetch('vocab_decks/deck_manifest.json');
+    const deckList = await res.json();
 
+    deckList.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
-function loadDeckButtons() {
-  const deckButtons = document.getElementById('deck-buttons');
-  deckButtons.innerHTML = ''; // Clear previous buttons
-
-  const deckKeys = Object.keys(localStorage)
-    .filter(key => key.startsWith('deck_'))
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-
-  deckKeys.forEach(key => {
-    const name = key.replace('deck_', '');
-    const btn = document.createElement('button');
-    btn.textContent = name;
-    btn.onclick = () => selectDeck(name);
-    deckButtons.appendChild(btn);
-  });
-}
-
-
-
-function loadDeleteDropdown() {
-  const select = document.getElementById('delete-deck-select');
-  select.innerHTML = '';
-  Object.keys(localStorage).forEach(key => {
-    if (key.startsWith('deck_')) {
-      const name = key.replace('deck_', '');
-      const option = document.createElement('option');
-      option.value = key;
-      option.textContent = name;
-      select.appendChild(option);
+    for (const file of deckList) {
+      const name = file.replace('.csv', '');
+      const deck = await fetchAndParseCSV(`vocab_decks/${file}`);
+      allDecks[name] = deck;
     }
-  });
-}
 
-function deleteSelectedDeck() {
-  const select = document.getElementById('delete-deck-select');
-  const selectedKey = select.value;
-  if (confirm(`Are you sure you want to delete deck: ${selectedKey.replace('deck_', '')}?`)) {
-    localStorage.removeItem(selectedKey);
-    location.reload();
+    renderDeckButtons();
+  } catch (err) {
+    console.error('Failed to load decks:', err);
   }
 }
 
+async function fetchAndParseCSV(url) {
+  const res = await fetch(url);
+  const text = await res.text();
+  const lines = text.split('\n').filter(Boolean);
+  return lines.map(line => {
+    const [word, meaning, romaji] = line.split(',');
+    return {
+      front: word.trim(),
+      back: meaning.trim(),
+      romaji: romaji?.trim() || ''
+    };
+  });
+}
+
+function renderDeckButtons() {
+  const container = document.getElementById('deck-buttons');
+  container.innerHTML = '';
+  Object.keys(allDecks).forEach(name => {
+    const btn = document.createElement('button');
+    btn.textContent = name;
+    btn.onclick = () => selectDeck(name);
+    container.appendChild(btn);
+  });
+}
+
 function selectDeck(name) {
-  currentDeck = JSON.parse(localStorage.getItem('deck_' + name));
-  document.getElementById('deck-select').classList.add('hidden');
-  document.getElementById('mode-select').classList.remove('hidden');
+  currentDeck = allDecks[name];
+  currentDeckName = name;
+  currentIndex = 0;
+  showSection('mode-select');
 }
 
 function startPractice(selectedMode) {
@@ -87,8 +82,7 @@ function startPractice(selectedMode) {
   currentIndex = 0;
   score = { correct: 0, wrong: 0, skipped: 0 };
   shuffleArray(currentDeck);
-  document.getElementById('mode-select').classList.add('hidden');
-  document.getElementById('practice').classList.remove('hidden');
+  showSection('practice');
   updateScore();
   showQuestion();
 }
@@ -112,15 +106,12 @@ function showQuestion() {
 }
 
 function generateOptions(correct) {
-  const allOptions = currentDeck.map(q => (mode === 'jp-en' ? q.back : q.front));
-  const uniqueOptions = [...new Set(allOptions)];
-  const filtered = uniqueOptions.filter(opt => opt !== correct);
-  shuffleArray(filtered);
-
-  const options = [correct, ...filtered.slice(0, 3)];
+  const pool = currentDeck.map(q => (mode === 'jp-en' ? q.back : q.front));
+  const unique = [...new Set(pool.filter(opt => opt !== correct))];
+  shuffleArray(unique);
+  const options = [correct, ...unique.slice(0, 3)];
   return shuffleArray(options);
 }
-
 
 function checkAnswer(selected, correct, wordObj) {
   const options = document.querySelectorAll('#options li');
@@ -148,29 +139,27 @@ function checkAnswer(selected, correct, wordObj) {
   setTimeout(nextQuestion, 1000);
 }
 
-function nextQuestion() {
-  currentIndex++;
-  if (currentIndex >= currentDeck.length) {
-    alert(`Finished! Correct: ${score.correct}, Wrong: ${score.wrong}, Skipped: ${score.skipped}`);
-    location.reload();
-  } else showQuestion();
-}
-
 function skipQuestion() {
   const wordObj = currentDeck[currentIndex];
   const key = wordObj.front + '|' + wordObj.back;
-
   score.skipped++;
-  mistakes.push(wordObj);
   masteryMap[key] = 0;
-
+  mistakes.push(wordObj);
   localStorage.setItem('mistakes', JSON.stringify(mistakes));
   localStorage.setItem('masteryMap', JSON.stringify(masteryMap));
-
   updateScore();
   nextQuestion();
 }
 
+function nextQuestion() {
+  currentIndex++;
+  if (currentIndex >= currentDeck.length) {
+    alert(`Finished! ✅ ${score.correct} ❌ ${score.wrong} ➖ ${score.skipped}`);
+    location.reload();
+  } else {
+    showQuestion();
+  }
+}
 
 function updateScore() {
   document.getElementById('correct').innerText = score.correct;
@@ -178,76 +167,34 @@ function updateScore() {
   document.getElementById('skipped').innerText = score.skipped;
 }
 
-function uploadCSV() {
-  const files = document.getElementById('csv-file').files;
-  if (!files.length) return alert('Please select at least one CSV file.');
-
-  Array.from(files).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const lines = e.target.result.split('\n').filter(Boolean);
-      const data = lines.map(line => {
-        const [word, meaning, romaji] = line.split(',');
-        return {
-          front: word.trim(),
-          back: meaning.trim(),
-          romaji: romaji?.trim() || ''
-        };
-      });
-
-      const deckName = file.name.replace(/\\.csv$/i, '');
-      localStorage.setItem('deck_' + deckName, JSON.stringify(data));
-      loadDeckButtons();
-      loadDeleteDropdown();
-    };
-    reader.readAsText(file);
-  });
-
-  alert('All decks uploaded successfully!');
-}
-
-
-
 function startMistakePractice() {
   if (mistakes.length === 0) return alert('No mistakes yet!');
   currentDeck = mistakes;
-  document.getElementById('deck-select').classList.add('hidden');
-  document.getElementById('mistakes-section').classList.add('hidden');
+  currentIndex = 0;
+  showSection('practice');
   startPractice(mode);
 }
 
-function shuffleArray(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
 function clearMistakes() {
-  if (confirm("Are you sure you want to clear all mistake words?")) {
+  if (confirm("Clear all mistake words?")) {
     mistakes = [];
     localStorage.setItem('mistakes', JSON.stringify([]));
-    alert("Mistake list cleared!");
+    alert("Mistakes cleared.");
   }
 }
 
 function resetSite() {
-  if (confirm("⚠️ This will delete all decks, mistakes, and progress. Continue?")) {
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('deck_') || key === 'mistakes' || key === 'masteryMap') {
-        localStorage.removeItem(key);
-      }
-    });
-    alert("All data has been reset.");
+  if (confirm("⚠️ Reset all progress? This clears mistakes and mastery.")) {
+    localStorage.removeItem('mistakes');
+    localStorage.removeItem('masteryMap');
+    alert("All data reset.");
     location.reload();
   }
 }
 
 function startLearnMode() {
   currentIndex = 0;
-  document.getElementById('mode-select').classList.add('hidden');
-  document.getElementById('learn').classList.remove('hidden');
+  showSection('learn');
   showLearnCard();
 }
 
@@ -259,13 +206,20 @@ function showLearnCard() {
   document.getElementById('learn-box').innerText = `${jp} – ${en} – ${ro}`;
 }
 
-
 function nextLearn() {
   currentIndex++;
   if (currentIndex >= currentDeck.length) {
-    alert("Finished learning this deck!");
+    alert("🎉 Finished learning this deck!");
     location.reload();
   } else {
     showLearnCard();
   }
+}
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
