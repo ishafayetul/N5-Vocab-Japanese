@@ -106,22 +106,6 @@ function showQuestion() {
   });
 }
 
-
-function showRomaji() {
-  if (!currentDeck[currentIndex]) return;
-  const romaji = currentDeck[currentIndex].romaji || '(no romaji)';
-  const output = document.getElementById('extra-info');
-  if (output) output.innerText = `Romaji: ${romaji}`;
-}
-
-function showMeaning() {
-  if (!currentDeck[currentIndex]) return;
-  const q = currentDeck[currentIndex];
-  const correct = mode === 'jp-en' ? q.back : q.front;
-  const output = document.getElementById('extra-info');
-  if (output) output.innerText = `Meaning: ${correct}`;
-}
-
 function generateOptions(correct) {
   const pool = currentDeck.map(q => (mode === 'jp-en' ? q.back : q.front));
   const unique = [...new Set(pool.filter(opt => opt !== correct))];
@@ -239,4 +223,19 @@ function shuffleArray(arr) {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
+}
+
+function showRomaji() {
+  if (!currentDeck[currentIndex]) return;
+  const romaji = currentDeck[currentIndex].romaji || '(no romaji)';
+  const output = document.getElementById('extra-info');
+  if (output) output.innerText = `Romaji: ${romaji}`;
+}
+
+function showMeaning() {
+  if (!currentDeck[currentIndex]) return;
+  const q = currentDeck[currentIndex];
+  const correct = mode === 'jp-en' ? q.back : q.front;
+  const output = document.getElementById('extra-info');
+  if (output) output.innerText = `Meaning: ${correct}`;
 }
