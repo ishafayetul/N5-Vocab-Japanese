@@ -94,6 +94,7 @@ function showQuestion() {
   const options = generateOptions(answer);
 
   document.getElementById('question-box').innerText = front;
+  document.getElementById('extra-info').innerText = ''; // clear info
   const optionsList = document.getElementById('options');
   optionsList.innerHTML = '';
 
@@ -103,6 +104,18 @@ function showQuestion() {
     li.onclick = () => checkAnswer(opt, answer, q);
     optionsList.appendChild(li);
   });
+}
+
+
+function showRomaji() {
+  const romaji = currentDeck[currentIndex].romaji || '(no romaji)';
+  document.getElementById('extra-info').innerText = `Romaji: ${romaji}`;
+}
+
+function showMeaning() {
+  const q = currentDeck[currentIndex];
+  const correct = mode === 'jp-en' ? q.back : q.front;
+  document.getElementById('extra-info').innerText = `Meaning: ${correct}`;
 }
 
 function generateOptions(correct) {
