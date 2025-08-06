@@ -85,6 +85,8 @@ function startPractice(selectedMode) {
   showSection('practice');
   updateScore();
   showQuestion();
+  showRomaji();
+  showMeaning();
 }
 
 function showQuestion() {
