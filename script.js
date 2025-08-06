@@ -85,8 +85,6 @@ function startPractice(selectedMode) {
   showSection('practice');
   updateScore();
   showQuestion();
-  showRomaji();
-  showMeaning();
 }
 
 function showQuestion() {
@@ -110,14 +108,18 @@ function showQuestion() {
 
 
 function showRomaji() {
+  if (!currentDeck[currentIndex]) return;
   const romaji = currentDeck[currentIndex].romaji || '(no romaji)';
-  document.getElementById('extra-info').innerText = `Romaji: ${romaji}`;
+  const output = document.getElementById('extra-info');
+  if (output) output.innerText = `Romaji: ${romaji}`;
 }
 
 function showMeaning() {
+  if (!currentDeck[currentIndex]) return;
   const q = currentDeck[currentIndex];
   const correct = mode === 'jp-en' ? q.back : q.front;
-  document.getElementById('extra-info').innerText = `Meaning: ${correct}`;
+  const output = document.getElementById('extra-info');
+  if (output) output.innerText = `Meaning: ${correct}`;
 }
 
 function generateOptions(correct) {
