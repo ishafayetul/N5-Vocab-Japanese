@@ -1,4 +1,4 @@
-/* Base styles */
+/* Base */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
@@ -6,99 +6,18 @@ body {
   background: #f9f9f9;
   color: #333;
 }
+.hidden { display: none; }
 
-.container {
-  padding: 20px;
-  max-width: 1000px;
-  margin: auto;
-}
+.layout { display: flex; min-height: 100vh; }
+.topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 
-header {
-  text-align: center;
-  margin-bottom: 20px;
-}
+h1 { font-size: 28px; margin: 0; }
+h2 { margin: 20px 0 12px; font-size: 22px; }
 
-#score {
-  margin-top: 10px;
-  font-size: 16px;
-}
+#score { font-size: 16px; }
+#score span { margin: 0 8px; font-weight: bold; }
 
-#score span {
-  margin: 0 8px;
-  font-weight: bold;
-}
-
-/* Headings */
-h1 {
-  font-size: 28px;
-  margin-bottom: 10px;
-}
-
-h2 {
-  margin-top: 30px;
-  margin-bottom: 15px;
-  font-size: 22px;
-}
-
-/* Buttons */
-button {
-  padding: 10px 18px;
-  margin: 6px;
-  cursor: pointer;
-  border: none;
-  background-color: #007bff;
-  color: white;
-  border-radius: 6px;
-  font-size: 16px;
-  transition: background 0.2s ease;
-}
-
-button:hover {
-  background-color: #0056b3;
-}
-
-/* Practice Options */
-#options {
-  list-style: none;
-  padding: 0;
-}
-
-#options li {
-  margin: 8px 0;
-  padding: 12px;
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 18px;
-  transition: background 0.2s ease;
-}
-
-#options li:hover {
-  background-color: #eaeaea;
-}
-
-/* Answer feedback */
-.correct {
-  background-color: #d4edda !important;
-}
-
-.wrong {
-  background-color: #f8d7da !important;
-}
-
-/* Section visibility */
-.hidden {
-  display: none;
-}
-
-/* Layout */
-.layout {
-  display: flex;
-  min-height: 100vh;
-}
-
-/* Sidebar styles */
+/* Sidebar */
 .sidebar {
   width: 220px;
   background-color: #2c3e50;
@@ -107,149 +26,102 @@ button:hover {
   display: flex;
   flex-direction: column;
 }
-
-.sidebar h2 {
-  font-size: 18px;
-  margin-bottom: 20px;
-}
-
+.sidebar h2 { font-size: 18px; margin-bottom: 18px; }
 .sidebar button {
-  background-color: #34495e;
-  border: none;
-  color: white;
-  padding: 10px;
-  margin-bottom: 10px;
-  text-align: left;
-  border-radius: 4px;
-  font-size: 15px;
-  transition: background-color 0.2s;
+  background-color: #34495e; color: #fff; border: none;
+  padding: 10px; margin-bottom: 10px; text-align: left;
+  border-radius: 6px; font-size: 15px; transition: background-color .2s;
 }
-
-.sidebar button:hover {
-  background-color: #1abc9c;
-}
+.sidebar button:hover { background-color: #1abc9c; }
 
 /* Main content */
-.main-content {
-  flex: 1;
-  padding: 20px;
-}
+.main-content { flex: 1; padding: 20px; }
 
-/* Learning view */
-#learn-box {
-  font-size: 22px;
-  margin-bottom: 25px;
-  font-weight: 500;
+/* Buttons */
+button {
+  padding: 10px 18px; margin: 6px; cursor: pointer; border: none;
+  background-color: #007bff; color: white; border-radius: 6px; font-size: 16px;
+  transition: background .2s ease;
 }
+button:hover { background-color: #0056b3; }
 
-/* Responsive Design */
+/* Practice options */
+#options { list-style: none; padding: 0; }
+#options li {
+  margin: 8px 0; padding: 12px; background: #fff; border: 1px solid #ccc;
+  border-radius: 6px; cursor: pointer; font-size: 18px; transition: background .2s ease;
+}
+#options li:hover { background-color: #eaeaea; }
+.correct { background-color: #d4edda !important; }
+.wrong { background-color: #f8d7da !important; }
+
+/* Leaderboard */
+#leaderboard-list { list-style: none; padding-left: 0; }
+#leaderboard-list li {
+  background: #fff; border:1px solid #ddd; border-radius:8px; padding:10px 12px; margin:8px 0;
+}
+.lb-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.lb-rank { width: 48px; font-weight:bold; }
+.lb-name { min-width: 150px; font-weight: 600; }
+.lb-part { color:#333; }
+.lb-score { margin-left:auto; font-weight:700; }
+
+/* Auth gate */
+.auth-gate {
+  position: fixed; inset: 0;
+  display: grid; place-items: center;
+  background: #0f172a; /* slate-900 */
+  z-index: 9999;
+}
+.auth-card {
+  background: #ffffff; border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.2);
+  padding: 28px; max-width: 420px; width: calc(100% - 40px); text-align: center;
+}
+.auth-card h1 { margin: 0 0 8px 0; }
+.muted { color: #666; margin: 0 0 12px 0; }
+.error { color: #b00020; margin-top: 10px; }
+
+/* To‑Do flyout (top-right) */
+.todo-flyout {
+  position: fixed; top: 12px; right: 12px; width: 320px;
+  background: #fff; border: 1px solid #ddd; border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.12); z-index: 500;
+  padding: 14px;
+}
+.todo-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; font-weight:600; }
+.todo-timer {
+  padding: 2px 8px; border-radius: 999px; background: #0ea5e9; color: #fff; font-weight:700;
+  font-variant-numeric: tabular-nums;
+}
+.todo-list { list-style:none; padding:0; margin:0; max-height: 40vh; overflow:auto; }
+.todo-item { display:flex; align-items:center; gap:10px; padding:8px; border-radius:8px; }
+.todo-item:hover { background:#f6f8fa; }
+.todo-empty { color:#666; padding:6px; }
+
+.admin-row {
+  display:flex; gap:8px; margin-top: 10px; border-top:1px dashed #e2e8f0; padding-top:10px;
+}
+.admin-row input { flex:1; padding:8px 10px; border:1px solid #ddd; border-radius:8px; }
+
+/* Responsive */
+@media screen and (max-width: 900px) {
+  .todo-flyout { position: static; width: 100%; margin: 10px 0 0; }
+}
 @media screen and (max-width: 768px) {
-  .layout {
-    flex-direction: column;
-  }
-
+  .layout { flex-direction: column; }
   .sidebar {
-    flex-direction: row;
-    width: 100%;
-    overflow-x: auto;
-    padding: 10px;
-    justify-content: flex-start;
+    flex-direction: row; width: 100%; overflow-x: auto; padding: 10px;
+    justify-content: flex-start; gap: 6px;
   }
-
-  .sidebar button {
-    flex: 1;
-    margin: 5px;
-    white-space: nowrap;
-    font-size: 14px;
-    text-align: center;
-  }
-
-  .main-content {
-    padding: 15px;
-  }
-
-  h1 {
-    font-size: 24px;
-  }
-
-  h2 {
-    font-size: 20px;
-  }
-
-  button {
-    font-size: 15px;
-    padding: 10px;
-  }
-
-  #options li {
-    font-size: 16px;
-  }
-
-  #learn-box,
-  #question-box {
-    font-size: 18px;
-  }
+  .sidebar button { white-space: nowrap; font-size: 14px; text-align: center; }
+  h1 { font-size: 24px; }
+  h2 { font-size: 20px; }
+  #options li { font-size: 16px; }
 }
-
 @media screen and (max-width: 480px) {
-  .sidebar {
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .sidebar button {
-    min-width: 120px;
-    font-size: 13px;
-    padding: 8px;
-  }
-
-  button {
-    font-size: 14px;
-  }
-
-  #options li {
-    font-size: 15px;
-  }
-}
-
-/* Grammar section */
-.grammar-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.grammar-grid button {
-  background-color: #34495e;
-  color: #fff;
-  border: none;
-  padding: 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.grammar-grid button:hover {
-  background-color: #1abc9c;
-}
-
-.pdf-viewer {
-  width: 100%;
-  height: 80vh;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  display: block;
-}
-
-#leaderboard-list, #todo-list {
-  list-style: none;
-  padding-left: 0;
-}
-#leaderboard-list li, #todo-list li {
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 8px 10px;
-  margin: 6px 0;
+  .sidebar { flex-wrap: wrap; gap: 6px; }
+  .sidebar button { min-width: 120px; font-size: 13px; padding: 8px; }
+  button { font-size: 14px; }
+  #options li { font-size: 15px; }
 }

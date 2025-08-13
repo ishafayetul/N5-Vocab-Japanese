@@ -7,23 +7,28 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="layout">
+  <!-- Full-screen auth gate -->
+  <div id="auth-gate" class="auth-gate">
+    <div class="auth-card">
+      <h1>Sign in to continue</h1>
+      <p class="muted">Use Google to save progress, see the daily to‑do, and join the leaderboard.</p>
+      <button id="auth-btn">🔐 Sign in with Google</button>
+      <p id="auth-error" class="error" style="display:none;"></p>
+    </div>
+  </div>
+
+  <!-- App content (hidden until signed in) -->
+  <div id="app-root" class="layout hidden">
     <nav class="sidebar">
       <h2>📘 Menu</h2>
       <button onclick="showSection('deck-select')">📚 Select Deck</button>
-      <button onclick="showSection('upload-section')">⬆️ Upload Deck</button>
-      <button onclick="showSection('delete-deck-section')">🗑️ Delete Deck</button>
       <button onclick="showSection('mistakes-section')">❗ Mistakes</button>
-      <button onclick="showSection('grammar-section')">📖 Grammar</button>
       <button onclick="showSection('leaderboard-section')">🏆 Leaderboard</button>
-      <button onclick="showSection('todo-section')">✅ To‑Do</button>
-      <button id="auth-btn">🔐 Sign in</button>
-      <span id="user-pill" class="hidden" style="margin-top:8px;font-size:13px;"></span>
       <button onclick="resetSite()">🔁 Reset</button>
     </nav>
 
     <div class="main-content">
-      <header>
+      <header class="topbar">
         <h1>Japanese Vocabulary Practice</h1>
         <div id="score">
           ✅ Correct: <span id="correct">0</span>
@@ -32,12 +37,29 @@
         </div>
       </header>
 
+      <!-- Top-right To‑Do flyout (not in navbar) -->
+      <aside id="todo-flyout" class="todo-flyout hidden">
+        <div class="todo-head">
+          <span>🗓️ Today’s Tasks</span>
+          <span class="todo-timer" id="todo-timer">00:00:00</span>
+        </div>
+        <ul id="todo-list" class="todo-list"></ul>
+
+        <!-- Shown only if user is admin -->
+        <div id="admin-row" class="admin-row hidden">
+          <input id="admin-task-input" type="text" placeholder="Admin: add a task for today" />
+          <button id="admin-task-add">Add</button>
+        </div>
+      </aside>
+
       <main>
+        <!-- Deck select -->
         <section id="deck-select">
           <h2>Select a Deck</h2>
           <div id="deck-buttons"></div>
         </section>
 
+        <!-- Mode select -->
         <section id="mode-select" class="hidden">
           <h2>Select Mode</h2>
           <button onclick="startLearnMode()">🧠 Learn</button>
@@ -45,11 +67,13 @@
           <button onclick="startPractice('en-jp')">English → Japanese</button>
         </section>
 
+        <!-- Learn -->
         <section id="learn" class="hidden">
           <div id="learn-box"></div>
           <button onclick="nextLearn()">Next</button>
         </section>
 
+        <!-- Practice -->
         <section id="practice" class="hidden">
           <div id="question-box"></div>
           <ul id="options"></ul>
@@ -60,64 +84,27 @@
           <div id="extra-info" style="margin-top: 10px; font-size: 16px;"></div>
         </section>
 
-
-
-        <section id="upload-section" class="hidden">
-          <h2>Add Word List</h2>
-          <input type="file" id="csv-file" accept=".csv" multiple />
-          <input type="text" id="deck-name" placeholder="Deck Name" />
-          <button onclick="uploadCSV()">Upload</button>
-        </section>
-
-        <section id="delete-deck-section" class="hidden">
-          <h2>Delete Deck</h2>
-          <select id="delete-deck-select"></select>
-          <button onclick="deleteSelectedDeck()">Delete</button>
-        </section>
-
+        <!-- Mistakes -->
         <section id="mistakes-section" class="hidden">
           <h2>Frequent Mistakes</h2>
           <button onclick="startMistakePractice()">Practice Mistakes</button>
           <button onclick="clearMistakes()">Clear Mistakes</button>
         </section>
-        
-        <section id="grammar-section" class="hidden">
-        <h2>Grammar Lessons</h2>
 
-        <div id="grammar-lessons" class="grammar-grid"></div>
-
-        <p id="pdf-hint" style="margin-top:12px;color:#666;">
-          Select a lesson to open its PDF.
-        </p>
-
-        <iframe
-          id="pdf-viewer"
-          class="pdf-viewer"
-          src=""
-          title="Grammar PDF"
-        ></iframe>
-      </section>
-
-      <section id="leaderboard-section" class="hidden">
-        <h2>Leaderboard</h2>
-        <ol id="leaderboard-list"></ol>
-      </section>
-
-      <section id="todo-section" class="hidden">
-        <h2>Your To‑Do</h2>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input id="todo-input" type="text" placeholder="Add a task (e.g., Finish Day 1)" />
-          <button id="todo-add">Add</button>
-        </div>
-        <ul id="todo-list" style="margin-top:12px;"></ul>
-      </section>
-
-
+        <!-- Leaderboard -->
+        <section id="leaderboard-section" class="hidden">
+          <h2>Today’s Leaderboard</h2>
+          <ol id="leaderboard-list"></ol>
+          <p class="muted" style="margin-top:8px">
+            Score = (JP→EN correct) + (EN→JP correct) + (10 × tasks completed)
+          </p>
+        </section>
       </main>
     </div>
   </div>
+
+  <!-- Firebase must load before your app logic -->
   <script type="module" src="firebase.js"></script>
   <script src="script.js"></script>
 </body>
-
 </html>

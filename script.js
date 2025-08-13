@@ -8,19 +8,20 @@ let score = { correct: 0, wrong: 0, skipped: 0 };
 let mistakes = JSON.parse(localStorage.getItem('mistakes') || '[]');
 let masteryMap = JSON.parse(localStorage.getItem('masteryMap') || '{}');
 
-let grammarFiles = []; // ["Grammar-Lesson-1.pdf", ...]
-
 window.onload = () => {
   loadDeckManifest();
   updateScore();
-  loadGrammarManifest();
+};
+
+// Gate-aware hook (called by firebase.js after login, optional)
+window.__initAfterLogin = () => {
+  // nothing required right now; decks are already loaded
 };
 
 function showSection(id) {
   const sections = [
-    'deck-select', 'upload-section', 'delete-deck-section',
-    'mistakes-section', 'practice', 'mode-select', 'learn', 'grammar-section',
-    'leaderboard-section','todo-section'
+    'deck-select', 'mistakes-section',
+    'practice', 'mode-select', 'learn', 'leaderboard-section'
   ];
   sections.forEach(sec => {
     const el = document.getElementById(sec);
@@ -56,11 +57,11 @@ async function fetchAndParseCSV(url) {
   return lines.map(line => {
     const [word, meaning, romaji] = line.split(',');
     return {
-      front: word.trim(),
-      back: meaning.trim(),
-      romaji: romaji?.trim() || ''
+      front: (word || '').trim(),
+      back: (meaning || '').trim(),
+      romaji: (romaji || '').trim()
     };
-  });
+  }).filter(row => row.front && row.back);
 }
 
 function renderDeckButtons() {
@@ -98,7 +99,7 @@ function showQuestion() {
   const options = generateOptions(answer);
 
   document.getElementById('question-box').innerText = front;
-  document.getElementById('extra-info').innerText = ''; // clear info
+  document.getElementById('extra-info').innerText = '';
   const optionsList = document.getElementById('options');
   optionsList.innerHTML = '';
 
@@ -112,7 +113,7 @@ function showQuestion() {
 
 function generateOptions(correct) {
   const pool = currentDeck.map(q => (mode === 'jp-en' ? q.back : q.front));
-  const unique = [...new Set(pool.filter(opt => opt !== correct))];
+  const unique = [...new Set(pool.filter(opt => opt && opt !== correct))];
   shuffleArray(unique);
   const options = [correct, ...unique.slice(0, 3)];
   return shuffleArray(options);
@@ -128,8 +129,12 @@ function checkAnswer(selected, correct, wordObj) {
   const key = wordObj.front + '|' + wordObj.back;
   if (selected === correct) {
     score.correct++;
-    // NEW: push to leaderboard
-    window.__fb_updateScore?.({ deltaCorrect: 1 });
+    // Record to Firebase (per-day, per-deck, per-mode)
+    window.__fb_recordAnswer?.({
+      deckName: currentDeckName,
+      mode,
+      isCorrect: true
+    });
 
     masteryMap[key] = (masteryMap[key] || 0) + 1;
     if (masteryMap[key] >= 5) {
@@ -137,15 +142,15 @@ function checkAnswer(selected, correct, wordObj) {
     }
   } else {
     score.wrong++;
-    // NEW: push to leaderboard (wrong)
-    window.__fb_updateScore?.({ deltaWrong: 1 });
-
     masteryMap[key] = 0;
     mistakes.push(wordObj);
   }
-  // ...rest unchanged
-}
 
+  localStorage.setItem('mistakes', JSON.stringify(mistakes));
+  localStorage.setItem('masteryMap', JSON.stringify(masteryMap));
+  updateScore();
+  setTimeout(nextQuestion, 600);
+}
 
 function skipQuestion() {
   const wordObj = currentDeck[currentIndex];
@@ -163,7 +168,7 @@ function nextQuestion() {
   currentIndex++;
   if (currentIndex >= currentDeck.length) {
     alert(`Finished! ✅ ${score.correct} ❌ ${score.wrong} ➖ ${score.skipped}`);
-    location.reload();
+    showSection('deck-select');
   } else {
     showQuestion();
   }
@@ -177,7 +182,7 @@ function updateScore() {
 
 function startMistakePractice() {
   if (mistakes.length === 0) return alert('No mistakes yet!');
-  currentDeck = mistakes;
+  currentDeck = mistakes.slice();
   currentIndex = 0;
   showSection('practice');
   startPractice(mode);
@@ -218,7 +223,7 @@ function nextLearn() {
   currentIndex++;
   if (currentIndex >= currentDeck.length) {
     alert("🎉 Finished learning this deck!");
-    location.reload();
+    showSection('deck-select');
   } else {
     showLearnCard();
   }
@@ -245,69 +250,4 @@ function showMeaning() {
   const correct = mode === 'jp-en' ? q.back : q.front;
   const output = document.getElementById('extra-info');
   if (output) output.innerText = `Meaning: ${correct}`;
-}
-
-// 2) Replace your loadGrammarManifest() with this version:
-async function loadGrammarManifest() {
-  try {
-    const url = 'grammar/grammar_manifest.json?v=' + Date.now(); // cache-bust
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Failed to fetch ${url} — HTTP ${res.status}`);
-    grammarFiles = await res.json();
-
-    // Basic validation
-    if (!Array.isArray(grammarFiles)) {
-      throw new Error('grammar_manifest.json must be a JSON array of file names.');
-    }
-
-    // Sort like 1,2,10
-    grammarFiles.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-    renderGrammarLessons();
-  } catch (e) {
-    console.error(e);
-    const wrap = document.getElementById('grammar-lessons');
-    if (wrap) {
-      wrap.innerHTML = `<div style="color:#b00;line-height:1.5">
-        ⚠️ Couldn’t load <code>grammar/grammar_manifest.json</code>.<br>
-        <strong>Tips:</strong><br>
-        • Ensure the file exists at <code>/grammar/grammar_manifest.json</code><br>
-        • Serve the site via http(s), not <code>file://</code><br>
-        • Confirm JSON is valid (an array of strings)<br>
-        • Filenames in JSON exactly match the PDFs (case‑sensitive)
-      </div>`;
-    }
-  }
-}
-
-// 3) (Optional) Improve empty-state and add tiny logging:
-function renderGrammarLessons() {
-  const wrap = document.getElementById('grammar-lessons');
-  if (!wrap) return;
-  wrap.innerHTML = '';
-
-  if (!grammarFiles.length) {
-    wrap.innerHTML = `<div style="color:#666">No lessons found in grammar_manifest.json.</div>`;
-    return;
-  }
-
-  console.log('Loaded grammar files:', grammarFiles); // debug
-  grammarFiles.forEach((file, idx) => {
-    const btn = document.createElement('button');
-    const match = file.match(/(\d+)/);
-    const labelNum = match ? match[1] : (idx + 1);
-    btn.textContent = `Lesson ${labelNum}`;
-    btn.onclick = () => openGrammarPDF(file);
-    wrap.appendChild(btn);
-  });
-}
-
-function openGrammarPDF(fileName) {
-  const iframe = document.getElementById('pdf-viewer');
-  const hint = document.getElementById('pdf-hint');
-  const src = `grammar/${fileName}`;
-  iframe.src = src;
-  if (hint) hint.style.display = 'none';
-
-  // Fallback for environments that block inline PDF preview
-  iframe.onerror = () => window.open(src, '_blank');
 }
