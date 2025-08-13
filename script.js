@@ -19,7 +19,8 @@ window.onload = () => {
 function showSection(id) {
   const sections = [
     'deck-select', 'upload-section', 'delete-deck-section',
-    'mistakes-section', 'practice', 'mode-select', 'learn', 'grammar-section'
+    'mistakes-section', 'practice', 'mode-select', 'learn', 'grammar-section',
+    'leaderboard-section','todo-section'
   ];
   sections.forEach(sec => {
     const el = document.getElementById(sec);
