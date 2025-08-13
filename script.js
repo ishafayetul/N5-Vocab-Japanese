@@ -243,28 +243,52 @@ function showMeaning() {
   if (output) output.innerText = `Meaning: ${correct}`;
 }
 
+// 2) Replace your loadGrammarManifest() with this version:
 async function loadGrammarManifest() {
   try {
-    const res = await fetch('grammar/grammar_manifest.json');
+    const url = 'grammar/grammar_manifest.json?v=' + Date.now(); // cache-bust
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to fetch ${url} — HTTP ${res.status}`);
     grammarFiles = await res.json();
 
-    // Optional: stable sort like "1, 2, 10"
-    grammarFiles.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    // Basic validation
+    if (!Array.isArray(grammarFiles)) {
+      throw new Error('grammar_manifest.json must be a JSON array of file names.');
+    }
 
+    // Sort like 1,2,10
+    grammarFiles.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     renderGrammarLessons();
   } catch (e) {
-    console.error('Failed to load grammar manifest:', e);
+    console.error(e);
+    const wrap = document.getElementById('grammar-lessons');
+    if (wrap) {
+      wrap.innerHTML = `<div style="color:#b00;line-height:1.5">
+        ⚠️ Couldn’t load <code>grammar/grammar_manifest.json</code>.<br>
+        <strong>Tips:</strong><br>
+        • Ensure the file exists at <code>/grammar/grammar_manifest.json</code><br>
+        • Serve the site via http(s), not <code>file://</code><br>
+        • Confirm JSON is valid (an array of strings)<br>
+        • Filenames in JSON exactly match the PDFs (case‑sensitive)
+      </div>`;
+    }
   }
 }
 
+// 3) (Optional) Improve empty-state and add tiny logging:
 function renderGrammarLessons() {
   const wrap = document.getElementById('grammar-lessons');
   if (!wrap) return;
   wrap.innerHTML = '';
 
+  if (!grammarFiles.length) {
+    wrap.innerHTML = `<div style="color:#666">No lessons found in grammar_manifest.json.</div>`;
+    return;
+  }
+
+  console.log('Loaded grammar files:', grammarFiles); // debug
   grammarFiles.forEach((file, idx) => {
     const btn = document.createElement('button');
-    // Friendly label: "Lesson 1" from "Grammar-Lesson-1.pdf"
     const match = file.match(/(\d+)/);
     const labelNum = match ? match[1] : (idx + 1);
     btn.textContent = `Lesson ${labelNum}`;
@@ -276,6 +300,10 @@ function renderGrammarLessons() {
 function openGrammarPDF(fileName) {
   const iframe = document.getElementById('pdf-viewer');
   const hint = document.getElementById('pdf-hint');
-  iframe.src = `grammar/${fileName}`;
+  const src = `grammar/${fileName}`;
+  iframe.src = src;
   if (hint) hint.style.display = 'none';
+
+  // Fallback for environments that block inline PDF preview
+  iframe.onerror = () => window.open(src, '_blank');
 }
