@@ -14,6 +14,10 @@
       <button onclick="showSection('upload-section')">⬆️ Upload Deck</button>
       <button onclick="showSection('delete-deck-section')">🗑️ Delete Deck</button>
       <button onclick="showSection('mistakes-section')">❗ Mistakes</button>
+      <button onclick="showSection('leaderboard-section')">🏆 Leaderboard</button>
+      <button onclick="showSection('todo-section')">✅ To‑Do</button>
+      <button id="auth-btn">🔐 Sign in</button>
+      <span id="user-pill" class="hidden" style="margin-top:8px;font-size:13px;"></span>
       <button onclick="showSection('grammar-section')">📖 Grammar</button>
       <button onclick="resetSite()">🔁 Reset</button>
     </nav>
@@ -76,7 +80,7 @@
           <button onclick="startMistakePractice()">Practice Mistakes</button>
           <button onclick="clearMistakes()">Clear Mistakes</button>
         </section>
-
+        
         <section id="grammar-section" class="hidden">
         <h2>Grammar Lessons</h2>
 
@@ -94,10 +98,25 @@
         ></iframe>
       </section>
 
+      <section id="leaderboard-section" class="hidden">
+        <h2>Leaderboard</h2>
+        <ol id="leaderboard-list"></ol>
+      </section>
+
+      <section id="todo-section" class="hidden">
+        <h2>Your To‑Do</h2>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="todo-input" type="text" placeholder="Add a task (e.g., Finish Day 1)" />
+          <button id="todo-add">Add</button>
+        </div>
+        <ul id="todo-list" style="margin-top:12px;"></ul>
+      </section>
+
       </main>
     </div>
   </div>
-
+  
+  <script type="module" src="firebase.js"></script>
   <script src="script.js"></script>
 </body>
 

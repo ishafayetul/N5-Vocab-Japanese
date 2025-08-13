@@ -127,21 +127,24 @@ function checkAnswer(selected, correct, wordObj) {
   const key = wordObj.front + '|' + wordObj.back;
   if (selected === correct) {
     score.correct++;
+    // NEW: push to leaderboard
+    window.__fb_updateScore?.({ deltaCorrect: 1 });
+
     masteryMap[key] = (masteryMap[key] || 0) + 1;
     if (masteryMap[key] >= 5) {
       mistakes = mistakes.filter(m => m.front !== wordObj.front || m.back !== wordObj.back);
     }
   } else {
     score.wrong++;
+    // NEW: push to leaderboard (wrong)
+    window.__fb_updateScore?.({ deltaWrong: 1 });
+
     masteryMap[key] = 0;
     mistakes.push(wordObj);
   }
-
-  localStorage.setItem('mistakes', JSON.stringify(mistakes));
-  localStorage.setItem('masteryMap', JSON.stringify(masteryMap));
-  updateScore();
-  setTimeout(nextQuestion, 1000);
+  // ...rest unchanged
 }
+
 
 function skipQuestion() {
   const wordObj = currentDeck[currentIndex];

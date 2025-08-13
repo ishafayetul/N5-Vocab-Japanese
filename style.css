@@ -241,3 +241,15 @@ button:hover {
   border-radius: 6px;
   display: block;
 }
+
+#leaderboard-list, #todo-list {
+  list-style: none;
+  padding-left: 0;
+}
+#leaderboard-list li, #todo-list li {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 6px 0;
+}
