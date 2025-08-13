@@ -22,20 +22,35 @@
     <nav class="sidebar">
       <h2>📘 Menu</h2>
       <button onclick="showSection('deck-select')">📚 Select Deck</button>
-      <!-- remove Upload/Delete per your wish later -->
       <button onclick="showSection('mistakes-section')">❗ Mistakes</button>
       <button onclick="resetSite()">🔁 Reset</button>
+      <button onclick="window.__signOut?.()">🚪 Sign out</button>
     </nav>
 
     <div class="main-content">
-      <header>
-        <h1>Japanese Vocabulary Practice</h1>
-        <div id="score">
-          ✅ Correct: <span id="correct">0</span>
-          ❌ Wrong: <span id="wrong">0</span>
-          ➖ Skipped: <span id="skipped">0</span>
+      <header class="topbar">
+        <div>
+          <h1>Japanese Vocabulary Practice</h1>
+          <div id="score">
+            ✅ Correct: <span id="correct">0</span>
+            ❌ Wrong: <span id="wrong">0</span>
+            ➖ Skipped: <span id="skipped">0</span>
+          </div>
         </div>
       </header>
+
+      <!-- OPTIONAL helper panels (safe even if you remove them) -->
+      <div id="todo-flyout" class="todo-flyout hidden">
+        <div class="todo-head">
+          <span>🗓️ Today’s To‑Dos</span>
+          <span id="todo-timer" class="todo-timer">--:--:--</span>
+        </div>
+        <ul id="todo-list" class="todo-list"></ul>
+        <div id="admin-row" class="admin-row hidden">
+          <input id="admin-task-input" placeholder="Add a task for everyone..." />
+          <button id="admin-task-add">Add</button>
+        </div>
+      </div>
 
       <main>
         <section id="deck-select">
@@ -69,6 +84,11 @@
           <h2>Frequent Mistakes</h2>
           <button onclick="startMistakePractice()">Practice Mistakes</button>
           <button onclick="clearMistakes()">Clear Mistakes</button>
+        </section>
+
+        <section id="leaderboard-section" class="hidden">
+          <h2>🏆 Today’s Leaderboard</h2>
+          <ul id="leaderboard-list"></ul>
         </section>
       </main>
     </div>

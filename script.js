@@ -33,14 +33,16 @@ function showSection(id) {
 
 async function loadDeckManifest() {
   try {
-    const res = await fetch('vocab_decks/deck_manifest.json');
+    // Load manifest from ROOT (fixes earlier path mismatch)
+    const res = await fetch('deck_manifest.json');
     const deckList = await res.json();
 
     deckList.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
     for (const file of deckList) {
       const name = file.replace('.csv', '');
-      const deck = await fetchAndParseCSV(`vocab_decks/${file}`);
+      // Fetch exactly as listed in manifest (no hard-coded subfolder)
+      const deck = await fetchAndParseCSV(file);
       allDecks[name] = deck;
     }
 
@@ -52,6 +54,7 @@ async function loadDeckManifest() {
 
 async function fetchAndParseCSV(url) {
   const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch ${url}`);
   const text = await res.text();
   const lines = text.split('\n').filter(Boolean);
   return lines.map(line => {
@@ -66,6 +69,7 @@ async function fetchAndParseCSV(url) {
 
 function renderDeckButtons() {
   const container = document.getElementById('deck-buttons');
+  if (!container) return;
   container.innerHTML = '';
   Object.keys(allDecks).forEach(name => {
     const btn = document.createElement('button');
@@ -76,7 +80,7 @@ function renderDeckButtons() {
 }
 
 function selectDeck(name) {
-  currentDeck = allDecks[name];
+  currentDeck = allDecks[name] || [];
   currentDeckName = name;
   currentIndex = 0;
   showSection('mode-select');
@@ -94,14 +98,19 @@ function startPractice(selectedMode) {
 
 function showQuestion() {
   const q = currentDeck[currentIndex];
+  if (!q) return;
+
   const front = mode === 'jp-en' ? q.front : q.back;
   const answer = mode === 'jp-en' ? q.back : q.front;
   const options = generateOptions(answer);
 
-  document.getElementById('question-box').innerText = front;
-  document.getElementById('extra-info').innerText = '';
+  const qBox = document.getElementById('question-box');
+  const extra = document.getElementById('extra-info');
   const optionsList = document.getElementById('options');
-  optionsList.innerHTML = '';
+
+  if (qBox) qBox.innerText = front;
+  if (extra) extra.innerText = '';
+  if (optionsList) optionsList.innerHTML = '';
 
   options.forEach(opt => {
     const li = document.createElement('li');
@@ -154,6 +163,7 @@ function checkAnswer(selected, correct, wordObj) {
 
 function skipQuestion() {
   const wordObj = currentDeck[currentIndex];
+  if (!wordObj) return;
   const key = wordObj.front + '|' + wordObj.back;
   score.skipped++;
   masteryMap[key] = 0;
@@ -175,9 +185,12 @@ function nextQuestion() {
 }
 
 function updateScore() {
-  document.getElementById('correct').innerText = score.correct;
-  document.getElementById('wrong').innerText = score.wrong;
-  document.getElementById('skipped').innerText = score.skipped;
+  const c = document.getElementById('correct');
+  const w = document.getElementById('wrong');
+  const s = document.getElementById('skipped');
+  if (c) c.innerText = score.correct;
+  if (w) w.innerText = score.wrong;
+  if (s) s.innerText = score.skipped;
 }
 
 function startMistakePractice() {
@@ -213,10 +226,12 @@ function startLearnMode() {
 
 function showLearnCard() {
   const word = currentDeck[currentIndex];
+  if (!word) return;
   const jp = word.front;
   const en = word.back;
   const ro = word.romaji || '';
-  document.getElementById('learn-box').innerText = `${jp} – ${en} – ${ro}`;
+  const box = document.getElementById('learn-box');
+  if (box) box.innerText = `${jp} – ${en} – ${ro}`;
 }
 
 function nextLearn() {

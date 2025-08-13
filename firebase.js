@@ -1,28 +1,15 @@
 // firebase.js  — load with <script type="module" src="firebase.js">
-// const V = "10.12.4"; // bump if CDN 404s (e.g., "11.0.0")
-
-// import { initializeApp } from `https://www.gstatic.com/firebasejs/${V}/firebase-app.js`;
-// import {
-//   getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
-// } from `https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`;
-// import {
-//   getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp,
-//   collection, query, orderBy, limit, onSnapshot, addDoc, deleteDoc,
-//   runTransaction, getDocs, increment
-// } from `https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`;
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
   getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp,
-  collection, query, orderBy, limit, onSnapshot, addDoc, deleteDoc,
-  runTransaction, getDocs, increment
+  collection, query, orderBy, limit, onSnapshot, addDoc,
+  runTransaction, getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
 // --- Your Firebase project ---
-
-
 const firebaseConfig = {
   apiKey: "AIzaSyCP-JzANiomwA-Q5MB5fnNoz0tUjdNX3Og",
   authDomain: "japanese-n5-53295.firebaseapp.com",
@@ -38,7 +25,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// --- DOM refs (exist in index.html) ---
+// --- DOM refs (guarded; these may or may not exist) ---
 const gate     = document.getElementById('auth-gate');
 const appRoot  = document.getElementById('app-root');
 const authBtn  = document.getElementById('auth-btn');
@@ -57,7 +44,6 @@ const lbList     = document.getElementById('leaderboard-list');
 const TASK_BONUS = 10; // each completed task adds 10 points to leaderboard score
 
 function localDateKey(d = new Date()) {
-  // YYYY-MM-DD in the user's local timezone
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -65,10 +51,10 @@ function localDateKey(d = new Date()) {
 }
 function endOfToday() {
   const n = new Date();
-  const e = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1, 0, 0, 0, 0);
-  return e;
+  return new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1, 0, 0, 0, 0);
 }
 function startCountdown() {
+  if (!todoTimer) return;
   function tick() {
     const ms = endOfToday() - new Date();
     if (ms <= 0) {
@@ -88,23 +74,24 @@ function startCountdown() {
 // --- Auth gate ---
 authBtn?.addEventListener('click', async () => {
   try {
-    authErr.style.display = 'none';
+    if (authErr) authErr.style.display = 'none';
     await signInWithPopup(auth, provider);
   } catch (e) {
-    authErr.textContent = e.message || 'Sign‑in failed';
-    authErr.style.display = 'block';
+    if (authErr) {
+      authErr.textContent = e.message || 'Sign‑in failed';
+      authErr.style.display = 'block';
+    }
   }
 });
 
 let unsubLB = null;
 let unsubTasks = null;
-let unsubTaskStatus = null;
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    gate.classList.add('hidden');
-    appRoot.classList.remove('hidden');
-    todoFlyout.classList.remove('hidden');
+    gate?.classList.add('hidden');
+    appRoot?.classList.remove('hidden');
+    todoFlyout?.classList.remove('hidden');
 
     // Ensure base user doc exists
     const uref = doc(db, 'users', user.uid);
@@ -122,57 +109,57 @@ onAuthStateChanged(auth, async (user) => {
 
     // Is this user an admin?
     const adminSnap = await getDoc(doc(db, 'admins', user.uid));
-    if (adminSnap.exists()) {
-      adminRow.classList.remove('hidden');
-    } else {
-      adminRow.classList.add('hidden');
+    if (adminRow) {
+      if (adminSnap.exists()) adminRow.classList.remove('hidden');
+      else adminRow.classList.add('hidden');
     }
 
     // Hook admin add-task button
-    adminAdd.onclick = async () => {
-      const text = (adminInput.value || '').trim();
-      if (!text) return;
-      const dkey = localDateKey();
-      await addDoc(collection(db, 'dailyTasks', dkey, 'tasks'), {
-        text, createdAt: serverTimestamp()
-      });
-      adminInput.value = '';
-    };
+    if (adminAdd && adminInput) {
+      adminAdd.onclick = async () => {
+        const text = (adminInput.value || '').trim();
+        if (!text) return;
+        const dkey = localDateKey();
+        await addDoc(collection(db, 'dailyTasks', dkey, 'tasks'), {
+          text, createdAt: serverTimestamp()
+        });
+        adminInput.value = '';
+      };
+    }
 
-    // Start countdown
+    // Start countdown (if timer exists)
     startCountdown();
 
-    // Subscribe to today's tasks + user statuses
-    subscribeTodayTasks(user.uid);
+    // Subscribe to today's tasks + user statuses (only if list exists)
+    if (todoList) subscribeTodayTasks(user.uid);
 
-    // Subscribe to today's leaderboard
-    subscribeLeaderboard();
+    // Subscribe to today's leaderboard (only if list exists)
+    if (lbList) subscribeLeaderboard();
 
     // Let app JS know login succeeded (optional hook)
     window.__initAfterLogin?.();
 
   } else {
-    appRoot.classList.add('hidden');
-    gate.classList.remove('hidden');
-    todoFlyout.classList.add('hidden');
+    appRoot?.classList.add('hidden');
+    gate?.classList.remove('hidden');
+    todoFlyout?.classList.add('hidden');
 
     if (unsubLB) { unsubLB(); unsubLB = null; }
     if (unsubTasks) { unsubTasks(); unsubTasks = null; }
-    if (unsubTaskStatus) { unsubTaskStatus(); unsubTaskStatus = null; }
   }
 });
 
 // --- To‑Do: listen to today's tasks (admin creates), render, and allow per‑user completion ---
 async function subscribeTodayTasks(uid) {
   const dkey = localDateKey();
+  if (!todoList) return;
 
-  // Listen to today's tasks
   if (unsubTasks) unsubTasks();
   unsubTasks = onSnapshot(collection(db, 'dailyTasks', dkey, 'tasks'), async (ss) => {
     const tasks = [];
     ss.forEach((docSnap) => tasks.push({ id: docSnap.id, ...docSnap.data() }));
 
-    // Load user's completion statuses (single read is OK here)
+    // Load user's completion statuses
     const statusQs = await getDocs(collection(db, 'users', uid, 'taskCompletion', dkey, 'tasks'));
     const statusMap = {};
     statusQs.forEach(s => statusMap[s.id] = s.data());
@@ -257,9 +244,11 @@ async function markTask(uid, dkey, taskId, text, done) {
 // --- Leaderboard subscription (today only) ---
 function subscribeLeaderboard() {
   const dkey = localDateKey();
+  if (!lbList) return;
+
+  const qy = query(collection(db, 'dailyLeaderboard', dkey, 'users'), orderBy('score', 'desc'), limit(50));
   if (unsubLB) unsubLB();
-  const q = query(collection(db, 'dailyLeaderboard', dkey, 'users'), orderBy('score', 'desc'), limit(50));
-  unsubLB = onSnapshot(q, (ss) => {
+  unsubLB = onSnapshot(qy, (ss) => {
     lbList.innerHTML = '';
     let rank = 1;
     ss.forEach(docSnap => {
@@ -279,58 +268,5 @@ function subscribeLeaderboard() {
   });
 }
 
-// --- Public API for your quiz to record answers ---
-// Call this when the user answers (we only count correct answers for scores)
-window.__fb_recordAnswer = async function ({ deckName = 'unknown', mode = 'jp-en', isCorrect = false } = {}) {
-  const user = auth.currentUser;
-  if (!user || !isCorrect) return;
-
-  const dkey = localDateKey();
-  const dailyRef = doc(db, 'users', user.uid, 'daily', dkey);
-  const lbRef    = doc(db, 'dailyLeaderboard', dkey, 'users', user.uid);
-  const uref     = doc(db, 'users', user.uid);
-
-  await runTransaction(db, async (tx) => {
-    const usnap = await tx.get(uref);
-    const displayName = usnap.exists() ? (usnap.data().displayName || 'Anonymous') : 'Anonymous';
-
-    const snap = await tx.get(dailyRef);
-    let data = snap.exists() ? snap.data() : { jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, byDeck: {} };
-
-    // update counters
-    if (mode === 'jp-en') data.jpEnCorrect = (data.jpEnCorrect || 0) + 1;
-    else data.enJpCorrect = (data.enJpCorrect || 0) + 1;
-
-    const bd = data.byDeck || {};
-    bd[deckName] = bd[deckName] || { jpEn: 0, enJp: 0 };
-    if (mode === 'jp-en') bd[deckName].jpEn += 1; else bd[deckName].enJp += 1;
-    data.byDeck = bd;
-
-    // recompute score
-    const score = (data.jpEnCorrect || 0) + (data.enJpCorrect || 0) + (data.tasksCompleted || 0) * TASK_BONUS;
-
-    // write daily + mirror
-    tx.set(dailyRef, {
-      date: dkey, displayName,
-      jpEnCorrect: data.jpEnCorrect || 0,
-      enJpCorrect: data.enJpCorrect || 0,
-      tasksCompleted: data.tasksCompleted || 0,
-      byDeck: data.byDeck,
-      score,
-      updatedAt: serverTimestamp()
-    }, { merge: true });
-
-    tx.set(lbRef, {
-      uid: user.uid, displayName,
-      jpEnCorrect: data.jpEnCorrect || 0,
-      enJpCorrect: data.enJpCorrect || 0,
-      tasksCompleted: data.tasksCompleted || 0,
-      score,
-      updatedAt: serverTimestamp()
-    }, { merge: true });
-  });
-};
-
-// Optional: expose sign out (not used, but handy)
-window.__signOut = () => signOut(getAuth());
-
+// Optional: expose sign out
+window.__signOut = () => signOut(auth);
