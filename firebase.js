@@ -1,15 +1,25 @@
 // firebase.js  — load with <script type="module" src="firebase.js">
-const V = "10.12.4"; // bump if CDN 404s (e.g., "11.0.0")
+// const V = "10.12.4"; // bump if CDN 404s (e.g., "11.0.0")
 
-import { initializeApp } from `https://www.gstatic.com/firebasejs/${V}/firebase-app.js`;
+// import { initializeApp } from `https://www.gstatic.com/firebasejs/${V}/firebase-app.js`;
+// import {
+//   getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+// } from `https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`;
+// import {
+//   getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp,
+//   collection, query, orderBy, limit, onSnapshot, addDoc, deleteDoc,
+//   runTransaction, getDocs, increment
+// } from `https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`;
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
   getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
-} from `https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`;
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp,
   collection, query, orderBy, limit, onSnapshot, addDoc, deleteDoc,
   runTransaction, getDocs, increment
-} from `https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`;
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
 // --- Your Firebase project ---
 const firebaseConfig = {
@@ -323,24 +333,3 @@ window.__fb_recordAnswer = async function ({ deckName = 'unknown', mode = 'jp-en
 // Optional: expose sign out (not used, but handy)
 window.__signOut = () => signOut(getAuth());
 
-// (Security rules suggestion)
-// rules_version = '2';
-// service cloud.firestore {
-//   match /databases/{database}/documents {
-//     match /users/{uid} {
-//       allow read: if request.auth != null; // or true if you want public leaderboard names
-//       allow write: if request.auth != null && request.auth.uid == uid;
-//       match /daily/{date} { allow read: if true; allow write: if request.auth != null && request.auth.uid == uid; }
-//       match /taskCompletion/{date}/tasks/{taskId} { allow read, write: if request.auth != null && request.auth.uid == uid; }
-//     }
-//     match /admins/{uid} { allow read: if request.auth != null; allow write: if false; } // set manually in console
-//     match /dailyTasks/{date}/tasks/{taskId} {
-//       allow read: if true;
-//       allow write: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-//     }
-//     match /dailyLeaderboard/{date}/users/{uid} {
-//       allow read: if true;
-//       allow write: if request.auth != null && request.auth.uid == uid;
-//     }
-//   }
-// }
