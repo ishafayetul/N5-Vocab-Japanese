@@ -21,6 +21,8 @@ import {
   runTransaction, getDocs, increment
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 // --- Your Firebase project ---
+
+
 const firebaseConfig = {
   apiKey: "AIzaSyCP-JzANiomwA-Q5MB5fnNoz0tUjdNX3Og",
   authDomain: "japanese-n5-53295.firebaseapp.com",
