@@ -13,16 +13,13 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
-  getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
-  getRedirectResult, signOut, onAuthStateChanged
+  getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
-
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp,
   collection, query, orderBy, limit, onSnapshot, addDoc, deleteDoc,
   runTransaction, getDocs, increment
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-
 // --- Your Firebase project ---
 const firebaseConfig = {
   apiKey: "AIzaSyCP-JzANiomwA-Q5MB5fnNoz0tUjdNX3Og",
@@ -87,21 +84,15 @@ function startCountdown() {
 }
 
 // --- Auth gate ---
-const USE_REDIRECT = location.hostname.endsWith("github.io"); // force redirect on GitHub Pages
-
 authBtn?.addEventListener('click', async () => {
   try {
-    if (USE_REDIRECT) {
-      await signInWithRedirect(auth, provider);
-    } else {
-      await signInWithPopup(auth, provider);
-    }
+    authErr.style.display = 'none';
+    await signInWithPopup(auth, provider);
   } catch (e) {
-    // If popup was blocked or COOP interfered, fall back to redirect
-    await signInWithRedirect(auth, provider);
+    authErr.textContent = e.message || 'Sign‑in failed';
+    authErr.style.display = 'block';
   }
 });
-
 
 let unsubLB = null;
 let unsubTasks = null;
@@ -340,5 +331,4 @@ window.__fb_recordAnswer = async function ({ deckName = 'unknown', mode = 'jp-en
 
 // Optional: expose sign out (not used, but handy)
 window.__signOut = () => signOut(getAuth());
-getRedirectResult(auth).catch(() => {/* no-op: user may land without redirect result */});
 
