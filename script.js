@@ -8,15 +8,18 @@ let score = { correct: 0, wrong: 0, skipped: 0 };
 let mistakes = JSON.parse(localStorage.getItem('mistakes') || '[]');
 let masteryMap = JSON.parse(localStorage.getItem('masteryMap') || '{}');
 
+let grammarFiles = []; // ["Grammar-Lesson-1.pdf", ...]
+
 window.onload = () => {
   loadDeckManifest();
   updateScore();
+  loadGrammarManifest();
 };
 
 function showSection(id) {
   const sections = [
     'deck-select', 'upload-section', 'delete-deck-section',
-    'mistakes-section', 'practice', 'mode-select', 'learn'
+    'mistakes-section', 'practice', 'mode-select', 'learn', 'grammar-section'
   ];
   sections.forEach(sec => {
     const el = document.getElementById(sec);
@@ -238,4 +241,41 @@ function showMeaning() {
   const correct = mode === 'jp-en' ? q.back : q.front;
   const output = document.getElementById('extra-info');
   if (output) output.innerText = `Meaning: ${correct}`;
+}
+
+async function loadGrammarManifest() {
+  try {
+    const res = await fetch('grammar/grammar_manifest.json');
+    grammarFiles = await res.json();
+
+    // Optional: stable sort like "1, 2, 10"
+    grammarFiles.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+    renderGrammarLessons();
+  } catch (e) {
+    console.error('Failed to load grammar manifest:', e);
+  }
+}
+
+function renderGrammarLessons() {
+  const wrap = document.getElementById('grammar-lessons');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  grammarFiles.forEach((file, idx) => {
+    const btn = document.createElement('button');
+    // Friendly label: "Lesson 1" from "Grammar-Lesson-1.pdf"
+    const match = file.match(/(\d+)/);
+    const labelNum = match ? match[1] : (idx + 1);
+    btn.textContent = `Lesson ${labelNum}`;
+    btn.onclick = () => openGrammarPDF(file);
+    wrap.appendChild(btn);
+  });
+}
+
+function openGrammarPDF(fileName) {
+  const iframe = document.getElementById('pdf-viewer');
+  const hint = document.getElementById('pdf-hint');
+  iframe.src = `grammar/${fileName}`;
+  if (hint) hint.style.display = 'none';
 }

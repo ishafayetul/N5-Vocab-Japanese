@@ -14,6 +14,7 @@
       <button onclick="showSection('upload-section')">⬆️ Upload Deck</button>
       <button onclick="showSection('delete-deck-section')">🗑️ Delete Deck</button>
       <button onclick="showSection('mistakes-section')">❗ Mistakes</button>
+      <button onclick="showSection('grammar-section')">📖 Grammar</button>
       <button onclick="resetSite()">🔁 Reset</button>
     </nav>
 
@@ -75,6 +76,24 @@
           <button onclick="startMistakePractice()">Practice Mistakes</button>
           <button onclick="clearMistakes()">Clear Mistakes</button>
         </section>
+
+        <section id="grammar-section" class="hidden">
+        <h2>Grammar Lessons</h2>
+
+        <div id="grammar-lessons" class="grammar-grid"></div>
+
+        <p id="pdf-hint" style="margin-top:12px;color:#666;">
+          Select a lesson to open its PDF.
+        </p>
+
+        <iframe
+          id="pdf-viewer"
+          class="pdf-viewer"
+          src=""
+          title="Grammar PDF"
+        ></iframe>
+      </section>
+
       </main>
     </div>
   </div>
