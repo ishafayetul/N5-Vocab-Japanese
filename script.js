@@ -1,5 +1,8 @@
 // script.js — decks loader + quiz UI + grammar list + progress UI
+// NOTE: All Firebase access is delegated to firebase.js helpers on window.*
+// This file contains NO direct Firebase imports.
 
+// ---------------- State ----------------
 let allDecks = {};                // { deckName: [{front, back, romaji}] }
 let currentDeck = [];
 let currentDeckName = "";
@@ -7,11 +10,10 @@ let currentIndex = 0;
 let mode = "jp-en";
 let score = { correct: 0, wrong: 0, skipped: 0 };
 
-// Local mistake/mastery helpers
 let mistakes = JSON.parse(localStorage.getItem("mistakes") || "[]");
 let masteryMap = JSON.parse(localStorage.getItem("masteryMap") || "{}");
 
-// Session buffer (temporary storage; committed on demand/auto)
+// Session buffer (temporary storage; committed on demand/auto via firebase.js)
 let sessionBuf = JSON.parse(localStorage.getItem("sessionBuf") || "null") || {
   deckName: "",
   mode: "jp-en",
@@ -26,26 +28,23 @@ let sessionBuf = JSON.parse(localStorage.getItem("sessionBuf") || "null") || {
 let currentSectionId = "deck-select";
 let committing = false;
 
-// ---- helpers ---------------------------------------------------------------
+// ---------------- DOM helpers ----------------
 const $ = (id) => document.getElementById(id);
 const setText = (id, txt) => { const el = $(id); if (el) el.innerText = txt; };
-
 function statusLine(id, msg) {
   const s = $(id);
   if (s) s.textContent = msg;
   console.log(`[status:${id}]`, msg);
 }
-
 function persistSession() {
   localStorage.setItem("sessionBuf", JSON.stringify(sessionBuf));
 }
-
 function percent(n, d) {
   if (!d) return 0;
   return Math.floor((n / d) * 100);
 }
 
-// Update the per-deck progress UI
+// ---------------- Deck progress UI ----------------
 function updateDeckProgress() {
   const totalQs = currentDeck.length || 0;
   const done = Math.min(currentIndex, totalQs);
@@ -56,9 +55,10 @@ function updateDeckProgress() {
   if (txt) txt.textContent = `${done} / ${totalQs} (${p}%)`;
 }
 
-// Commit buffered session if there’s anything to save
+// ---------------- Autosave bridge ----------------
 async function autoCommitIfNeeded(reason = "") {
-  if (!window.__fb_commitSession) return; // if Firebase not ready, skip (pendingSession will handle later)
+  // Only commit if firebase helper exists and we have data
+  if (!window.__fb_commitSession) return;
   if (committing) return;
   if (!sessionBuf || sessionBuf.total <= 0) return;
 
@@ -77,7 +77,7 @@ async function autoCommitIfNeeded(reason = "") {
     };
     await window.__fb_commitSession(payload);
 
-    // Reset counts but keep deck/mode so a user can continue without losing context
+    // Reset counts but keep deck & mode to allow continuing smoothly
     sessionBuf.correct = 0;
     sessionBuf.wrong = 0;
     sessionBuf.skipped = 0;
@@ -86,18 +86,18 @@ async function autoCommitIfNeeded(reason = "") {
     sessionBuf.enJpCorrect = 0;
     persistSession();
 
-    // Refresh progress page summaries
+    // Refresh progress summaries
     await renderProgress();
     console.log("[autosave] saved ✔");
   } catch (e) {
     console.warn("[autosave] failed → keeping local buffer:", e?.message || e);
-    // Keep sessionBuf as-is; pendingSession on next launch will try to commit
+    // Leave sessionBuf intact; firebase.js will try to commit pendingSession next launch
   } finally {
     committing = false;
   }
 }
 
-// Load Decks + Grammar + Progress on page ready
+// ---------------- App lifecycle ----------------
 window.onload = () => {
   loadDeckManifest();
   loadGrammarManifest();
@@ -105,12 +105,12 @@ window.onload = () => {
   updateScore();
 };
 
-// Gate-aware hook (called by firebase.js after login)
+// Called by firebase.js when auth is ready
 window.__initAfterLogin = () => {
   renderProgress();
 };
 
-// Best-effort: before leaving, store a 'pendingSession' copy for next launch auto-commit
+// Best-effort: persist pending session for next launch auto-commit
 window.addEventListener('pagehide', () => {
   try {
     if (sessionBuf.total > 0) {
@@ -126,9 +126,9 @@ window.addEventListener('beforeunload', () => {
   } catch {}
 });
 
-// ---- section router (robust) ----------------------------------------------
+// ---------------- Section Router ----------------
 function showSection(id) {
-  // If leaving Practice, auto-save the deck's buffered progress
+  // Leaving Practice? autosave the deck's buffered progress
   if (currentSectionId === "practice" && id !== "practice") {
     autoCommitIfNeeded("leaving practice");
   }
@@ -146,7 +146,10 @@ function showSection(id) {
   if (id === "practice") updateDeckProgress();
 }
 
-// ---- DECKS -----------------------------------------------------------------
+// Make router global for inline onclicks in HTML
+window.showSection = showSection;
+
+// ---------------- DECKS ----------------
 async function loadDeckManifest() {
   try {
     statusLine("deck-status", "Loading decks…");
@@ -231,7 +234,7 @@ function selectDeck(name) {
   showSection("mode-select");
 }
 
-// ---- PRACTICE --------------------------------------------------------------
+// ---------------- PRACTICE ----------------
 function startPractice(selectedMode) {
   mode = selectedMode;
   sessionBuf.mode = selectedMode;
@@ -243,6 +246,7 @@ function startPractice(selectedMode) {
   updateDeckProgress();
   showQuestion();
 }
+window.startPractice = startPractice; // used by inline onclicks
 
 function showQuestion() {
   const q = currentDeck[currentIndex];
@@ -337,21 +341,12 @@ function skipQuestion() {
   nextQuestion();
   updateDeckProgress();
 }
-
-// Save Progress (now navbar button triggers this)
-window.saveCurrentScore = async function () {
-  try {
-    await autoCommitIfNeeded("manual save");
-    alert('Progress saved ✅');
-  } catch {
-    // autoCommitIfNeeded already logs/handles errors
-  }
-};
+window.skipQuestion = skipQuestion;
 
 function nextQuestion() {
   currentIndex++;
   if (currentIndex >= currentDeck.length) {
-    // Finished the deck → navigate to Vocab; auto-save on section change
+    // Finished the deck → navigate to Vocab; autosave happens via showSection()
     alert(`Finished! ✅ ${score.correct} ❌ ${score.wrong} ➖ ${score.skipped}\nSaving your progress…`);
     showSection("deck-select");
   } else {
@@ -365,13 +360,14 @@ function updateScore() {
   setText("skipped", String(score.skipped));
 }
 
-// ---- LEARN mode ------------------------------------------------------------
+// ---------------- LEARN mode ----------------
 function startLearnMode() {
   currentIndex = 0;
   if (!currentDeck.length) return alert("Pick a deck first!");
   showSection("learn");
   showLearnCard();
 }
+window.startLearnMode = startLearnMode;
 
 function showLearnCard() {
   const word = currentDeck[currentIndex];
@@ -391,8 +387,9 @@ function nextLearn() {
     showLearnCard();
   }
 }
+window.nextLearn = nextLearn;
 
-// ---- MISTAKES --------------------------------------------------------------
+// ---------------- MISTAKES ----------------
 function startMistakePractice() {
   if (mistakes.length === 0) return alert("No mistakes yet!");
   currentDeck = mistakes.slice();
@@ -401,6 +398,7 @@ function startMistakePractice() {
   showSection("practice");
   startPractice(mode);
 }
+window.startMistakePractice = startMistakePractice;
 
 function clearMistakes() {
   if (confirm("Clear all mistake words?")) {
@@ -409,8 +407,9 @@ function clearMistakes() {
     alert("Mistakes cleared.");
   }
 }
+window.clearMistakes = clearMistakes;
 
-// ---- GRAMMAR ---------------------------------------------------------------
+// ---------------- GRAMMAR ----------------
 async function loadGrammarManifest() {
   try {
     statusLine("grammar-status", "Loading grammar lessons…");
@@ -452,9 +451,9 @@ async function loadGrammarManifest() {
   }
 }
 
-// ---- PROGRESS --------------------------------------------------------------
+// ---------------- PROGRESS (reads via firebase.js) ----------------
 async function renderProgress() {
-  if (!window.__fb_fetchAttempts) return;
+  if (!window.__fb_fetchAttempts) return; // firebase.js exposes this
 
   try {
     const attempts = await window.__fb_fetchAttempts(50);
@@ -529,8 +528,9 @@ async function renderProgress() {
     console.warn("renderProgress failed:", e);
   }
 }
+window.renderProgress = renderProgress;
 
-// ---- utils -----------------------------------------------------------------
+// ---------------- Utilities ----------------
 function shuffleArray(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -545,6 +545,7 @@ function showRomaji() {
   const romaji = card.romaji || "(no romaji)";
   setText("extra-info", `Romaji: ${romaji}`);
 }
+window.showRomaji = showRomaji;
 
 function showMeaning() {
   const card = currentDeck[currentIndex];
@@ -552,52 +553,35 @@ function showMeaning() {
   const correct = mode === "jp-en" ? card.back : card.front;
   setText("extra-info", `Meaning: ${correct}`);
 }
+window.showMeaning = showMeaning;
+
+// ---------------- Navbar actions ----------------
+window.saveCurrentScore = async function () {
+  try {
+    await autoCommitIfNeeded("manual save");
+    alert('Progress saved ✅');
+  } catch {
+    // autoCommitIfNeeded already logs/handles errors
+  }
+};
 
 window.resetSite = async function () {
-  const sure = confirm("⚠️ This will erase all your progress, leaderboard scores, and tasks.\nYour sign-in will remain.\n\nContinue?");
+  const sure = confirm("⚠️ This will erase ALL your progress (attempts, daily aggregates, leaderboard rows, tasks) from the database. Your sign‑in will remain.\n\nProceed?");
   if (!sure) return;
 
   const btn = event?.target;
   if (btn) btn.disabled = true;
 
   try {
-    const user = getAuth().currentUser;
-    if (!user) throw new Error("No signed-in user");
+    // Delegate to firebase.js where auth/db are available
+    if (!window.__fb_fullReset) throw new Error("__fb_fullReset is not available.");
+    await window.__fb_fullReset();
 
-    const db = getFirestore();
-
-    // 1. Delete all user attempts
-    const attemptsSnap = await getDocs(collection(db, 'users', user.uid, 'attempts'));
-    for (const docSnap of attemptsSnap.docs) {
-      await deleteDoc(docSnap.ref);
-    }
-
-    // 2. Delete all daily leaderboard entries for this user
-    const lbSnap = await getDocs(collectionGroup(db, 'users'));
-    for (const docSnap of lbSnap.docs) {
-      if (docSnap.id === user.uid && docSnap.ref.path.includes('dailyLeaderboard')) {
-        await deleteDoc(docSnap.ref);
-      }
-    }
-
-    // 3. Delete overall leaderboard row
-    await deleteDoc(doc(db, 'overallLeaderboard', user.uid)).catch(() => {});
-
-    // 4. Delete daily + overall aggregates under user doc
-    const dailyAggSnap = await getDocs(collection(db, 'users', user.uid, 'daily'));
-    for (const docSnap of dailyAggSnap.docs) {
-      await deleteDoc(docSnap.ref);
-    }
-    const overallAggSnap = await getDocs(collection(db, 'users', user.uid, 'overall'));
-    for (const docSnap of overallAggSnap.docs) {
-      await deleteDoc(docSnap.ref);
-    }
-
-    // 5. Clear local mistakes & mastery
-    localStorage.removeItem('mistakes');
-    localStorage.removeItem('masteryMap');
-    localStorage.removeItem('sessionBuf');
-    localStorage.removeItem('pendingSession');
+    // Clear local caches
+    localStorage.removeItem("mistakes");
+    localStorage.removeItem("masteryMap");
+    localStorage.removeItem("sessionBuf");
+    localStorage.removeItem("pendingSession");
 
     alert("✅ All progress erased. You are still signed in.");
     location.reload();
