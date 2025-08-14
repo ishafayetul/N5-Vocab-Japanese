@@ -319,14 +319,34 @@ function clearMistakes() {
   }
 }
 
-function resetSite() {
-  if (confirm("⚠️ Reset all progress? This clears mistakes and mastery.")) {
+// Danger reset: cloud + local
+async function resetSite() {
+  const sure = confirm(
+    "⚠️ This will permanently erase ALL of your data:\n• Attempts & Progress\n• Daily & Overall aggregates\n• Your entries on Today's & Overall Leaderboards\n• Task completion statuses\n\nProceed?"
+  );
+  if (!sure) return;
+
+  const btn = event?.target;
+  if (btn) btn.disabled = true;
+
+  try {
+    // wipe Firestore for this user
+    await window.__fb_fullReset?.();
+
+    // wipe local helpers
     localStorage.removeItem("mistakes");
     localStorage.removeItem("masteryMap");
-    alert("All data reset.");
+
+    alert("All your data has been erased.");
     location.reload();
+  } catch (e) {
+    console.error("Full reset failed:", e);
+    alert("Reset failed: " + (e?.message || e));
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
+
 
 // ---- GRAMMAR ---------------------------------------------------------------
 async function loadGrammarManifest() {

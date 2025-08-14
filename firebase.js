@@ -6,7 +6,7 @@ import {
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp,
   collection, query, orderBy, limit, onSnapshot, addDoc,
-  runTransaction, getDocs, increment
+  runTransaction, getDocs, increment, writeBatch, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
 // --- Firebase project config ---
@@ -402,6 +402,80 @@ async function __touchLeaderboardDocs(uid) {
   await setDoc(lbOverall, { uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0, updatedAt: serverTimestamp() }, { merge: true });
   await setDoc(lbDaily,   { uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0, updatedAt: serverTimestamp() }, { merge: true });
 }
+
+// Wipe ALL of the current user's data (attempts, daily/overall aggregates,
+// leaderboard rows for all days present in user's daily docs, taskCompletion statuses).
+// Keeps the base users/{uid} profile doc and admin lists.
+window.__fb_fullReset = async function () {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not signed in');
+
+  const uid = user.uid;
+
+  // 1) Collect doc refs to delete
+  const refs = [];
+
+  // attempts
+  const attemptsSnap = await getDocs(collection(db, 'users', uid, 'attempts'));
+  attemptsSnap.forEach(d => refs.push(d.ref));
+
+  // per-day aggregates (also use the date ids later to clean dailyLeaderboard)
+  const dailySnap = await getDocs(collection(db, 'users', uid, 'daily'));
+  const dayIds = [];
+  dailySnap.forEach(d => { refs.push(d.ref); dayIds.push(d.id); });
+
+  // overall aggregate
+  refs.push(doc(db, 'users', uid, 'overall', 'stats'));
+
+  // taskCompletion/{date}/tasks/*
+  const tcDatesSnap = await getDocs(collection(db, 'users', uid, 'taskCompletion'));
+  for (const dateDoc of tcDatesSnap.docs) {
+    const dateId = dateDoc.id;
+    const tasksSnap = await getDocs(collection(db, 'users', uid, 'taskCompletion', dateId, 'tasks'));
+    tasksSnap.forEach(t => refs.push(t.ref));
+    // optional: delete placeholder date doc (ok if it never existed)
+    refs.push(doc(db, 'users', uid, 'taskCompletion', dateId));
+  }
+
+  // leaderboard: overall + all dayIds we discovered above
+  refs.push(doc(db, 'overallLeaderboard', uid));
+  for (const dateId of dayIds) {
+    refs.push(doc(db, 'dailyLeaderboard', dateId, 'users', uid));
+  }
+
+  // 2) Batched delete (chunks of 450 to stay under 500/commit)
+  const CHUNK = 450;
+  for (let i = 0; i < refs.length; i += CHUNK) {
+    const batch = writeBatch(db);
+    for (let j = i; j < Math.min(i + CHUNK, refs.length); j++) {
+      batch.delete(refs[j]);
+    }
+    await batch.commit();
+  }
+
+  // 3) Recreate empty leaderboard placeholders so your listeners don't error (optional)
+  const displayName = (await getDoc(doc(db, 'users', uid))).data()?.displayName || 'Anonymous';
+  const today = (function () {
+    const n = new Date();
+    const y = n.getFullYear();
+    const m = String(n.getMonth() + 1).padStart(2, '0');
+    const d = String(n.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  })();
+
+  // Touch current day + overall with zeros so UI shows 0 instead of missing row
+  await Promise.all([
+    setDoc(doc(db, 'overallLeaderboard', uid), {
+      uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0,
+      updatedAt: serverTimestamp()
+    }, { merge: true }),
+    setDoc(doc(db, 'dailyLeaderboard', today, 'users', uid), {
+      uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0,
+      updatedAt: serverTimestamp()
+    }, { merge: true }),
+  ]);
+};
+
 
 // Optional: expose sign out
 window.__signOut = () => signOut(auth);
