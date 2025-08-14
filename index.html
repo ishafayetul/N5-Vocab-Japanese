@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Japanese Vocab MCQ Practice</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- optional: silence favicon 404 -->
   <link rel="icon" href="data:," />
 </head>
 <body>
@@ -24,10 +23,24 @@
     <nav class="sidebar">
       <h2>📘 Menu</h2>
       <button onclick="showSection('deck-select')">📚 Select Deck</button>
-      <button onclick="showSection('grammar-section')">📖 Grammar</button>
+      <button onclick="showSection('leaderboard-section')">🏆 Leaderboard</button> <!-- NEW -->
       <button onclick="showSection('mistakes-section')">❗ Mistakes</button>
       <button onclick="resetSite()">🔁 Reset</button>
     </nav>
+
+    <!-- To-Do flyout (shown/hidden by firebase.js) — NEW -->
+    <div id="todo-flyout" class="todo-flyout hidden">
+      <div class="todo-head">
+        <span>Today’s To-Dos</span>
+        <span id="todo-timer" class="todo-timer">00:00:00</span>
+      </div>
+      <ul id="todo-list" class="todo-list"></ul>
+      <!-- Only visible to admins (firebase.js toggles) -->
+      <div id="admin-row" class="admin-row hidden">
+        <input id="admin-task-input" placeholder="Add a task for everyone today…" />
+        <button id="admin-task-add">Add</button>
+      </div>
+    </div>
 
     <div class="main-content">
       <header>
@@ -43,7 +56,6 @@
         <!-- Decks -->
         <section id="deck-select">
           <h2>Select a Deck</h2>
-          <!-- optional status line -->
           <p id="deck-status" class="muted" style="margin:8px 0"></p>
           <div id="deck-buttons"></div>
         </section>
@@ -73,11 +85,10 @@
           <div id="extra-info" style="margin-top: 10px; font-size: 16px;"></div>
         </section>
 
-        <!-- Grammar (NEW) -->
-        <section id="grammar-section" class="hidden">
-          <h2>Grammar Lessons</h2>
-          <p id="grammar-status" class="muted" style="margin:8px 0"></p>
-          <div id="grammar-list"></div>
+        <!-- Leaderboard (NEW) -->
+        <section id="leaderboard-section" class="hidden">
+          <h2>🏆 Today’s Leaderboard</h2>
+          <ul id="leaderboard-list"></ul>
         </section>
 
         <!-- Mistakes -->
