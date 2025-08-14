@@ -211,10 +211,10 @@ function skipQuestion() {
 }
 
 // NEW: Save Score AND finish current session (return to Deck Select)
-async function saveCurrentScore() {
+// Save & Finish (global)
+window.saveCurrentScore = async function () {
   const btn = document.querySelector('#practice .save');
   if (btn) btn.disabled = true;
-
   try {
     await window.__fb_saveScore?.({
       deckName: currentDeckName || 'Unknown Deck',
@@ -224,13 +224,9 @@ async function saveCurrentScore() {
       skipped: score.skipped,
       total: score.correct + score.wrong + score.skipped
     });
-
-    // Refresh Progress panel (so it shows the new attempt immediately)
-    await renderProgress();
-
+    await renderProgress();           // refresh Progress view
     alert('Score saved to Progress ✅');
-
-    // Finish the session and return to Deck Select
+    // Finish session and go back to Deck Select
     currentDeck = [];
     currentDeckName = "";
     currentIndex = 0;
@@ -241,7 +237,8 @@ async function saveCurrentScore() {
   } finally {
     if (btn) btn.disabled = false;
   }
-}
+};
+
 
 
 function nextQuestion() {

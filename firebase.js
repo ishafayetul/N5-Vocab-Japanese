@@ -89,20 +89,12 @@ let unsubOverallLB = null;
 let unsubTasks = null;
 
 onAuthStateChanged(auth, async (user) => {
-  const found = {
-    gate: !!gate, appRoot: !!appRoot, todoFlyout: !!todoFlyout,
-    todoTimer: !!todoTimer, todoList: !!todoList,
-    adminRow: !!adminRow, adminInput: !!adminInput, adminAdd: !!adminAdd,
-    overallLbList: !!overallLbList, todaysLbList: !!todaysLbList
-  };
   console.log('[auth] state changed →', user ? 'SIGNED IN' : 'SIGNED OUT', user?.uid || '');
-  console.log('[auth] elements found:', found);
-
   try {
     if (user) {
-      if (gate) { gate.classList.add('hidden'); gate.style.display = 'none'; }
-      if (appRoot) { appRoot.classList.remove('hidden'); appRoot.style.display = 'block'; }
-      if (todoFlyout) { todoFlyout.classList.remove('hidden'); todoFlyout.style.display = ''; }
+      gate?.classList.add('hidden'); if (gate) gate.style.display = 'none';
+      appRoot?.classList.remove('hidden'); if (appRoot) appRoot.style.display = 'block';
+      todoFlyout?.classList.remove('hidden'); if (todoFlyout) todoFlyout.style.display = '';
 
       // Ensure base user doc exists
       const uref = doc(db, 'users', user.uid);
@@ -144,24 +136,19 @@ onAuthStateChanged(auth, async (user) => {
       // Start optional UI bits
       startCountdown();
       if (todoList) subscribeTodayTasks(user.uid);
-
       if (todaysLbList) subscribeTodaysLeaderboard();
       if (overallLbList) subscribeOverallLeaderboard();
 
       // let app JS continue
       window.__initAfterLogin?.();
-
-      console.log('[auth] gate hidden + app shown');
     } else {
-      if (appRoot) { appRoot.classList.add('hidden'); appRoot.style.display = 'none'; }
-      if (gate) { gate.classList.remove('hidden'); gate.style.display = ''; }
-      if (todoFlyout) { todoFlyout.classList.add('hidden'); todoFlyout.style.display = 'none'; }
+      appRoot?.classList.add('hidden'); if (appRoot) appRoot.style.display = 'none';
+      gate?.classList.remove('hidden'); if (gate) gate.style.display = '';
+      todoFlyout?.classList.add('hidden'); if (todoFlyout) todoFlyout.style.display = 'none';
 
       if (unsubTodayLB) { unsubTodayLB(); unsubTodayLB = null; }
       if (unsubOverallLB) { unsubOverallLB(); unsubOverallLB = null; }
       if (unsubTasks) { unsubTasks(); unsubTasks = null; }
-
-      console.log('[auth] gate shown + app hidden');
     }
   } catch (err) {
     console.error('[auth] onAuthStateChanged handler error:', err);
@@ -261,11 +248,11 @@ async function markTask(uid, dkey, taskId, text, done) {
 
 /* ------------------------------
    Leaderboards
-   - Overall leaderboard (from start) → collection: overallLeaderboard (docs keyed by uid)
-   - Today's leaderboard (daily)      → collection: dailyLeaderboard/{dkey}/users
+   - Overall leaderboard (since start) → collection: overallLeaderboard (docs keyed by uid)
+   - Today's leaderboard               → collection: dailyLeaderboard/{date}/users
 --------------------------------- */
 
-// Overall (from start) — truly dynamic subscription
+// Overall (from start) — live subscription
 function subscribeOverallLeaderboard() {
   if (!overallLbList) return;
   const qy = query(collection(db, 'overallLeaderboard'), orderBy('score', 'desc'), limit(50));
@@ -321,7 +308,7 @@ function subscribeTodaysLeaderboard() {
 --------------------------------- */
 
 // Per-correct answer: updates TODAY and OVERALL live
-window.__fb_recordAnswer = async function ({ deckName = 'unknown', mode = 'jp-en', isCorrect = false } = {}) {
+window.__fb_recordAnswer = async function ({ mode = 'jp-en', isCorrect = false } = {}) {
   const user = auth.currentUser;
   if (!user || !isCorrect) return;
 
@@ -337,90 +324,51 @@ window.__fb_recordAnswer = async function ({ deckName = 'unknown', mode = 'jp-en
     const usnap = await tx.get(uref);
     const displayName = usnap.exists() ? (usnap.data().displayName || 'Anonymous') : 'Anonymous';
 
-    // --- Daily aggregate (for today's leaderboard)
+    // Daily aggregate
     const ds = await tx.get(dailyRef);
     let d = ds.exists() ? ds.data() : { jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0 };
     if (mode === 'jp-en') d.jpEnCorrect = (d.jpEnCorrect || 0) + 1;
     else d.enJpCorrect = (d.enJpCorrect || 0) + 1;
     const scoreD = (d.jpEnCorrect || 0) + (d.enJpCorrect || 0) + (d.tasksCompleted || 0) * TASK_BONUS;
 
-    tx.set(dailyRef, {
-      date: dkey, displayName,
-      jpEnCorrect: d.jpEnCorrect || 0,
-      enJpCorrect: d.enJpCorrect || 0,
-      tasksCompleted: d.tasksCompleted || 0,
-      score: scoreD,
-      updatedAt: serverTimestamp()
-    }, { merge: true });
+    tx.set(dailyRef, { date: dkey, displayName, ...d, score: scoreD, updatedAt: serverTimestamp() }, { merge: true });
+    tx.set(lbDaily,  { uid: user.uid, displayName, ...d, score: scoreD, updatedAt: serverTimestamp() }, { merge: true });
 
-    tx.set(lbDaily, {
-      uid: user.uid, displayName,
-      jpEnCorrect: d.jpEnCorrect || 0,
-      enJpCorrect: d.enJpCorrect || 0,
-      tasksCompleted: d.tasksCompleted || 0,
-      score: scoreD,
-      updatedAt: serverTimestamp()
-    }, { merge: true });
-
-    // --- OVERALL aggregate (since start)
+    // Overall aggregate
     const os = await tx.get(overallRef);
     let o = os.exists() ? os.data() : { jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0 };
     if (mode === 'jp-en') o.jpEnCorrect = (o.jpEnCorrect || 0) + 1;
     else o.enJpCorrect = (o.enJpCorrect || 0) + 1;
     const scoreO = (o.jpEnCorrect || 0) + (o.enJpCorrect || 0) + (o.tasksCompleted || 0) * TASK_BONUS;
 
-    tx.set(overallRef, {
-      jpEnCorrect: o.jpEnCorrect || 0,
-      enJpCorrect: o.enJpCorrect || 0,
-      tasksCompleted: o.tasksCompleted || 0,
-      score: scoreO,
-      updatedAt: serverTimestamp()
-    }, { merge: true });
-
-    tx.set(lbOverall, {
-      uid: user.uid, displayName,
-      jpEnCorrect: o.jpEnCorrect || 0,
-      enJpCorrect: o.enJpCorrect || 0,
-      tasksCompleted: o.tasksCompleted || 0,
-      score: scoreO,
-      updatedAt: serverTimestamp()
-    }, { merge: true });
+    tx.set(overallRef, { ...o, score: scoreO, updatedAt: serverTimestamp() }, { merge: true });
+    tx.set(lbOverall,  { uid: user.uid, displayName, ...o, score: scoreO, updatedAt: serverTimestamp() }, { merge: true });
   });
 };
 
-// End of a practice run: store an attempt document for Progress page
+// End of a practice run: store an attempt (for Progress)
 window.__fb_finishAttempt = async function ({ deckName, mode, correct, wrong, skipped, total }) {
   const user = auth.currentUser;
   if (!user) return;
 
   const attemptsCol = collection(db, 'users', user.uid, 'attempts');
-  await addDoc(attemptsCol, {
-    deckName, mode, correct, wrong, skipped, total,
-    createdAt: Date.now(), // client timestamp for quick display
-    createdAtServer: serverTimestamp()
-  });
+  await addDoc(attemptsCol, { deckName, mode, correct, wrong, skipped, total, createdAt: Date.now(), createdAtServer: serverTimestamp() });
 
-  // touch leaderboard docs so live listeners refresh even if numbers unchanged right now
   await __touchLeaderboardDocs(user.uid);
 };
 
-// NEW: Save Score on demand (manual attempt + touch leaderboards)
+// Save Score on demand (manual attempt + touch leaderboards)
 window.__fb_saveScore = async function ({ deckName, mode, correct, wrong, skipped, total }) {
   const user = auth.currentUser;
   if (!user) throw new Error('Not signed in');
 
   const attemptsCol = collection(db, 'users', user.uid, 'attempts');
-  await addDoc(attemptsCol, {
-    deckName, mode, correct, wrong, skipped, total,
-    createdAt: Date.now(),
-    createdAtServer: serverTimestamp()
-  });
+  await addDoc(attemptsCol, { deckName, mode, correct, wrong, skipped, total, createdAt: Date.now(), createdAtServer: serverTimestamp() });
 
-  // Ensure leaderboard docs exist and bump updatedAt so onSnapshot redraws
   await __touchLeaderboardDocs(user.uid);
 };
 
-// Fetch recent attempts (for Progress page)
+// Fetch recent attempts (for Progress)
 window.__fb_fetchAttempts = async function (limitN = 20) {
   const user = auth.currentUser;
   if (!user) return [];
@@ -438,9 +386,6 @@ window.__fb_fetchAttempts = async function (limitN = 20) {
 
 // Ensure leaderboard docs exist and update their updatedAt
 async function __touchLeaderboardDocs(uid) {
-  const user = auth.currentUser;
-  if (!user) return;
-
   const uref = doc(db, 'users', uid);
   const usnap = await getDoc(uref);
   const displayName = usnap.exists() ? (usnap.data().displayName || 'Anonymous') : 'Anonymous';
@@ -450,18 +395,8 @@ async function __touchLeaderboardDocs(uid) {
   const lbOverall = doc(db, 'overallLeaderboard', uid);
   const lbDaily   = doc(db, 'dailyLeaderboard', dkey, 'users', uid);
 
-  // set with defaults if missing, but DO NOT change counts here (avoid double-counting)
-  await setDoc(lbOverall, {
-    uid, displayName,
-    jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0,
-    updatedAt: serverTimestamp()
-  }, { merge: true });
-
-  await setDoc(lbDaily, {
-    uid, displayName,
-    jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0,
-    updatedAt: serverTimestamp()
-  }, { merge: true });
+  await setDoc(lbOverall, { uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0, updatedAt: serverTimestamp() }, { merge: true });
+  await setDoc(lbDaily,   { uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0, updatedAt: serverTimestamp() }, { merge: true });
 }
 
 // Optional: expose sign out
