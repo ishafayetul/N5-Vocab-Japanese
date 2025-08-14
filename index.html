@@ -23,19 +23,20 @@
     <nav class="sidebar">
       <h2>📘 Menu</h2>
       <button onclick="showSection('deck-select')">📚 Select Deck</button>
-      <button onclick="showSection('leaderboard-section')">🏆 Leaderboard</button> <!-- NEW -->
+      <button onclick="showSection('grammar-section')">📖 Grammar</button> <!-- RESTORED -->
+      <button onclick="showSection('leaderboard-section')">🏆 Leaderboard</button>
       <button onclick="showSection('mistakes-section')">❗ Mistakes</button>
       <button onclick="resetSite()">🔁 Reset</button>
     </nav>
 
-    <!-- To-Do flyout (shown/hidden by firebase.js) — NEW -->
+    <!-- To-Do flyout (shown/hidden by firebase.js) -->
     <div id="todo-flyout" class="todo-flyout hidden">
       <div class="todo-head">
         <span>Today’s To-Dos</span>
         <span id="todo-timer" class="todo-timer">00:00:00</span>
       </div>
       <ul id="todo-list" class="todo-list"></ul>
-      <!-- Only visible to admins (firebase.js toggles) -->
+      <!-- Only visible to admins (firebase.js toggles this row) -->
       <div id="admin-row" class="admin-row hidden">
         <input id="admin-task-input" placeholder="Add a task for everyone today…" />
         <button id="admin-task-add">Add</button>
@@ -85,7 +86,14 @@
           <div id="extra-info" style="margin-top: 10px; font-size: 16px;"></div>
         </section>
 
-        <!-- Leaderboard (NEW) -->
+        <!-- Grammar -->
+        <section id="grammar-section" class="hidden">
+          <h2>Grammar Lessons</h2>
+          <p id="grammar-status" class="muted" style="margin:8px 0"></p>
+          <div id="grammar-list"></div>
+        </section>
+
+        <!-- Leaderboard -->
         <section id="leaderboard-section" class="hidden">
           <h2>🏆 Today’s Leaderboard</h2>
           <ul id="leaderboard-list"></ul>

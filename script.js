@@ -20,7 +20,7 @@ function statusLine(id, msg) {
   console.log(`[status:${id}]`, msg);
 }
 
-// Load both Decks and Grammar as soon as the page is ready
+// Load both Decks and Grammar on page ready
 window.onload = () => {
   loadDeckManifest();
   loadGrammarManifest();
@@ -40,15 +40,11 @@ function showSection(id) {
     "deck-select", "grammar-section", "mistakes-section",
     "practice", "mode-select", "learn", "leaderboard-section"
   ];
-  sections.forEach(sec => {
-    const el = $(sec);
-    if (el) el.classList.add("hidden");
-  });
-  const target = $(id);
-  if (target) target.classList.remove("hidden");
+  sections.forEach(sec => $(sec)?.classList.add("hidden"));
+  $(id)?.classList.remove("hidden");
 }
 
-// ---- DECKS: data loading ---------------------------------------------------
+// ---- DECKS -----------------------------------------------------------------
 async function loadDeckManifest() {
   try {
     statusLine("deck-status", "Loading decks…");
@@ -283,19 +279,31 @@ function resetSite() {
   }
 }
 
-// ---- GRAMMAR: manifest loader + buttons -----------------------------------
+// ---- GRAMMAR ---------------------------------------------------------------
 async function loadGrammarManifest() {
   try {
     statusLine("grammar-status", "Loading grammar lessons…");
-    const res = await fetch("grammar/grammar_manifest.json");
-    if (!res.ok) throw new Error(`HTTP ${res.status} for grammar/grammar_manifest.json`);
 
-    const text = await res.text();
-    if (text.trim().startsWith("<")) {
-      throw new Error("Grammar manifest is HTML (check path/case for grammar/grammar_manifest.json)");
+    // Try folder path first; fall back to root if needed
+    let base = "grammar/";
+    let list = null;
+
+    const tryLoad = async (url) => {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
+      const t = await r.text();
+      if (t.trim().startsWith("<")) throw new Error("Got HTML instead of JSON");
+      return JSON.parse(t);
+    };
+
+    try {
+      list = await tryLoad("grammar/grammar_manifest.json");
+      base = "grammar/";
+    } catch (e1) {
+      // Fallback if repo has grammar_manifest.json at root
+      list = await tryLoad("grammar_manifest.json");
+      base = "";
     }
-    /** @type {string[]} */
-    const list = JSON.parse(text);
 
     const container = $("grammar-list");
     if (!container) return;
@@ -304,7 +312,7 @@ async function loadGrammarManifest() {
     list.forEach((file) => {
       const btn = document.createElement("button");
       btn.textContent = file.replace(".pdf", "");
-      btn.onclick = () => window.open(`grammar/${file}`, "_blank");
+      btn.onclick = () => window.open(`${base}${file}`, "_blank");
       container.appendChild(btn);
     });
 
