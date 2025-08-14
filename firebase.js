@@ -32,15 +32,14 @@ window.__fb_fullReset = async function () {
   if (!user) throw new Error('Not signed in');
 
   const uid = user.uid;
-
-  // Collect refs to delete
   const refs = [];
 
+  // ---------- collect refs to delete ----------
   // attempts
   const attemptsSnap = await getDocs(collection(db, 'users', uid, 'attempts'));
   attemptsSnap.forEach(d => refs.push(d.ref));
 
-  // daily aggregates (also capture date IDs to clear dailyLeaderboard entries)
+  // daily aggregate docs (collect day IDs to clear dailyLeaderboard)
   const dailySnap = await getDocs(collection(db, 'users', uid, 'daily'));
   const dayIds = [];
   dailySnap.forEach(d => { refs.push(d.ref); dayIds.push(d.id); });
@@ -48,7 +47,7 @@ window.__fb_fullReset = async function () {
   // overall aggregate
   refs.push(doc(db, 'users', uid, 'overall', 'stats'));
 
-  // taskCompletion/{date}/tasks/*
+  // taskCompletion/{date}/tasks/*  (delete all task status docs)
   const tcDatesSnap = await getDocs(collection(db, 'users', uid, 'taskCompletion'));
   for (const dateDoc of tcDatesSnap.docs) {
     const dateId = dateDoc.id;
@@ -56,13 +55,28 @@ window.__fb_fullReset = async function () {
     tasksSnap.forEach(t => refs.push(t.ref));
   }
 
-  // leaderboard: overall + each discovered date (today’s will be recreated at the end)
+  // ---------- extra: UNTICK Today's To-Dos explicitly ----------
+  const today = (() => {
+    const n = new Date();
+    const y = n.getFullYear();
+    const m = String(n.getMonth() + 1).padStart(2, '0');
+    const d = String(n.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  })();
+
+  // If any tasks exist for today, queue delete of this user's status docs for them
+  const todaysTasksSnap = await getDocs(collection(db, 'dailyTasks', today, 'tasks'));
+  for (const t of todaysTasksSnap.docs) {
+    refs.push(doc(db, 'users', uid, 'taskCompletion', today, 'tasks', t.id));
+  }
+
+  // leaderboard: overall + each discovered date
   refs.push(doc(db, 'overallLeaderboard', uid));
   for (const dateId of dayIds) {
     refs.push(doc(db, 'dailyLeaderboard', dateId, 'users', uid));
   }
 
-  // Batched deletes in chunks (Firestore limit safety)
+  // ---------- batched deletes ----------
   const CHUNK = 450;
   for (let i = 0; i < refs.length; i += CHUNK) {
     const batch = writeBatch(db);
@@ -72,28 +86,21 @@ window.__fb_fullReset = async function () {
     await batch.commit();
   }
 
-  // Best-effort: remove empty taskCompletion date docs themselves
+  // Best-effort: remove empty taskCompletion/{date} docs (parents)
   try {
-    const tcDatesSnap2 = await getDocs(collection(db, 'users', uid, 'taskCompletion'));
-    for (const dateDoc of tcDatesSnap2.docs) {
+    for (const dateDoc of tcDatesSnap.docs) {
       await deleteDoc(dateDoc.ref);
     }
   } catch (e) {
     console.warn('Non-fatal: could not delete some taskCompletion date docs', e);
   }
 
-  // Recreate placeholder leaderboard rows so UI listeners have something to render (optional)
+  // ---------- recreate placeholders ----------
+  // Get display name
   const us = await getDoc(doc(db, 'users', uid));
   const displayName = us.exists() ? (us.data().displayName || 'Anonymous') : 'Anonymous';
 
-  const today = (() => {
-    const n = new Date();
-    const y = n.getFullYear();
-    const m = String(n.getMonth() + 1).padStart(2, '0');
-    const d = String(n.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  })();
-
+  // Leaderboards placeholders
   await Promise.all([
     setDoc(doc(db, 'overallLeaderboard', uid), {
       uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0,
@@ -104,7 +111,21 @@ window.__fb_fullReset = async function () {
       updatedAt: serverTimestamp()
     }, { merge: true }),
   ]);
+
+  // ---------- also zero out user's daily aggregate for TODAY ----------
+  await setDoc(doc(db, 'users', uid, 'daily', today), {
+    date: today,
+    displayName,
+    jpEnCorrect: 0,
+    enJpCorrect: 0,
+    tasksCompleted: 0,
+    score: 0,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+
+  // Done
 };
+
 
 // --- DOM refs (may be null) ---
 const gate       = document.getElementById('auth-gate');
