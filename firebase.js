@@ -6,7 +6,7 @@ import {
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp,
   collection, query, orderBy, limit, onSnapshot, addDoc,
-  runTransaction, getDocs
+  runTransaction, getDocs, increment
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
 // --- Firebase project config ---
@@ -308,43 +308,47 @@ function subscribeTodaysLeaderboard() {
 --------------------------------- */
 
 // Per-correct answer: updates TODAY and OVERALL live
+// Per-correct answer: updates TODAY and OVERALL live (reads first, then writes)
+// Per-correct answer: bump TODAY + OVERALL using atomic increments (no transaction)
 window.__fb_recordAnswer = async function ({ mode = 'jp-en', isCorrect = false } = {}) {
   const user = auth.currentUser;
   if (!user || !isCorrect) return;
 
-  const dkey = localDateKey();
-  const dailyRef = doc(db, 'users', user.uid, 'daily', dkey);
-  const lbDaily  = doc(db, 'dailyLeaderboard', dkey, 'users', user.uid);
-
+  const dkey       = localDateKey();
+  const dailyRef   = doc(db, 'users', user.uid, 'daily', dkey);
   const overallRef = doc(db, 'users', user.uid, 'overall', 'stats');
+  const lbDaily    = doc(db, 'dailyLeaderboard', dkey, 'users', user.uid);
   const lbOverall  = doc(db, 'overallLeaderboard', user.uid);
   const uref       = doc(db, 'users', user.uid);
 
-  await runTransaction(db, async (tx) => {
-    const usnap = await tx.get(uref);
-    const displayName = usnap.exists() ? (usnap.data().displayName || 'Anonymous') : 'Anonymous';
+  // read display name (outside any transaction)
+  const usnap = await getDoc(uref);
+  const displayName = usnap.exists() ? (usnap.data().displayName || 'Anonymous') : 'Anonymous';
 
-    // Daily aggregate
-    const ds = await tx.get(dailyRef);
-    let d = ds.exists() ? ds.data() : { jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0 };
-    if (mode === 'jp-en') d.jpEnCorrect = (d.jpEnCorrect || 0) + 1;
-    else d.enJpCorrect = (d.enJpCorrect || 0) + 1;
-    const scoreD = (d.jpEnCorrect || 0) + (d.enJpCorrect || 0) + (d.tasksCompleted || 0) * TASK_BONUS;
+  // which counter to bump?
+  const incField = (mode === 'jp-en')
+    ? { jpEnCorrect: increment(1) }
+    : { enJpCorrect: increment(1) };
 
-    tx.set(dailyRef, { date: dkey, displayName, ...d, score: scoreD, updatedAt: serverTimestamp() }, { merge: true });
-    tx.set(lbDaily,  { uid: user.uid, displayName, ...d, score: scoreD, updatedAt: serverTimestamp() }, { merge: true });
+  // ensure docs exist (merge) so updateDoc doesn't fail
+  await Promise.all([
+    setDoc(dailyRef,   { date: dkey, uid: user.uid, displayName }, { merge: true }),
+    setDoc(overallRef, { uid: user.uid },                           { merge: true }),
+    setDoc(lbDaily,    { uid: user.uid, displayName },              { merge: true }),
+    setDoc(lbOverall,  { uid: user.uid, displayName },              { merge: true }),
+  ]);
 
-    // Overall aggregate
-    const os = await tx.get(overallRef);
-    let o = os.exists() ? os.data() : { jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0 };
-    if (mode === 'jp-en') o.jpEnCorrect = (o.jpEnCorrect || 0) + 1;
-    else o.enJpCorrect = (o.enJpCorrect || 0) + 1;
-    const scoreO = (o.jpEnCorrect || 0) + (o.enJpCorrect || 0) + (o.tasksCompleted || 0) * TASK_BONUS;
-
-    tx.set(overallRef, { ...o, score: scoreO, updatedAt: serverTimestamp() }, { merge: true });
-    tx.set(lbOverall,  { uid: user.uid, displayName, ...o, score: scoreO, updatedAt: serverTimestamp() }, { merge: true });
-  });
+  // bump the chosen correct counter + score (+1 for each correct answer)
+  const base = { updatedAt: serverTimestamp() };
+  await Promise.all([
+    updateDoc(dailyRef,   { ...incField, score: increment(1), ...base }),
+    updateDoc(lbDaily,    { ...incField, score: increment(1), ...base }),
+    updateDoc(overallRef, { ...incField, score: increment(1), ...base }),
+    updateDoc(lbOverall,  { ...incField, score: increment(1), ...base }),
+  ]);
 };
+
+
 
 // End of a practice run: store an attempt (for Progress)
 window.__fb_finishAttempt = async function ({ deckName, mode, correct, wrong, skipped, total }) {
