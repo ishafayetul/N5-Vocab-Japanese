@@ -98,6 +98,14 @@ button{
 }
 button:hover{ background: var(--primary-hover); }
 button:active{ transform: translateY(1px); }
+button.save{ background:#10b981; }
+button.save:hover{ background:#0ea371; }
+button:disabled { opacity: .6; cursor: not-allowed; }
+
+/* =========================
+   Practice actions
+   ========================= */
+.practice-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
 
 /* =========================
    Deck list / options

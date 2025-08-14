@@ -24,24 +24,21 @@ function statusLine(id, msg) {
 window.onload = () => {
   loadDeckManifest();
   loadGrammarManifest();
-  renderProgress(); // pulls last attempts via firebase helpers
+  renderProgress();
   updateScore();
 };
 
 // Gate-aware hook (called by firebase.js after login)
 window.__initAfterLogin = () => {
-  // refresh progress after login to ensure we have permissions
   renderProgress();
 };
 
-// ---- sections --------------------------------------------------------------
+// ---- section router (robust) ----------------------------------------------
 function showSection(id) {
-  // Hide every section under <main>
+  // Hide every section inside <main>, then show requested
   document.querySelectorAll('.main-content main > section').forEach(sec => {
     sec.classList.add('hidden');
   });
-
-  // Show the requested one
   const target = document.getElementById(id);
   if (target) target.classList.remove('hidden');
   else console.warn('showSection: no element with id:', id);
@@ -173,6 +170,7 @@ function checkAnswer(selected, correct, wordObj) {
 
   if (selected === correct) {
     score.correct++;
+    // update daily & overall live (Firebase will aggregate)
     window.__fb_recordAnswer?.({
       deckName: currentDeckName,
       mode,
@@ -212,10 +210,44 @@ function skipQuestion() {
   nextQuestion();
 }
 
+// NEW: Save Score AND finish current session (return to Deck Select)
+async function saveCurrentScore() {
+  const btn = document.querySelector('#practice .save');
+  if (btn) btn.disabled = true;
+
+  try {
+    await window.__fb_saveScore?.({
+      deckName: currentDeckName || 'Unknown Deck',
+      mode,
+      correct: score.correct,
+      wrong: score.wrong,
+      skipped: score.skipped,
+      total: score.correct + score.wrong + score.skipped
+    });
+
+    // Refresh Progress panel (so it shows the new attempt immediately)
+    await renderProgress();
+
+    alert('Score saved to Progress ✅');
+
+    // Finish the session and return to Deck Select
+    currentDeck = [];
+    currentDeckName = "";
+    currentIndex = 0;
+    showSection('deck-select');
+  } catch (e) {
+    console.warn('saveCurrentScore failed:', e);
+    alert('Could not save score. Please try again.');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+
 function nextQuestion() {
   currentIndex++;
   if (currentIndex >= currentDeck.length) {
-    // record attempt summary in Firestore (per-user)
+    // store an attempt automatically on finish
     (async () => {
       try {
         await window.__fb_finishAttempt?.({
@@ -226,7 +258,6 @@ function nextQuestion() {
           skipped: score.skipped,
           total: score.correct + score.wrong + score.skipped
         });
-        // refresh progress UI
         renderProgress();
       } catch (e) {
         console.warn("finishAttempt failed:", e);
@@ -321,7 +352,6 @@ async function loadGrammarManifest() {
       list = await tryLoad("grammar/grammar_manifest.json");
       base = "grammar/";
     } catch (e1) {
-      // Fallback if repo has grammar_manifest.json at root
       list = await tryLoad("grammar_manifest.json");
       base = "";
     }
@@ -344,7 +374,7 @@ async function loadGrammarManifest() {
   }
 }
 
-// ---- PROGRESS (NEW) --------------------------------------------------------
+// ---- PROGRESS --------------------------------------------------------------
 async function renderProgress() {
   if (!window.__fb_fetchAttempts) return;
 

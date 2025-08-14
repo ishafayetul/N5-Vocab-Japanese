@@ -24,9 +24,9 @@
       <h2>📘 Menu</h2>
       <button onclick="showSection('deck-select')">📚 Select Deck</button>
       <button onclick="showSection('grammar-section')">📖 Grammar</button>
-      <button onclick="showSection('progress-section')">📈 Progress</button> <!-- NEW -->
-      <button onclick="showSection('overall-leaderboard-section')">🏆 Overall Leaderboard</button> <!-- NEW (overall) -->
-      <button onclick="showSection('todays-leaderboard-section')">📅 Today’s Leaderboard</button> <!-- NEW (daily) -->
+      <button onclick="showSection('progress-section')">📈 Progress</button>
+      <button onclick="showSection('overall-leaderboard-section')">🏆 Overall Leaderboard</button>
+      <button onclick="showSection('todays-leaderboard-section')">📅 Today’s Leaderboard</button>
       <button onclick="showSection('mistakes-section')">❗ Mistakes</button>
       <button onclick="resetSite()">🔁 Reset</button>
     </nav>
@@ -81,10 +81,13 @@
         <section id="practice" class="hidden">
           <div id="question-box"></div>
           <ul id="options"></ul>
-          <button onclick="skipQuestion()">Skip</button>
-          <br />
-          <button onclick="showRomaji()">👁 Show Romaji</button>
-          <button onclick="showMeaning()">💡 Show Meaning</button>
+          <div class="practice-actions">
+            <button onclick="skipQuestion()">Skip</button>
+            <button onclick="showRomaji()">👁 Show Romaji</button>
+            <button onclick="showMeaning()">💡 Show Meaning</button>
+            <!-- NEW: Save Score button -->
+            <button class="save" onclick="saveCurrentScore()">💾 Save & Finish Score</button>
+          </div>
           <div id="extra-info" style="margin-top: 10px; font-size: 16px;"></div>
         </section>
 
@@ -95,7 +98,7 @@
           <div id="grammar-list"></div>
         </section>
 
-        <!-- Progress (NEW) -->
+        <!-- Progress -->
         <section id="progress-section" class="hidden">
           <h2>📈 Your Progress</h2>
 
@@ -123,18 +126,18 @@
                   <th>Right</th><th>Wrong</th><th>Skipped</th><th>Total</th>
                 </tr>
               </thead>
-              <tbody><!-- filled by script.js --></tbody>
+              <tbody></tbody>
             </table>
           </div>
         </section>
 
-        <!-- Overall Leaderboard (NEW) -->
+        <!-- Overall Leaderboard -->
         <section id="overall-leaderboard-section" class="hidden">
           <h2>🏆 Overall Leaderboard</h2>
           <ul id="overall-leaderboard-list"></ul>
         </section>
 
-        <!-- Today’s Leaderboard (NEW) -->
+        <!-- Today’s Leaderboard -->
         <section id="todays-leaderboard-section" class="hidden">
           <h2>📅 Today’s Leaderboard</h2>
           <ul id="todays-leaderboard-list"></ul>

@@ -38,8 +38,8 @@ const adminRow   = document.getElementById('admin-row');
 const adminInput = document.getElementById('admin-task-input');
 const adminAdd   = document.getElementById('admin-task-add');
 
-const overallLbList = document.getElementById('overall-leaderboard-list'); // NEW
-const todaysLbList  = document.getElementById('todays-leaderboard-list');  // NEW
+const overallLbList = document.getElementById('overall-leaderboard-list');
+const todaysLbList  = document.getElementById('todays-leaderboard-list');
 
 // --- Helpers ---
 const TASK_BONUS = 10;
@@ -261,14 +261,14 @@ async function markTask(uid, dkey, taskId, text, done) {
 
 /* ------------------------------
    Leaderboards
-   - Overall leaderboard (from start) → collection: overallLeaderboard/users
+   - Overall leaderboard (from start) → collection: overallLeaderboard (docs keyed by uid)
    - Today's leaderboard (daily)      → collection: dailyLeaderboard/{dkey}/users
 --------------------------------- */
 
-// Overall (from start)
+// Overall (from start) — truly dynamic subscription
 function subscribeOverallLeaderboard() {
   if (!overallLbList) return;
-  const qy = query(collection(db, 'overallLeaderboard', 'users'), orderBy('score', 'desc'), limit(50));
+  const qy = query(collection(db, 'overallLeaderboard'), orderBy('score', 'desc'), limit(50));
   if (unsubOverallLB) unsubOverallLB();
   unsubOverallLB = onSnapshot(qy, (ss) => {
     overallLbList.innerHTML = '';
@@ -330,7 +330,7 @@ window.__fb_recordAnswer = async function ({ deckName = 'unknown', mode = 'jp-en
   const lbDaily  = doc(db, 'dailyLeaderboard', dkey, 'users', user.uid);
 
   const overallRef = doc(db, 'users', user.uid, 'overall', 'stats');
-  const lbOverall  = doc(db, 'overallLeaderboard', 'users', user.uid);
+  const lbOverall  = doc(db, 'overallLeaderboard', user.uid);
   const uref       = doc(db, 'users', user.uid);
 
   await runTransaction(db, async (tx) => {
@@ -339,7 +339,7 @@ window.__fb_recordAnswer = async function ({ deckName = 'unknown', mode = 'jp-en
 
     // --- Daily aggregate (for today's leaderboard)
     const ds = await tx.get(dailyRef);
-    let d = ds.exists() ? ds.data() : { jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, byDeck: {} };
+    let d = ds.exists() ? ds.data() : { jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0 };
     if (mode === 'jp-en') d.jpEnCorrect = (d.jpEnCorrect || 0) + 1;
     else d.enJpCorrect = (d.enJpCorrect || 0) + 1;
     const scoreD = (d.jpEnCorrect || 0) + (d.enJpCorrect || 0) + (d.tasksCompleted || 0) * TASK_BONUS;
@@ -399,6 +399,25 @@ window.__fb_finishAttempt = async function ({ deckName, mode, correct, wrong, sk
     createdAt: Date.now(), // client timestamp for quick display
     createdAtServer: serverTimestamp()
   });
+
+  // touch leaderboard docs so live listeners refresh even if numbers unchanged right now
+  await __touchLeaderboardDocs(user.uid);
+};
+
+// NEW: Save Score on demand (manual attempt + touch leaderboards)
+window.__fb_saveScore = async function ({ deckName, mode, correct, wrong, skipped, total }) {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not signed in');
+
+  const attemptsCol = collection(db, 'users', user.uid, 'attempts');
+  await addDoc(attemptsCol, {
+    deckName, mode, correct, wrong, skipped, total,
+    createdAt: Date.now(),
+    createdAtServer: serverTimestamp()
+  });
+
+  // Ensure leaderboard docs exist and bump updatedAt so onSnapshot redraws
+  await __touchLeaderboardDocs(user.uid);
 };
 
 // Fetch recent attempts (for Progress page)
@@ -411,12 +430,39 @@ window.__fb_fetchAttempts = async function (limitN = 20) {
   const list = [];
   snap.forEach(docSnap => {
     const d = docSnap.data();
-    // Prefer client createdAt; fall back to server timestamp
     const ts = d.createdAt || (d.createdAtServer?.toMillis ? d.createdAtServer.toMillis() : Date.now());
     list.push({ id: docSnap.id, ...d, createdAt: ts });
   });
   return list;
 };
+
+// Ensure leaderboard docs exist and update their updatedAt
+async function __touchLeaderboardDocs(uid) {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const uref = doc(db, 'users', uid);
+  const usnap = await getDoc(uref);
+  const displayName = usnap.exists() ? (usnap.data().displayName || 'Anonymous') : 'Anonymous';
+
+  const dkey = localDateKey();
+
+  const lbOverall = doc(db, 'overallLeaderboard', uid);
+  const lbDaily   = doc(db, 'dailyLeaderboard', dkey, 'users', uid);
+
+  // set with defaults if missing, but DO NOT change counts here (avoid double-counting)
+  await setDoc(lbOverall, {
+    uid, displayName,
+    jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+
+  await setDoc(lbDaily, {
+    uid, displayName,
+    jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+}
 
 // Optional: expose sign out
 window.__signOut = () => signOut(auth);
