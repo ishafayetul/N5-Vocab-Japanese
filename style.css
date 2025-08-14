@@ -15,6 +15,8 @@
   --success: #d4edda;
   --danger: #f8d7da;
   --shadow: 0 10px 24px rgba(0,0,0,.12);
+  --green: #16a34a;
+  --red: #dc2626;
 }
 
 * { box-sizing: border-box; }
@@ -31,7 +33,6 @@ body {
 /* =========================
    Layout
    ========================= */
-/* Desktop: fixed sidebar on the left, content fills right */
 .layout { min-height: 100vh; }
 .sidebar{
   position: fixed;
@@ -43,7 +44,7 @@ body {
   display: flex; flex-direction: column;
 }
 .main-content{
-  margin-left: 220px;  /* must match .sidebar width */
+  margin-left: 220px;
   padding: 20px;
 }
 
@@ -52,6 +53,7 @@ body {
    ========================= */
 h1 { margin: 0 0 8px; font-size: 28px; }
 h2 { margin: 20px 0 12px; font-size: 22px; }
+h3 { margin: 0 0 10px; font-size: 18px; }
 .muted { color: var(--muted); }
 .error { color: #b00020; margin-top: 10px; }
 
@@ -103,7 +105,6 @@ button:active{ transform: translateY(1px); }
 #deck-buttons{ display:flex; flex-wrap:wrap; gap:10px; }
 #deck-buttons button{ border-radius: 999px; padding: 8px 14px; }
 
-/* Multiple‑choice options */
 #options{ list-style:none; padding:0; margin: 12px 0 0; }
 #options li{
   margin: 8px 0;
@@ -120,10 +121,12 @@ button:active{ transform: translateY(1px); }
 .wrong{ background: var(--danger) !important; }
 
 /* =========================
-   Leaderboard
+   Leaderboards
    ========================= */
-#leaderboard-list{ list-style:none; padding-left:0; }
-#leaderboard-list li{
+#overall-leaderboard-list,
+#todays-leaderboard-list{ list-style:none; padding-left:0; }
+#overall-leaderboard-list li,
+#todays-leaderboard-list li{
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -138,12 +141,46 @@ button:active{ transform: translateY(1px); }
 .lb-score{ margin-left:auto; font-weight:700; }
 
 /* =========================
-   Auth gate (overlay)
+   Progress
+   ========================= */
+.progress-grid{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap:12px;
+}
+.card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: var(--shadow);
+}
+.table-wrap{ overflow:auto; }
+.progress-table{
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.progress-table th, .progress-table td{
+  font-size: 14px;
+  border-bottom: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+}
+.progress-table thead th{ background:#f3f4f6; }
+.delta-up{ color: var(--green); font-weight: 700; }
+.delta-down{ color: var(--red); font-weight: 700; }
+
+/* =========================
+   Auth gate
    ========================= */
 .auth-gate{
   position: fixed; inset: 0;
   display: grid; place-items: center;
-  background: #0f172a; /* slate-900 */
+  background: #0f172a;
   z-index: 9999;
 }
 .auth-card{
@@ -156,16 +193,15 @@ button:active{ transform: translateY(1px); }
 }
 
 /* =========================
-   To‑Do flyout (optional widget)
+   To-Do flyout (bottom-right)
    ========================= */
-/* To-Do flyout (bottom-right on desktop) */
 .todo-flyout{
   position: fixed;
-  bottom: 12px;           /* moved from top */
-  right: 12px;            /* stays right */
-  width: 360px;           /* a bit wider; adjust if you like */
-  max-height: 45vh;       /* cap height so it never gets too tall */
-  overflow: auto;         /* scroll if it grows */
+  bottom: 12px;
+  right: 12px;
+  width: 360px;
+  max-height: 45vh;
+  overflow: auto;
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -173,7 +209,6 @@ button:active{ transform: translateY(1px); }
   z-index: 500;
   padding: 14px;
 }
-
 .todo-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; font-weight:600; }
 .todo-timer{
   padding:2px 8px; border-radius:999px; background:#0ea5e9; color:#fff; font-weight:700;
@@ -194,7 +229,6 @@ button:active{ transform: translateY(1px); }
 }
 
 @media (max-width: 768px){
-  /* stack sidebar on top on small screens */
   .sidebar{
     position: static;
     width: 100%;
@@ -208,6 +242,7 @@ button:active{ transform: translateY(1px); }
   h1{ font-size: 24px; }
   h2{ font-size: 20px; }
   #options li{ font-size: 16px; }
+  .progress-grid{ grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px){
@@ -217,16 +252,7 @@ button:active{ transform: translateY(1px); }
   #options li{ font-size: 15px; }
 }
 
-/* Reserve room at the bottom so content isn't covered by the fixed flyout */
+/* Reserve room so content isn't covered by the fixed flyout on desktop */
 @media (min-width: 769px){
-  .main-content{
-    padding-bottom: 360px;   /* should be >= .todo-flyout height */
-  }
-}
-
-@media (max-width: 900px){
-  .todo-flyout { position: static; width: 100%; margin: 10px 0 0; }
-}
-@media (max-width: 768px){
-  .main-content { padding-bottom: 0; } /* remove reserved bottom space on mobile */
+  .main-content{ padding-bottom: 360px; }
 }

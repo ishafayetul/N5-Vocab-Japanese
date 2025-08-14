@@ -1,4 +1,4 @@
-// script.js — decks loader + quiz UI + grammar list
+// script.js — decks loader + quiz UI + grammar list + progress UI
 
 let allDecks = {};                // { deckName: [{front, back, romaji}] }
 let currentDeck = [];
@@ -20,25 +20,26 @@ function statusLine(id, msg) {
   console.log(`[status:${id}]`, msg);
 }
 
-// Load both Decks and Grammar on page ready
+// Load Decks + Grammar + Progress on page ready
 window.onload = () => {
   loadDeckManifest();
   loadGrammarManifest();
+  renderProgress(); // pulls last attempts via firebase helpers
   updateScore();
 };
 
-// Gate-aware hook (called by firebase.js after login, optional)
+// Gate-aware hook (called by firebase.js after login)
 window.__initAfterLogin = () => {
-  // If you want to refresh after login, uncomment:
-  // loadDeckManifest();
-  // loadGrammarManifest();
+  // refresh progress after login to ensure we have permissions
+  renderProgress();
 };
 
 // ---- sections --------------------------------------------------------------
 function showSection(id) {
   const sections = [
-    "deck-select", "grammar-section", "mistakes-section",
-    "practice", "mode-select", "learn", "leaderboard-section"
+    "deck-select", "grammar-section", "progress-section", "mistakes-section",
+    "practice", "mode-select", "learn", "overall-leaderboard-section",
+    "todays-leaderboard-section"
   ];
   sections.forEach(sec => $(sec)?.classList.add("hidden"));
   $(id)?.classList.remove("hidden");
@@ -212,6 +213,24 @@ function skipQuestion() {
 function nextQuestion() {
   currentIndex++;
   if (currentIndex >= currentDeck.length) {
+    // record attempt summary in Firestore (per-user)
+    (async () => {
+      try {
+        await window.__fb_finishAttempt?.({
+          deckName: currentDeckName,
+          mode,
+          correct: score.correct,
+          wrong: score.wrong,
+          skipped: score.skipped,
+          total: score.correct + score.wrong + score.skipped
+        });
+        // refresh progress UI
+        renderProgress();
+      } catch (e) {
+        console.warn("finishAttempt failed:", e);
+      }
+    })();
+
     alert(`Finished! ✅ ${score.correct} ❌ ${score.wrong} ➖ ${score.skipped}`);
     showSection("deck-select");
   } else {
@@ -320,6 +339,77 @@ async function loadGrammarManifest() {
   } catch (err) {
     console.error("Failed to load grammar manifest:", err);
     statusLine("grammar-status", `Failed to load grammar: ${err.message}`);
+  }
+}
+
+// ---- PROGRESS (NEW) --------------------------------------------------------
+async function renderProgress() {
+  if (!window.__fb_fetchAttempts) return;
+
+  try {
+    const attempts = await window.__fb_fetchAttempts(20); // latest 20
+    const tbody = $("progress-table")?.querySelector("tbody");
+    if (tbody) {
+      tbody.innerHTML = "";
+      attempts.forEach(a => {
+        const tr = document.createElement("tr");
+        const when = a.createdAt ? new Date(a.createdAt).toLocaleString() : "—";
+        tr.innerHTML = `
+          <td>${when}</td>
+          <td>${a.deckName || "—"}</td>
+          <td>${a.mode || "—"}</td>
+          <td>${a.correct ?? 0}</td>
+          <td>${a.wrong ?? 0}</td>
+          <td>${a.skipped ?? 0}</td>
+          <td>${a.total ?? ((a.correct||0)+(a.wrong||0)+(a.skipped||0))}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    const last = attempts[0];
+    const prev = attempts[1];
+
+    const lastBox = $("progress-last");
+    const prevBox = $("progress-prev");
+    const deltaBox = $("progress-delta");
+
+    if (lastBox) {
+      if (last) {
+        lastBox.innerHTML = `
+          <div><b>${last.deckName}</b> (${last.mode})</div>
+          <div>✅ ${last.correct || 0} | ❌ ${last.wrong || 0} | ➖ ${last.skipped || 0}</div>
+          <div class="muted">${new Date(last.createdAt).toLocaleString()}</div>
+        `;
+      } else {
+        lastBox.textContent = "No attempts yet.";
+      }
+    }
+
+    if (prevBox) {
+      if (prev) {
+        prevBox.innerHTML = `
+          <div><b>${prev.deckName}</b> (${prev.mode})</div>
+          <div>✅ ${prev.correct || 0} | ❌ ${prev.wrong || 0} | ➖ ${prev.skipped || 0}</div>
+          <div class="muted">${new Date(prev.createdAt).toLocaleString()}</div>
+        `;
+      } else {
+        prevBox.textContent = "—";
+      }
+    }
+
+    if (deltaBox) {
+      if (last && prev) {
+        const d = (last.correct || 0) - (prev.correct || 0);
+        const cls = d >= 0 ? "delta-up" : "delta-down";
+        const sign = d > 0 ? "+" : (d < 0 ? "" : "±");
+        deltaBox.innerHTML = `<span class="${cls}">${sign}${d} correct vs previous</span>`;
+      } else {
+        deltaBox.textContent = "—";
+      }
+    }
+  } catch (e) {
+    console.warn("renderProgress failed:", e);
   }
 }
 

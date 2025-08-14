@@ -23,8 +23,10 @@
     <nav class="sidebar">
       <h2>📘 Menu</h2>
       <button onclick="showSection('deck-select')">📚 Select Deck</button>
-      <button onclick="showSection('grammar-section')">📖 Grammar</button> <!-- RESTORED -->
-      <button onclick="showSection('leaderboard-section')">🏆 Leaderboard</button>
+      <button onclick="showSection('grammar-section')">📖 Grammar</button>
+      <button onclick="showSection('progress-section')">📈 Progress</button> <!-- NEW -->
+      <button onclick="showSection('overall-leaderboard-section')">🏆 Overall Leaderboard</button> <!-- NEW (overall) -->
+      <button onclick="showSection('todays-leaderboard-section')">📅 Today’s Leaderboard</button> <!-- NEW (daily) -->
       <button onclick="showSection('mistakes-section')">❗ Mistakes</button>
       <button onclick="resetSite()">🔁 Reset</button>
     </nav>
@@ -93,10 +95,49 @@
           <div id="grammar-list"></div>
         </section>
 
-        <!-- Leaderboard -->
-        <section id="leaderboard-section" class="hidden">
-          <h2>🏆 Today’s Leaderboard</h2>
-          <ul id="leaderboard-list"></ul>
+        <!-- Progress (NEW) -->
+        <section id="progress-section" class="hidden">
+          <h2>📈 Your Progress</h2>
+
+          <div class="progress-grid">
+            <div class="card">
+              <h3>Last Attempt</h3>
+              <div id="progress-last">No attempts yet.</div>
+            </div>
+            <div class="card">
+              <h3>Previous Attempt</h3>
+              <div id="progress-prev">—</div>
+            </div>
+            <div class="card">
+              <h3>Delta</h3>
+              <div id="progress-delta">—</div>
+            </div>
+          </div>
+
+          <h3 style="margin-top:18px;">Recent Attempts</h3>
+          <div class="table-wrap">
+            <table id="progress-table" class="progress-table">
+              <thead>
+                <tr>
+                  <th>Date</th><th>Deck</th><th>Mode</th>
+                  <th>Right</th><th>Wrong</th><th>Skipped</th><th>Total</th>
+                </tr>
+              </thead>
+              <tbody><!-- filled by script.js --></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Overall Leaderboard (NEW) -->
+        <section id="overall-leaderboard-section" class="hidden">
+          <h2>🏆 Overall Leaderboard</h2>
+          <ul id="overall-leaderboard-list"></ul>
+        </section>
+
+        <!-- Today’s Leaderboard (NEW) -->
+        <section id="todays-leaderboard-section" class="hidden">
+          <h2>📅 Today’s Leaderboard</h2>
+          <ul id="todays-leaderboard-list"></ul>
         </section>
 
         <!-- Mistakes -->
