@@ -1,4 +1,4 @@
-// firebase.js  — load with <script type="module" src="firebase.js">
+// firebase.js — load with <script type="module" src="firebase.js">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
   getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
@@ -22,14 +22,14 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+const db   = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// --- DOM refs (guarded; these may or may not exist) ---
-const gate     = document.getElementById('auth-gate');
-const appRoot  = document.getElementById('app-root');
-const authBtn  = document.getElementById('auth-btn');
-const authErr  = document.getElementById('auth-error');
+// --- DOM refs (guarded) ---
+const gate       = document.getElementById('auth-gate');
+const appRoot    = document.getElementById('app-root');
+const authBtn    = document.getElementById('auth-btn');
+const authErr    = document.getElementById('auth-error');
 
 const todoFlyout = document.getElementById('todo-flyout');
 const todoTimer  = document.getElementById('todo-timer');
@@ -41,7 +41,14 @@ const adminAdd   = document.getElementById('admin-task-add');
 const lbList     = document.getElementById('leaderboard-list');
 
 // --- Helpers ---
-const TASK_BONUS = 10; // each completed task adds 10 points to leaderboard score
+const TASK_BONUS = 10; // each completed task adds 10 points
+
+const showError = (msg) => {
+  if (!authErr) return;
+  authErr.textContent = msg || 'Something went wrong';
+  authErr.style.display = 'block';
+};
+const hideError = () => { if (authErr) authErr.style.display = 'none'; };
 
 function localDateKey(d = new Date()) {
   const y = d.getFullYear();
@@ -57,10 +64,7 @@ function startCountdown() {
   if (!todoTimer) return;
   function tick() {
     const ms = endOfToday() - new Date();
-    if (ms <= 0) {
-      todoTimer.textContent = "00:00:00";
-      return;
-    }
+    if (ms <= 0) { todoTimer.textContent = "00:00:00"; return; }
     const s = Math.floor(ms / 1000);
     const h = String(Math.floor(s / 3600)).padStart(2, '0');
     const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
@@ -71,15 +75,32 @@ function startCountdown() {
   setInterval(tick, 1000);
 }
 
-// --- Auth gate ---
+// --- Sign-in (popup → redirect fallback) ---
 authBtn?.addEventListener('click', async () => {
   try {
-    if (authErr) authErr.style.display = 'none';
+    hideError();
+    console.log('[auth] Trying signInWithPopup…');
     await signInWithPopup(auth, provider);
   } catch (e) {
-    if (authErr) {
-      authErr.textContent = e.message || 'Sign‑in failed';
-      authErr.style.display = 'block';
+    console.warn('[auth] Popup sign-in failed:', e?.code, e?.message);
+    const popupBlocked = new Set([
+      'auth/popup-blocked',
+      'auth/operation-not-supported-in-this-environment',
+      'auth/popup-closed-by-user'
+    ]);
+    if (popupBlocked.has(e?.code)) {
+      try {
+        console.log('[auth] Falling back to signInWithRedirect…');
+        const { signInWithRedirect } =
+          await import("https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js");
+        await signInWithRedirect(auth, provider);
+        return;
+      } catch (e2) {
+        console.error('[auth] Redirect sign-in failed:', e2?.code, e2?.message);
+        showError(e2?.message || 'Redirect sign‑in failed');
+      }
+    } else {
+      showError(e?.message || 'Sign‑in failed');
     }
   }
 });
@@ -87,73 +108,71 @@ authBtn?.addEventListener('click', async () => {
 let unsubLB = null;
 let unsubTasks = null;
 
+// --- Auth state gate ---
 onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    const gate    = document.getElementById('auth-gate');
-    const appRoot = document.getElementById('app-root');
-    const todoFly = document.getElementById('todo-flyout');
+  console.log('[auth] state changed →', user ? 'SIGNED IN' : 'SIGNED OUT', user?.uid || '');
+  try {
+    if (user) {
+      gate?.classList.add('hidden');
+      appRoot?.classList.remove('hidden');
+      todoFlyout?.classList.remove('hidden');
 
-    gate?.classList.add('hidden');
-    appRoot?.classList.remove('hidden');
-    todoFlyout?.classList.remove('hidden');
-
-    // Ensure base user doc exists
-    const uref = doc(db, 'users', user.uid);
-    const usnap = await getDoc(uref);
-    if (!usnap.exists()) {
-      await setDoc(uref, {
-        displayName: user.displayName || 'Anonymous',
-        photoURL: user.photoURL || '',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-    } else {
-      await updateDoc(uref, { updatedAt: serverTimestamp() });
-    }
-
-    // Is this user an admin?
-    const adminSnap = await getDoc(doc(db, 'admins', user.uid));
-    if (adminRow) {
-      if (adminSnap.exists()) adminRow.classList.remove('hidden');
-      else adminRow.classList.add('hidden');
-    }
-
-    // Hook admin add-task button
-    if (adminAdd && adminInput) {
-      adminAdd.onclick = async () => {
-        const text = (adminInput.value || '').trim();
-        if (!text) return;
-        const dkey = localDateKey();
-        await addDoc(collection(db, 'dailyTasks', dkey, 'tasks'), {
-          text, createdAt: serverTimestamp()
+      // Ensure base user doc exists
+      const uref = doc(db, 'users', user.uid);
+      const usnap = await getDoc(uref);
+      if (!usnap.exists()) {
+        await setDoc(uref, {
+          displayName: user.displayName || 'Anonymous',
+          photoURL: user.photoURL || '',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
         });
-        adminInput.value = '';
-      };
+      } else {
+        await updateDoc(uref, { updatedAt: serverTimestamp() });
+      }
+
+      // Admin UI
+      try {
+        const adminSnap = await getDoc(doc(db, 'admins', user.uid));
+        if (adminRow) adminRow.classList.toggle('hidden', !adminSnap.exists());
+      } catch (_) {
+        if (adminRow) adminRow.classList.add('hidden');
+      }
+
+      // Admin add-task
+      if (adminAdd && adminInput) {
+        adminAdd.onclick = async () => {
+          const text = (adminInput.value || '').trim();
+          if (!text) return;
+          const dkey = localDateKey();
+          await addDoc(collection(db, 'dailyTasks', dkey, 'tasks'), {
+            text, createdAt: serverTimestamp()
+          });
+          adminInput.value = '';
+        };
+      }
+
+      startCountdown();
+      if (todoList) subscribeTodayTasks(user.uid);
+      if (lbList) subscribeLeaderboard();
+
+      // let app JS continue (script.js hook)
+      window.__initAfterLogin?.();
+
+    } else {
+      appRoot?.classList.add('hidden');
+      gate?.classList.remove('hidden');
+      todoFlyout?.classList.add('hidden');
+      if (unsubLB) { unsubLB(); unsubLB = null; }
+      if (unsubTasks) { unsubTasks(); unsubTasks = null; }
     }
-
-    // Start countdown (if timer exists)
-    startCountdown();
-
-    // Subscribe to today's tasks + user statuses (only if list exists)
-    if (todoList) subscribeTodayTasks(user.uid);
-
-    // Subscribe to today's leaderboard (only if list exists)
-    if (lbList) subscribeLeaderboard();
-
-    // Let app JS know login succeeded (optional hook)
-    window.__initAfterLogin?.();
-
-  } else {
-    appRoot?.classList.add('hidden');
-    gate?.classList.remove('hidden');
-    todoFlyout?.classList.add('hidden');
-
-    if (unsubLB) { unsubLB(); unsubLB = null; }
-    if (unsubTasks) { unsubTasks(); unsubTasks = null; }
+  } catch (err) {
+    console.error('[auth] onAuthStateChanged handler error:', err);
+    showError(err?.message);
   }
 });
 
-// --- To‑Do: listen to today's tasks (admin creates), render, and allow per‑user completion ---
+// --- Subscribe to today’s tasks ---
 async function subscribeTodayTasks(uid) {
   const dkey = localDateKey();
   if (!todoList) return;
@@ -163,7 +182,7 @@ async function subscribeTodayTasks(uid) {
     const tasks = [];
     ss.forEach((docSnap) => tasks.push({ id: docSnap.id, ...docSnap.data() }));
 
-    // Load user's completion statuses
+    // Load user's completion statuses once
     const statusQs = await getDocs(collection(db, 'users', uid, 'taskCompletion', dkey, 'tasks'));
     const statusMap = {};
     statusQs.forEach(s => statusMap[s.id] = s.data());
@@ -197,7 +216,7 @@ async function subscribeTodayTasks(uid) {
   });
 }
 
-// Toggle a task for the current user and update daily stats + leaderboard
+// --- Toggle task + mirror to leaderboard ---
 async function markTask(uid, dkey, taskId, text, done) {
   const statusRef = doc(db, 'users', uid, 'taskCompletion', dkey, 'tasks', taskId);
   const dailyRef  = doc(db, 'users', uid, 'daily', dkey);
@@ -211,7 +230,6 @@ async function markTask(uid, dkey, taskId, text, done) {
     const ds = await tx.get(dailyRef);
     const data = ds.exists() ? ds.data() : { jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0 };
 
-    // update tasksCompleted
     let tasksCompleted = data.tasksCompleted || 0;
     const statusSnap = await tx.get(statusRef);
     const prev = statusSnap.exists() ? !!statusSnap.data().done : false;
@@ -219,12 +237,10 @@ async function markTask(uid, dkey, taskId, text, done) {
     if (done && !prev) tasksCompleted += 1;
     if (!done && prev) tasksCompleted = Math.max(0, tasksCompleted - 1);
 
-    // write status
     tx.set(statusRef, {
       done, text, updatedAt: serverTimestamp(), ...(done ? { completedAt: serverTimestamp() } : {})
     }, { merge: true });
 
-    // write daily aggregate + leaderboard mirror
     const jpEn = data.jpEnCorrect || 0;
     const enJp = data.enJpCorrect || 0;
     const score = jpEn + enJp + tasksCompleted * TASK_BONUS;
@@ -245,11 +261,10 @@ async function markTask(uid, dkey, taskId, text, done) {
   });
 }
 
-// --- Leaderboard subscription (today only) ---
+// --- Leaderboard (today only) ---
 function subscribeLeaderboard() {
   const dkey = localDateKey();
   if (!lbList) return;
-
   const qy = query(collection(db, 'dailyLeaderboard', dkey, 'users'), orderBy('score', 'desc'), limit(50));
   if (unsubLB) unsubLB();
   unsubLB = onSnapshot(qy, (ss) => {
@@ -271,6 +286,54 @@ function subscribeLeaderboard() {
     });
   });
 }
+
+// --- Public API for quiz scoring (called from script.js) ---
+window.__fb_recordAnswer = async function ({ deckName = 'unknown', mode = 'jp-en', isCorrect = false } = {}) {
+  const user = auth.currentUser;
+  if (!user || !isCorrect) return;
+
+  const dkey = localDateKey();
+  const dailyRef = doc(db, 'users', user.uid, 'daily', dkey);
+  const lbRef    = doc(db, 'dailyLeaderboard', dkey, 'users', user.uid);
+  const uref     = doc(db, 'users', user.uid);
+
+  await runTransaction(db, async (tx) => {
+    const usnap = await tx.get(uref);
+    const displayName = usnap.exists() ? (usnap.data().displayName || 'Anonymous') : 'Anonymous';
+
+    const snap = await tx.get(dailyRef);
+    let data = snap.exists() ? snap.data() : { jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, byDeck: {} };
+
+    if (mode === 'jp-en') data.jpEnCorrect = (data.jpEnCorrect || 0) + 1;
+    else data.enJpCorrect = (data.enJpCorrect || 0) + 1;
+
+    const bd = data.byDeck || {};
+    bd[deckName] = bd[deckName] || { jpEn: 0, enJp: 0 };
+    if (mode === 'jp-en') bd[deckName].jpEn += 1; else bd[deckName].enJp += 1;
+    data.byDeck = bd;
+
+    const score = (data.jpEnCorrect || 0) + (data.enJpCorrect || 0) + (data.tasksCompleted || 0) * TASK_BONUS;
+
+    tx.set(dailyRef, {
+      date: dkey, displayName,
+      jpEnCorrect: data.jpEnCorrect || 0,
+      enJpCorrect: data.enJpCorrect || 0,
+      tasksCompleted: data.tasksCompleted || 0,
+      byDeck: data.byDeck,
+      score,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    tx.set(lbRef, {
+      uid: user.uid, displayName,
+      jpEnCorrect: data.jpEnCorrect || 0,
+      enJpCorrect: data.enJpCorrect || 0,
+      tasksCompleted: data.tasksCompleted || 0,
+      score,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  });
+};
 
 // Optional: expose sign out
 window.__signOut = () => signOut(auth);
