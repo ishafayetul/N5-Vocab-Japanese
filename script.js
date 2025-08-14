@@ -36,13 +36,15 @@ window.__initAfterLogin = () => {
 
 // ---- sections --------------------------------------------------------------
 function showSection(id) {
-  const sections = [
-    "deck-select", "grammar-section", "progress-section", "mistakes-section",
-    "practice", "mode-select", "learn", "overall-leaderboard-section",
-    "todays-leaderboard-section"
-  ];
-  sections.forEach(sec => $(sec)?.classList.add("hidden"));
-  $(id)?.classList.remove("hidden");
+  // Hide every section under <main>
+  document.querySelectorAll('.main-content main > section').forEach(sec => {
+    sec.classList.add('hidden');
+  });
+
+  // Show the requested one
+  const target = document.getElementById(id);
+  if (target) target.classList.remove('hidden');
+  else console.warn('showSection: no element with id:', id);
 }
 
 // ---- DECKS -----------------------------------------------------------------
