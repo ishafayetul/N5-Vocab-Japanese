@@ -158,11 +158,22 @@ button:active{ transform: translateY(1px); }
 /* =========================
    To‑Do flyout (optional widget)
    ========================= */
+/* To-Do flyout (bottom-right on desktop) */
 .todo-flyout{
-  position: fixed; top:12px; right:12px; width:320px;
-  background:#fff; border:1px solid var(--border); border-radius:12px;
-  box-shadow: var(--shadow); z-index: 500; padding:14px;
+  position: fixed;
+  bottom: 12px;           /* moved from top */
+  right: 12px;            /* stays right */
+  width: 360px;           /* a bit wider; adjust if you like */
+  max-height: 45vh;       /* cap height so it never gets too tall */
+  overflow: auto;         /* scroll if it grows */
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  z-index: 500;
+  padding: 14px;
 }
+
 .todo-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; font-weight:600; }
 .todo-timer{
   padding:2px 8px; border-radius:999px; background:#0ea5e9; color:#fff; font-weight:700;
@@ -204,4 +215,18 @@ button:active{ transform: translateY(1px); }
   .sidebar button{ min-width: 120px; font-size: 13px; padding: 8px; }
   button{ font-size: 14px; }
   #options li{ font-size: 15px; }
+}
+
+/* Reserve room at the bottom so content isn't covered by the fixed flyout */
+@media (min-width: 769px){
+  .main-content{
+    padding-bottom: 360px;   /* should be >= .todo-flyout height */
+  }
+}
+
+@media (max-width: 900px){
+  .todo-flyout { position: static; width: 100%; margin: 10px 0 0; }
+}
+@media (max-width: 768px){
+  .main-content { padding-bottom: 0; } /* remove reserved bottom space on mobile */
 }
