@@ -34,7 +34,6 @@ window.__fb_fullReset = async function () {
   const uid = user.uid;
   const refs = [];
 
-  // ---------- collect refs to delete ----------
   // attempts
   const attemptsSnap = await getDocs(collection(db, 'users', uid, 'attempts'));
   attemptsSnap.forEach(d => refs.push(d.ref));
@@ -47,7 +46,7 @@ window.__fb_fullReset = async function () {
   // overall aggregate
   refs.push(doc(db, 'users', uid, 'overall', 'stats'));
 
-  // taskCompletion/{date}/tasks/*  (delete all task status docs)
+  // taskCompletion/{date}/tasks/*  (delete all discovered status docs)
   const tcDatesSnap = await getDocs(collection(db, 'users', uid, 'taskCompletion'));
   for (const dateDoc of tcDatesSnap.docs) {
     const dateId = dateDoc.id;
@@ -55,7 +54,8 @@ window.__fb_fullReset = async function () {
     tasksSnap.forEach(t => refs.push(t.ref));
   }
 
-  // ---------- extra: UNTICK Today's To-Dos explicitly ----------
+  // EXTRA: force-untick TODAY by deleting any status docs for today's tasks,
+  // even if today's parent 'taskCompletion/{today}' doc wasn't found above.
   const today = (() => {
     const n = new Date();
     const y = n.getFullYear();
@@ -64,9 +64,8 @@ window.__fb_fullReset = async function () {
     return `${y}-${m}-${d}`;
   })();
 
-  // If any tasks exist for today, queue delete of this user's status docs for them
-  const todaysTasksSnap = await getDocs(collection(db, 'dailyTasks', today, 'tasks'));
-  for (const t of todaysTasksSnap.docs) {
+  const todaysTasks = await getDocs(collection(db, 'dailyTasks', today, 'tasks'));
+  for (const t of todaysTasks.docs) {
     refs.push(doc(db, 'users', uid, 'taskCompletion', today, 'tasks', t.id));
   }
 
@@ -76,7 +75,7 @@ window.__fb_fullReset = async function () {
     refs.push(doc(db, 'dailyLeaderboard', dateId, 'users', uid));
   }
 
-  // ---------- batched deletes ----------
+  // Batched deletes
   const CHUNK = 450;
   for (let i = 0; i < refs.length; i += CHUNK) {
     const batch = writeBatch(db);
@@ -86,21 +85,21 @@ window.__fb_fullReset = async function () {
     await batch.commit();
   }
 
-  // Best-effort: remove empty taskCompletion/{date} docs (parents)
+  // Best-effort: remove empty taskCompletion/{date} parent docs
   try {
     for (const dateDoc of tcDatesSnap.docs) {
       await deleteDoc(dateDoc.ref);
     }
+    // also try to delete parent 'taskCompletion/{today}' if now empty
+    await deleteDoc(doc(db, 'users', uid, 'taskCompletion', today));
   } catch (e) {
-    console.warn('Non-fatal: could not delete some taskCompletion date docs', e);
+    console.warn('Non-fatal: could not delete some taskCompletion parent docs', e);
   }
 
-  // ---------- recreate placeholders ----------
-  // Get display name
+  // Recreate placeholders so UI listeners have rows
   const us = await getDoc(doc(db, 'users', uid));
   const displayName = us.exists() ? (us.data().displayName || 'Anonymous') : 'Anonymous';
 
-  // Leaderboards placeholders
   await Promise.all([
     setDoc(doc(db, 'overallLeaderboard', uid), {
       uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0,
@@ -110,20 +109,13 @@ window.__fb_fullReset = async function () {
       uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0,
       updatedAt: serverTimestamp()
     }, { merge: true }),
+    // Also zero out your per-day aggregate so the score/Tasks UI is consistent
+    setDoc(doc(db, 'users', uid, 'daily', today), {
+      date: today, displayName,
+      jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0,
+      updatedAt: serverTimestamp()
+    }, { merge: true }),
   ]);
-
-  // ---------- also zero out user's daily aggregate for TODAY ----------
-  await setDoc(doc(db, 'users', uid, 'daily', today), {
-    date: today,
-    displayName,
-    jpEnCorrect: 0,
-    enJpCorrect: 0,
-    tasksCompleted: 0,
-    score: 0,
-    updatedAt: serverTimestamp()
-  }, { merge: true });
-
-  // Done
 };
 
 
@@ -266,35 +258,35 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 // --- Today’s tasks (To-Do) ---
+// --- Today’s tasks (To-Do) ---
+let unsubTasksDaily = null;
+let unsubTasksStatus = null;
+
 async function subscribeTodayTasks(uid) {
   if (!todoList) return;
   const dkey = localDateKey();
 
-  if (unsubTasks) unsubTasks();
-  unsubTasks = onSnapshot(collection(db, 'dailyTasks', dkey, 'tasks'), async (ss) => {
-    const tasks = [];
-    ss.forEach((docSnap) => tasks.push({ id: docSnap.id, ...docSnap.data() }));
+  // Cached data from each stream
+  let lastTasks = [];           // [{id, text, ...}]
+  let lastStatusMap = {};       // { taskId: { done: boolean } }
 
-    // Load user's completion statuses
-    const statusQs = await getDocs(collection(db, 'users', uid, 'taskCompletion', dkey, 'tasks'));
-    const statusMap = {};
-    statusQs.forEach(s => statusMap[s.id] = s.data());
-
-    // Render
+  function renderTodos() {
+    // Build UI from lastTasks + lastStatusMap
     todoList.innerHTML = '';
-    if (tasks.length === 0) {
+    if (lastTasks.length === 0) {
       const li = document.createElement('li');
       li.textContent = 'No tasks yet for today.';
       li.className = 'todo-empty';
       todoList.appendChild(li);
+      return;
     }
-    tasks.forEach(t => {
+    lastTasks.forEach(t => {
       const li = document.createElement('li');
       li.className = 'todo-item';
 
       const chk = document.createElement('input');
       chk.type = 'checkbox';
-      chk.checked = !!(statusMap[t.id]?.done);
+      chk.checked = !!(lastStatusMap[t.id]?.done);
 
       const label = document.createElement('span');
       label.textContent = t.text || '(untitled task)';
@@ -306,8 +298,29 @@ async function subscribeTodayTasks(uid) {
       li.append(chk, label);
       todoList.appendChild(li);
     });
+  }
+
+  // Unsubscribe old
+  if (unsubTasksDaily)  { unsubTasksDaily();  unsubTasksDaily  = null; }
+  if (unsubTasksStatus) { unsubTasksStatus(); unsubTasksStatus = null; }
+
+  // 1) Stream of shared tasks for today
+  unsubTasksDaily = onSnapshot(collection(db, 'dailyTasks', dkey, 'tasks'), (ss) => {
+    const arr = [];
+    ss.forEach((docSnap) => arr.push({ id: docSnap.id, ...docSnap.data() }));
+    lastTasks = arr;
+    renderTodos();
+  });
+
+  // 2) Stream of YOUR status docs for today
+  unsubTasksStatus = onSnapshot(collection(db, 'users', uid, 'taskCompletion', dkey, 'tasks'), (statusQs) => {
+    const map = {};
+    statusQs.forEach(s => map[s.id] = s.data());
+    lastStatusMap = map;
+    renderTodos();
   });
 }
+
 
 // Toggle a task + mirror to daily leaderboard
 async function markTask(uid, dkey, taskId, text, done) {
