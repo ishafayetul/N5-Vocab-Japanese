@@ -89,6 +89,10 @@ let unsubTasks = null;
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
+    const gate    = document.getElementById('auth-gate');
+    const appRoot = document.getElementById('app-root');
+    const todoFly = document.getElementById('todo-flyout');
+
     gate?.classList.add('hidden');
     appRoot?.classList.remove('hidden');
     todoFlyout?.classList.remove('hidden');

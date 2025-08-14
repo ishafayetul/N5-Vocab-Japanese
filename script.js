@@ -34,7 +34,7 @@ function showSection(id) {
 async function loadDeckManifest() {
   try {
     // Load manifest from ROOT (fixes earlier path mismatch)
-    const res = await fetch('deck_manifest.json');
+    const res = await fetch('vocab_decks/deck_manifest.json');
     const deckList = await res.json();
 
     deckList.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
@@ -42,7 +42,7 @@ async function loadDeckManifest() {
     for (const file of deckList) {
       const name = file.replace('.csv', '');
       // Fetch exactly as listed in manifest (no hard-coded subfolder)
-      const deck = await fetchAndParseCSV(file);
+      const deck = await fetchAndParseCSV(`vocab_decks/${file}`);
       allDecks[name] = deck;
     }
 
