@@ -10,7 +10,6 @@ import {
   collectionGroup
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-
 // --- Firebase project config ---
 const firebaseConfig = {
   apiKey: "AIzaSyCP-JzANiomwA-Q5MB5fnNoz0tUjdNX3Og",
@@ -139,7 +138,14 @@ onAuthStateChanged(auth, async (user) => {
       startCountdown();
       if (todoList) subscribeTodayTasks(user.uid);
       if (todaysLbList) subscribeTodaysLeaderboard();
-      if (overallLbList) subscribeOverallLeaderboard(); // now computed from all past days + today
+      if (overallLbList) subscribeOverallLeaderboard();
+
+      // Auto-commit any pending session stored locally (from last close)
+      try {
+        await __fb_commitLocalPendingSession();
+      } catch (e) {
+        console.warn('[pending-session] commit skipped:', e?.message || e);
+      }
 
       // let app JS continue
       window.__initAfterLogin?.();
@@ -251,19 +257,16 @@ async function markTask(uid, dkey, taskId, text, done) {
 /* ------------------------------
    Leaderboards
    - Overall leaderboard = SUM of all dailyLeaderboard/{date}/users per uid
-   - Today's leaderboard  = dailyLeaderboard/{YYYY-MM-DD}/users (unchanged)
+   - Today's leaderboard  = dailyLeaderboard/{YYYY-MM-DD}/users
 --------------------------------- */
 
-// Compute Overall (sum of all days) — live using a collectionGroup
 function subscribeOverallLeaderboard() {
   if (!overallLbList) return;
 
-  // Listen to all 'users' subcollections under dailyLeaderboard/*/users
-  const cg = collectionGroup(db, 'users'); // each doc has fields: uid, displayName, jpEnCorrect, enJpCorrect, tasksCompleted, score
+  const cg = collectionGroup(db, 'users'); // 'dailyLeaderboard/{date}/users/{uid}'
   if (unsubOverallLB) unsubOverallLB();
 
   unsubOverallLB = onSnapshot(cg, (ss) => {
-    // Aggregate by uid
     const agg = new Map();
     ss.forEach(docSnap => {
       const d = docSnap.data() || {};
@@ -279,16 +282,14 @@ function subscribeOverallLeaderboard() {
         });
       }
       const row = agg.get(uid);
-      row.jpEnCorrect += d.jpEnCorrect || 0;
-      row.enJpCorrect += d.enJpCorrect || 0;
-      row.tasksCompleted += d.tasksCompleted || 0;
-      row.score += d.score || 0;
+      row.jpEnCorrect   += d.jpEnCorrect   || 0;
+      row.enJpCorrect   += d.enJpCorrect   || 0;
+      row.tasksCompleted+= d.tasksCompleted|| 0;
+      row.score         += d.score         || 0;
 
-      // keep a useful display name if present
       if (d.displayName) row.displayName = d.displayName;
     });
 
-    // Sort by score desc and render top 50
     const rows = [...agg.values()].sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 50);
 
     overallLbList.innerHTML = '';
@@ -306,10 +307,10 @@ function subscribeOverallLeaderboard() {
         </div>`;
       overallLbList.appendChild(li);
     });
-  });
+  }, (err) => console.error('[overall LB] snapshot error:', err));
 }
 
-// Today's (date-scoped) — unchanged
+// Today's (date-scoped)
 function subscribeTodaysLeaderboard() {
   if (!todaysLbList) return;
   const dkey = localDateKey();
@@ -332,159 +333,94 @@ function subscribeTodaysLeaderboard() {
         </div>`;
       todaysLbList.appendChild(li);
     });
-  });
+  }, (err) => console.error('[today LB] snapshot error:', err));
 }
 
 /* ------------------------------
-   Recording answers & attempts
+   NEW — Commit a buffered session (single write burst)
 --------------------------------- */
 
-// Per-correct answer: bump TODAY using atomic increments (no overall writes here)
-// (Overall is now computed as SUM of all days on the client)
-window.__fb_recordAnswer = async function ({ mode = 'jp-en', isCorrect = false } = {}) {
-  const user = auth.currentUser;
-  if (!user || !isCorrect) return;
-
-  const dkey       = localDateKey();
-  const dailyRef   = doc(db, 'users', user.uid, 'daily', dkey);
-  const lbDaily    = doc(db, 'dailyLeaderboard', dkey, 'users', user.uid);
-  const uref       = doc(db, 'users', user.uid);
-
-  // read display name
-  const usnap = await getDoc(uref);
-  const displayName = usnap.exists() ? (usnap.data().displayName || 'Anonymous') : 'Anonymous';
-
-  // which counter to bump?
-  const incField = (mode === 'jp-en')
-    ? { jpEnCorrect: increment(1) }
-    : { enJpCorrect: increment(1) };
-
-  // ensure docs exist (merge) so updateDoc doesn't fail
-  await Promise.all([
-    setDoc(dailyRef,   { date: dkey, uid: user.uid, displayName }, { merge: true }),
-    setDoc(lbDaily,    { uid: user.uid, displayName },              { merge: true }),
-  ]);
-
-  // bump the chosen correct counter + score (+1 per correct)
-  const base = { updatedAt: serverTimestamp() };
-  await Promise.all([
-    updateDoc(dailyRef,   { ...incField, score: increment(1), ...base }),
-    updateDoc(lbDaily,    { ...incField, score: increment(1), ...base }),
-  ]);
-};
-
-// End of a practice run: store an attempt (for Progress)
-window.__fb_finishAttempt = async function ({ deckName, mode, correct, wrong, skipped, total }) {
-  const user = auth.currentUser;
-  if (!user) return;
-
-  const attemptsCol = collection(db, 'users', user.uid, 'attempts');
-  await addDoc(attemptsCol, { deckName, mode, correct, wrong, skipped, total, createdAt: Date.now(), createdAtServer: serverTimestamp() });
-
-  await __touchTodayDoc(user.uid);
-};
-
-// Save Score on demand (manual attempt)
-window.__fb_saveScore = async function ({ deckName, mode, correct, wrong, skipped, total }) {
+/**
+ * Commit a buffered session to Firestore.
+ * @param {{deckName:string, mode:'jp-en'|'en-jp', correct:number, wrong:number, skipped:number, total:number, jpEnCorrect:number, enJpCorrect:number}} payload
+ */
+window.__fb_commitSession = async function (payload) {
   const user = auth.currentUser;
   if (!user) throw new Error('Not signed in');
-
-  const attemptsCol = collection(db, 'users', user.uid, 'attempts');
-  await addDoc(attemptsCol, { deckName, mode, correct, wrong, skipped, total, createdAt: Date.now(), createdAtServer: serverTimestamp() });
-
-  await __touchTodayDoc(user.uid);
-};
-
-// Fetch recent attempts (for Progress)
-window.__fb_fetchAttempts = async function (limitN = 20) {
-  const user = auth.currentUser;
-  if (!user) return [];
-  const colRef = collection(db, 'users', user.uid, 'attempts');
-  const qy = query(colRef, orderBy('createdAt', 'desc'), limit(limitN));
-  const snap = await getDocs(qy);
-  const list = [];
-  snap.forEach(docSnap => {
-    const d = docSnap.data();
-    const ts = d.createdAt || (d.createdAtServer?.toMillis ? d.createdAtServer.toMillis() : Date.now());
-    list.push({ id: docSnap.id, ...d, createdAt: ts });
-  });
-  return list;
-};
-
-// Ensure today's leaderboard doc exists (so Today's LB shows the user row)
-async function __touchTodayDoc(uid) {
-  const uref = doc(db, 'users', uid);
-  const usnap = await getDoc(uref);
-  const displayName = usnap.exists() ? (usnap.data().displayName || 'Anonymous') : 'Anonymous';
+  const {
+    deckName = 'Unknown Deck',
+    mode = 'jp-en',
+    correct = 0, wrong = 0, skipped = 0, total = 0,
+    jpEnCorrect = 0, enJpCorrect = 0
+  } = payload || {};
 
   const dkey = localDateKey();
-  const lbDaily   = doc(db, 'dailyLeaderboard', dkey, 'users', uid);
+  const uref = doc(db, 'users', user.uid);
+  const dailyRef = doc(db, 'users', user.uid, 'daily', dkey);
+  const lbDaily  = doc(db, 'dailyLeaderboard', dkey, 'users', user.uid);
+  const attemptsCol = collection(db, 'users', user.uid, 'attempts');
 
-  await setDoc(lbDaily,   { uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0, updatedAt: serverTimestamp() }, { merge: true });
-}
+  // ensure displayName
+  const usnap = await getDoc(uref);
+  const displayName = usnap.exists() ? (usnap.data().displayName || 'Anonymous') : 'Anonymous';
 
-// Wipe ALL of the current user's data (attempts, daily aggregates,
-// leaderboard rows for all days present in user's daily docs, taskCompletion statuses).
-// Keeps the base users/{uid} profile doc and admin lists.
-window.__fb_fullReset = async function () {
-  const user = auth.currentUser;
-  if (!user) throw new Error('Not signed in');
+  // Make sure daily & lb docs exist before increment
+  await Promise.all([
+    setDoc(dailyRef, { date: dkey, uid: user.uid, displayName }, { merge: true }),
+    setDoc(lbDaily,  { uid: user.uid, displayName }, { merge: true }),
+  ]);
 
-  const uid = user.uid;
-  const refs = [];
+  // Batch: attempt + daily increments + lb increments
+  const batch = writeBatch(db);
 
-  // attempts
-  const attemptsSnap = await getDocs(collection(db, 'users', uid, 'attempts'));
-  attemptsSnap.forEach(d => refs.push(d.ref));
+  // Attempt doc
+  const attemptDoc = doc(attemptsCol);
+  batch.set(attemptDoc, {
+    deckName, mode, correct, wrong, skipped, total,
+    createdAt: Date.now(), createdAtServer: serverTimestamp()
+  });
 
-  // daily aggregate docs (collect day IDs to clear dailyLeaderboard)
-  const dailySnap = await getDocs(collection(db, 'users', uid, 'daily'));
-  const dayIds = [];
-  dailySnap.forEach(d => { refs.push(d.ref); dayIds.push(d.id); });
+  // Increments for daily aggregate + mirror on leaderboard
+  const incsDaily = {
+    updatedAt: serverTimestamp(),
+    jpEnCorrect: increment(jpEnCorrect),
+    enJpCorrect: increment(enJpCorrect),
+    score: increment(jpEnCorrect + enJpCorrect) // +1 per correct answer
+  };
+  const incsLB = {
+    updatedAt: serverTimestamp(),
+    jpEnCorrect: increment(jpEnCorrect),
+    enJpCorrect: increment(enJpCorrect),
+    score: increment(jpEnCorrect + enJpCorrect)
+  };
 
-  // taskCompletion/{date}/tasks/*
-  const tcDatesSnap = await getDocs(collection(db, 'users', uid, 'taskCompletion'));
-  for (const dateDoc of tcDatesSnap.docs) {
-    const dateId = dateDoc.id;
-    const tasksSnap = await getDocs(collection(db, 'users', uid, 'taskCompletion', dateId, 'tasks'));
-    tasksSnap.forEach(t => refs.push(t.ref));
-  }
+  batch.set(dailyRef, incsDaily, { merge: true });
+  batch.set(lbDaily,  incsLB,    { merge: true });
 
-  // leaderboard rows: each discovered date (we no longer use overallLeaderboard collection)
-  for (const dateId of dayIds) {
-    refs.push(doc(db, 'dailyLeaderboard', dateId, 'users', uid));
-  }
-
-  // Batched deletes in chunks
-  const CHUNK = 450;
-  for (let i = 0; i < refs.length; i += CHUNK) {
-    const batch = writeBatch(db);
-    for (let j = i; j < Math.min(i + CHUNK, refs.length); j++) {
-      batch.delete(refs[j]);
-    }
-    await batch.commit();
-  }
-
-  // Remove empty taskCompletion date docs
-  try {
-    const tcDatesSnap2 = await getDocs(collection(db, 'users', uid, 'taskCompletion'));
-    for (const dateDoc of tcDatesSnap2.docs) {
-      await deleteDoc(dateDoc.ref);
-    }
-  } catch (e) {
-    console.warn('Non-fatal: could not delete some taskCompletion date docs', e);
-  }
-
-  // Recreate today's placeholder so UI listeners have a row to render
-  const us = await getDoc(doc(db, 'users', uid));
-  const displayName = us.exists() ? (us.data().displayName || 'Anonymous') : 'Anonymous';
-  const today = localDateKey();
-
-  await setDoc(doc(db, 'dailyLeaderboard', today, 'users', uid), {
-    uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0,
-    updatedAt: serverTimestamp()
-  }, { merge: true });
+  await batch.commit();
 };
 
-// Optional: expose sign out
+/**
+ * If a pending session is in localStorage, commit it once the user is signed in.
+ * Clears the pending session after success.
+ */
+async function __fb_commitLocalPendingSession() {
+  const raw = localStorage.getItem('pendingSession');
+  if (!raw) return;
+  let payload;
+  try {
+    payload = JSON.parse(raw);
+  } catch {
+    localStorage.removeItem('pendingSession');
+    return;
+  }
+  if (!payload || !payload.total) {
+    localStorage.removeItem('pendingSession');
+    return;
+  }
+  await window.__fb_commitSession(payload);
+  localStorage.removeItem('pendingSession');
+}
+
+// Expose sign out
 window.__signOut = () => signOut(auth);

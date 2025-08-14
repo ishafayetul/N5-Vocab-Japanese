@@ -7,8 +7,21 @@ let currentIndex = 0;
 let mode = "jp-en";
 let score = { correct: 0, wrong: 0, skipped: 0 };
 
+// Local mistake/mastery helpers
 let mistakes = JSON.parse(localStorage.getItem("mistakes") || "[]");
 let masteryMap = JSON.parse(localStorage.getItem("masteryMap") || "{}");
+
+// NEW: Session buffer (temporary storage only; committed on demand)
+let sessionBuf = JSON.parse(localStorage.getItem("sessionBuf") || "null") || {
+  deckName: "",
+  mode: "jp-en",
+  correct: 0,
+  wrong: 0,
+  skipped: 0,
+  total: 0,
+  jpEnCorrect: 0,
+  enJpCorrect: 0
+};
 
 // ---- helpers ---------------------------------------------------------------
 const $ = (id) => document.getElementById(id);
@@ -18,6 +31,10 @@ function statusLine(id, msg) {
   const s = $(id);
   if (s) s.textContent = msg;
   console.log(`[status:${id}]`, msg);
+}
+
+function persistSession() {
+  localStorage.setItem("sessionBuf", JSON.stringify(sessionBuf));
 }
 
 // Load Decks + Grammar + Progress on page ready
@@ -33,9 +50,24 @@ window.__initAfterLogin = () => {
   renderProgress();
 };
 
+// Best-effort: before leaving, store a 'pendingSession' copy for next launch auto-commit
+window.addEventListener('pagehide', () => {
+  try {
+    if (sessionBuf.total > 0) {
+      localStorage.setItem('pendingSession', JSON.stringify(sessionBuf));
+    }
+  } catch {}
+});
+window.addEventListener('beforeunload', () => {
+  try {
+    if (sessionBuf.total > 0) {
+      localStorage.setItem('pendingSession', JSON.stringify(sessionBuf));
+    }
+  } catch {}
+});
+
 // ---- section router (robust) ----------------------------------------------
 function showSection(id) {
-  // Hide every section inside <main>, then show requested
   document.querySelectorAll('.main-content main > section').forEach(sec => {
     sec.classList.add('hidden');
   });
@@ -50,11 +82,9 @@ async function loadDeckManifest() {
     statusLine("deck-status", "Loading decks…");
     const res = await fetch("vocab_decks/deck_manifest.json");
     if (!res.ok) throw new Error(`HTTP ${res.status} for vocab_decks/deck_manifest.json`);
-
     const text = await res.text();
-    if (text.trim().startsWith("<")) {
-      throw new Error("Manifest is HTML (check path/case for vocab_decks/deck_manifest.json)");
-    }
+    if (text.trim().startsWith("<")) throw new Error("Manifest is HTML (check path/case for vocab_decks/deck_manifest.json)");
+
     /** @type {string[]} */
     const deckList = JSON.parse(text);
     deckList.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
@@ -114,12 +144,21 @@ function selectDeck(name) {
     alert(`Deck "${name}" is empty or failed to load.`);
     return;
   }
+  // reset session buffer for a fresh run on this deck
+  sessionBuf = {
+    deckName: name,
+    mode: "jp-en",
+    correct: 0, wrong: 0, skipped: 0, total: 0,
+    jpEnCorrect: 0, enJpCorrect: 0
+  };
+  persistSession();
   showSection("mode-select");
 }
 
 // ---- PRACTICE --------------------------------------------------------------
 function startPractice(selectedMode) {
   mode = selectedMode;
+  sessionBuf.mode = selectedMode;
   currentIndex = 0;
   score = { correct: 0, wrong: 0, skipped: 0 };
   shuffleArray(currentDeck);
@@ -170,13 +209,12 @@ function checkAnswer(selected, correct, wordObj) {
 
   if (selected === correct) {
     score.correct++;
-    // update daily live (Firebase will aggregate to Today + Overall client-side)
-    window.__fb_recordAnswer?.({
-      deckName: currentDeckName,
-      mode,
-      isCorrect: true,
-    });
+    sessionBuf.correct++;
+    sessionBuf.total++;
+    if (mode === 'jp-en') sessionBuf.jpEnCorrect++;
+    else sessionBuf.enJpCorrect++;
 
+    // mastery & mistakes
     masteryMap[key] = (masteryMap[key] || 0) + 1;
     if (masteryMap[key] >= 5) {
       mistakes = mistakes.filter(
@@ -185,12 +223,16 @@ function checkAnswer(selected, correct, wordObj) {
     }
   } else {
     score.wrong++;
+    sessionBuf.wrong++;
+    sessionBuf.total++;
+
     masteryMap[key] = 0;
     mistakes.push(wordObj);
   }
 
   localStorage.setItem("mistakes", JSON.stringify(mistakes));
   localStorage.setItem("masteryMap", JSON.stringify(masteryMap));
+  persistSession();
   updateScore();
   setTimeout(nextQuestion, 600);
 }
@@ -201,67 +243,64 @@ function skipQuestion() {
   const key = wordObj.front + "|" + wordObj.back;
 
   score.skipped++;
+  sessionBuf.skipped++;
+  sessionBuf.total++;
+
   masteryMap[key] = 0;
   mistakes.push(wordObj);
 
   localStorage.setItem("mistakes", JSON.stringify(mistakes));
   localStorage.setItem("masteryMap", JSON.stringify(masteryMap));
+  persistSession();
   updateScore();
   nextQuestion();
 }
 
-// NEW: Save Score AND finish current session (return to Vocab list)
-// Save & Finish (global)
+// Save Progress (manual commit) — single burst to Firestore
 window.saveCurrentScore = async function () {
   const btn = document.querySelector('#practice .save');
   if (btn) btn.disabled = true;
   try {
-    await window.__fb_saveScore?.({
+    const payload = {
       deckName: currentDeckName || 'Unknown Deck',
-      mode,
+      mode: sessionBuf.mode,
       correct: score.correct,
       wrong: score.wrong,
       skipped: score.skipped,
-      total: score.correct + score.wrong + score.skipped
-    });
-    await renderProgress();           // refresh Progress view
-    alert('Score saved to Progress ✅');
-    // Finish session and go back to Vocab
+      total: score.correct + score.wrong + score.skipped,
+      jpEnCorrect: sessionBuf.jpEnCorrect,
+      enJpCorrect: sessionBuf.enJpCorrect
+    };
+    await window.__fb_commitSession?.(payload);
+
+    // Clear session buffer on success
+    sessionBuf = {
+      deckName: currentDeckName, mode: sessionBuf.mode,
+      correct: 0, wrong: 0, skipped: 0, total: 0,
+      jpEnCorrect: 0, enJpCorrect: 0
+    };
+    persistSession();
+
+    await renderProgress();
+    alert('Progress saved ✅');
+    // Go back to Vocab list
     currentDeck = [];
     currentDeckName = "";
     currentIndex = 0;
     showSection('deck-select');
   } catch (e) {
     console.warn('saveCurrentScore failed:', e);
-    alert('Could not save score. Please try again.');
+    alert('Could not save progress. It will be kept locally and auto-saved next time you open the app.');
+    // Keep the local buffer intact
   } finally {
     if (btn) btn.disabled = false;
   }
 };
 
-
-
 function nextQuestion() {
   currentIndex++;
   if (currentIndex >= currentDeck.length) {
-    // store an attempt automatically on finish
-    (async () => {
-      try {
-        await window.__fb_finishAttempt?.({
-          deckName: currentDeckName,
-          mode,
-          correct: score.correct,
-          wrong: score.wrong,
-          skipped: score.skipped,
-          total: score.correct + score.wrong + score.skipped
-        });
-        renderProgress();
-      } catch (e) {
-        console.warn("finishAttempt failed:", e);
-      }
-    })();
-
-    alert(`Finished! ✅ ${score.correct} ❌ ${score.wrong} ➖ ${score.skipped}`);
+    alert(`Finished! ✅ ${score.correct} ❌ ${score.wrong} ➖ ${score.skipped}\nUse "Save Progress" to store your results.`);
     showSection("deck-select");
   } else {
     showQuestion();
@@ -319,41 +358,11 @@ function clearMistakes() {
   }
 }
 
-// Danger reset: cloud + local
-async function resetSite() {
-  const sure = confirm(
-    "⚠️ This will permanently erase ALL of your data:\n• Attempts & Progress\n• Daily aggregates\n• Your entries on Today's Leaderboard\n• Task completion statuses\n\nProceed?"
-  );
-  if (!sure) return;
-
-  const btn = event?.target;
-  if (btn) btn.disabled = true;
-
-  try {
-    // wipe Firestore for this user
-    await window.__fb_fullReset?.();
-
-    // wipe local helpers
-    localStorage.removeItem("mistakes");
-    localStorage.removeItem("masteryMap");
-
-    alert("All your data has been erased.");
-    location.reload();
-  } catch (e) {
-    console.error("Full reset failed:", e);
-    alert("Reset failed: " + (e?.message || e));
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
-
 // ---- GRAMMAR ---------------------------------------------------------------
 async function loadGrammarManifest() {
   try {
     statusLine("grammar-status", "Loading grammar lessons…");
 
-    // Try folder path first; fall back to root if needed
     let base = "grammar/";
     let list = null;
 
@@ -396,7 +405,7 @@ async function renderProgress() {
   if (!window.__fb_fetchAttempts) return;
 
   try {
-    const attempts = await window.__fb_fetchAttempts(50); // fetch more so we can find same-deck prev
+    const attempts = await window.__fb_fetchAttempts(50);
     const tbody = $("progress-table")?.querySelector("tbody");
     if (tbody) {
       tbody.innerHTML = "";
@@ -417,12 +426,10 @@ async function renderProgress() {
     }
 
     const last = attempts[0];
-    // Find the most recent previous attempt on the SAME DECK
     let prev = null;
     if (last) {
       prev = attempts.find(a =>
-        a.deckName === last.deckName &&
-        a.createdAt < last.createdAt
+        a.deckName === last.deckName && a.createdAt < last.createdAt
       ) || null;
     }
 
