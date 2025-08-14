@@ -264,3 +264,26 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 @media (min-width: 769px){
   .main-content{ padding-bottom: 360px; }
 }
+
+/* ... keep your existing CSS ... */
+
+/* Deck progress (Practice) */
+.deck-progress{
+  margin: 8px 0 12px;
+  background: #eef2ff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.deck-progress-bar{
+  height: 10px;
+  width: 0%;
+  background: var(--primary);
+  transition: width .25s ease;
+}
+.deck-progress-text{
+  padding: 8px 10px;
+  font-size: 14px;
+  color: #111;
+}

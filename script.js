@@ -11,7 +11,7 @@ let score = { correct: 0, wrong: 0, skipped: 0 };
 let mistakes = JSON.parse(localStorage.getItem("mistakes") || "[]");
 let masteryMap = JSON.parse(localStorage.getItem("masteryMap") || "{}");
 
-// NEW: Session buffer (temporary storage only; committed on demand)
+// Session buffer (temporary storage; committed on demand/auto)
 let sessionBuf = JSON.parse(localStorage.getItem("sessionBuf") || "null") || {
   deckName: "",
   mode: "jp-en",
@@ -22,6 +22,9 @@ let sessionBuf = JSON.parse(localStorage.getItem("sessionBuf") || "null") || {
   jpEnCorrect: 0,
   enJpCorrect: 0
 };
+
+let currentSectionId = "deck-select";
+let committing = false;
 
 // ---- helpers ---------------------------------------------------------------
 const $ = (id) => document.getElementById(id);
@@ -35,6 +38,63 @@ function statusLine(id, msg) {
 
 function persistSession() {
   localStorage.setItem("sessionBuf", JSON.stringify(sessionBuf));
+}
+
+function percent(n, d) {
+  if (!d) return 0;
+  return Math.floor((n / d) * 100);
+}
+
+// Update the per-deck progress UI
+function updateDeckProgress() {
+  const totalQs = currentDeck.length || 0;
+  const done = Math.min(currentIndex, totalQs);
+  const p = percent(done, totalQs);
+  const bar = $("deck-progress-bar");
+  const txt = $("deck-progress-text");
+  if (bar) bar.style.width = `${p}%`;
+  if (txt) txt.textContent = `${done} / ${totalQs} (${p}%)`;
+}
+
+// Commit buffered session if there’s anything to save
+async function autoCommitIfNeeded(reason = "") {
+  if (!window.__fb_commitSession) return; // if Firebase not ready, skip (pendingSession will handle later)
+  if (committing) return;
+  if (!sessionBuf || sessionBuf.total <= 0) return;
+
+  try {
+    committing = true;
+    console.log("[autosave] committing buffered session", { reason, sessionBuf });
+    const payload = {
+      deckName: sessionBuf.deckName || 'Unknown Deck',
+      mode: sessionBuf.mode,
+      correct: sessionBuf.correct,
+      wrong: sessionBuf.wrong,
+      skipped: sessionBuf.skipped,
+      total: sessionBuf.total,
+      jpEnCorrect: sessionBuf.jpEnCorrect,
+      enJpCorrect: sessionBuf.enJpCorrect
+    };
+    await window.__fb_commitSession(payload);
+
+    // Reset counts but keep deck/mode so a user can continue without losing context
+    sessionBuf.correct = 0;
+    sessionBuf.wrong = 0;
+    sessionBuf.skipped = 0;
+    sessionBuf.total = 0;
+    sessionBuf.jpEnCorrect = 0;
+    sessionBuf.enJpCorrect = 0;
+    persistSession();
+
+    // Refresh progress page summaries
+    await renderProgress();
+    console.log("[autosave] saved ✔");
+  } catch (e) {
+    console.warn("[autosave] failed → keeping local buffer:", e?.message || e);
+    // Keep sessionBuf as-is; pendingSession on next launch will try to commit
+  } finally {
+    committing = false;
+  }
 }
 
 // Load Decks + Grammar + Progress on page ready
@@ -68,12 +128,22 @@ window.addEventListener('beforeunload', () => {
 
 // ---- section router (robust) ----------------------------------------------
 function showSection(id) {
+  // If leaving Practice, auto-save the deck's buffered progress
+  if (currentSectionId === "practice" && id !== "practice") {
+    autoCommitIfNeeded("leaving practice");
+  }
+
   document.querySelectorAll('.main-content main > section').forEach(sec => {
     sec.classList.add('hidden');
   });
   const target = document.getElementById(id);
   if (target) target.classList.remove('hidden');
   else console.warn('showSection: no element with id:', id);
+
+  currentSectionId = id;
+
+  // Keep progress bar accurate if we re-enter Practice
+  if (id === "practice") updateDeckProgress();
 }
 
 // ---- DECKS -----------------------------------------------------------------
@@ -131,7 +201,13 @@ function renderDeckButtons() {
   Object.keys(allDecks).forEach((name) => {
     const btn = document.createElement("button");
     btn.textContent = name;
-    btn.onclick = () => selectDeck(name);
+    btn.onclick = async () => {
+      // If switching decks while having progress, auto-save first
+      if (sessionBuf.total > 0 && sessionBuf.deckName && sessionBuf.deckName !== name) {
+        await autoCommitIfNeeded("switching decks");
+      }
+      selectDeck(name);
+    };
     container.appendChild(btn);
   });
 }
@@ -164,6 +240,7 @@ function startPractice(selectedMode) {
   shuffleArray(currentDeck);
   showSection("practice");
   updateScore();
+  updateDeckProgress();
   showQuestion();
 }
 
@@ -187,6 +264,8 @@ function showQuestion() {
     li.onclick = () => checkAnswer(opt, answer, q);
     optionsList.appendChild(li);
   });
+
+  updateDeckProgress();
 }
 
 function generateOptions(correct) {
@@ -214,7 +293,6 @@ function checkAnswer(selected, correct, wordObj) {
     if (mode === 'jp-en') sessionBuf.jpEnCorrect++;
     else sessionBuf.enJpCorrect++;
 
-    // mastery & mistakes
     masteryMap[key] = (masteryMap[key] || 0) + 1;
     if (masteryMap[key] >= 5) {
       mistakes = mistakes.filter(
@@ -234,7 +312,10 @@ function checkAnswer(selected, correct, wordObj) {
   localStorage.setItem("masteryMap", JSON.stringify(masteryMap));
   persistSession();
   updateScore();
-  setTimeout(nextQuestion, 600);
+  setTimeout(() => {
+    nextQuestion();
+    updateDeckProgress();
+  }, 600);
 }
 
 function skipQuestion() {
@@ -254,53 +335,24 @@ function skipQuestion() {
   persistSession();
   updateScore();
   nextQuestion();
+  updateDeckProgress();
 }
 
-// Save Progress (manual commit) — single burst to Firestore
+// Save Progress (now navbar button triggers this)
 window.saveCurrentScore = async function () {
-  const btn = document.querySelector('#practice .save');
-  if (btn) btn.disabled = true;
   try {
-    const payload = {
-      deckName: currentDeckName || 'Unknown Deck',
-      mode: sessionBuf.mode,
-      correct: score.correct,
-      wrong: score.wrong,
-      skipped: score.skipped,
-      total: score.correct + score.wrong + score.skipped,
-      jpEnCorrect: sessionBuf.jpEnCorrect,
-      enJpCorrect: sessionBuf.enJpCorrect
-    };
-    await window.__fb_commitSession?.(payload);
-
-    // Clear session buffer on success
-    sessionBuf = {
-      deckName: currentDeckName, mode: sessionBuf.mode,
-      correct: 0, wrong: 0, skipped: 0, total: 0,
-      jpEnCorrect: 0, enJpCorrect: 0
-    };
-    persistSession();
-
-    await renderProgress();
+    await autoCommitIfNeeded("manual save");
     alert('Progress saved ✅');
-    // Go back to Vocab list
-    currentDeck = [];
-    currentDeckName = "";
-    currentIndex = 0;
-    showSection('deck-select');
-  } catch (e) {
-    console.warn('saveCurrentScore failed:', e);
-    alert('Could not save progress. It will be kept locally and auto-saved next time you open the app.');
-    // Keep the local buffer intact
-  } finally {
-    if (btn) btn.disabled = false;
+  } catch {
+    // autoCommitIfNeeded already logs/handles errors
   }
 };
 
 function nextQuestion() {
   currentIndex++;
   if (currentIndex >= currentDeck.length) {
-    alert(`Finished! ✅ ${score.correct} ❌ ${score.wrong} ➖ ${score.skipped}\nUse "Save Progress" to store your results.`);
+    // Finished the deck → navigate to Vocab; auto-save on section change
+    alert(`Finished! ✅ ${score.correct} ❌ ${score.wrong} ➖ ${score.skipped}\nSaving your progress…`);
     showSection("deck-select");
   } else {
     showQuestion();
