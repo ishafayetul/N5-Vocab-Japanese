@@ -6,7 +6,8 @@ import {
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp,
   collection, query, orderBy, limit, onSnapshot, addDoc,
-  runTransaction, getDocs, increment, writeBatch, deleteDoc
+  runTransaction, getDocs, increment, writeBatch, deleteDoc,
+  collectionGroup
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
 
@@ -138,7 +139,7 @@ onAuthStateChanged(auth, async (user) => {
       startCountdown();
       if (todoList) subscribeTodayTasks(user.uid);
       if (todaysLbList) subscribeTodaysLeaderboard();
-      if (overallLbList) subscribeOverallLeaderboard();
+      if (overallLbList) subscribeOverallLeaderboard(); // now computed from all past days + today
 
       // let app JS continue
       window.__initAfterLogin?.();
@@ -249,20 +250,50 @@ async function markTask(uid, dkey, taskId, text, done) {
 
 /* ------------------------------
    Leaderboards
-   - Overall leaderboard (since start) → collection: overallLeaderboard (docs keyed by uid)
-   - Today's leaderboard               → collection: dailyLeaderboard/{date}/users
+   - Overall leaderboard = SUM of all dailyLeaderboard/{date}/users per uid
+   - Today's leaderboard  = dailyLeaderboard/{YYYY-MM-DD}/users (unchanged)
 --------------------------------- */
 
-// Overall (from start) — live subscription
+// Compute Overall (sum of all days) — live using a collectionGroup
 function subscribeOverallLeaderboard() {
   if (!overallLbList) return;
-  const qy = query(collection(db, 'overallLeaderboard'), orderBy('score', 'desc'), limit(50));
+
+  // Listen to all 'users' subcollections under dailyLeaderboard/*/users
+  const cg = collectionGroup(db, 'users'); // each doc has fields: uid, displayName, jpEnCorrect, enJpCorrect, tasksCompleted, score
   if (unsubOverallLB) unsubOverallLB();
-  unsubOverallLB = onSnapshot(qy, (ss) => {
+
+  unsubOverallLB = onSnapshot(cg, (ss) => {
+    // Aggregate by uid
+    const agg = new Map();
+    ss.forEach(docSnap => {
+      const d = docSnap.data() || {};
+      const uid = d.uid || docSnap.id;
+      if (!agg.has(uid)) {
+        agg.set(uid, {
+          uid,
+          displayName: d.displayName || 'Anonymous',
+          jpEnCorrect: 0,
+          enJpCorrect: 0,
+          tasksCompleted: 0,
+          score: 0
+        });
+      }
+      const row = agg.get(uid);
+      row.jpEnCorrect += d.jpEnCorrect || 0;
+      row.enJpCorrect += d.enJpCorrect || 0;
+      row.tasksCompleted += d.tasksCompleted || 0;
+      row.score += d.score || 0;
+
+      // keep a useful display name if present
+      if (d.displayName) row.displayName = d.displayName;
+    });
+
+    // Sort by score desc and render top 50
+    const rows = [...agg.values()].sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 50);
+
     overallLbList.innerHTML = '';
     let rank = 1;
-    ss.forEach(docSnap => {
-      const u = docSnap.data();
+    rows.forEach(u => {
       const li = document.createElement('li');
       li.innerHTML = `
         <div class="lb-row">
@@ -278,7 +309,7 @@ function subscribeOverallLeaderboard() {
   });
 }
 
-// Today's (date-scoped)
+// Today's (date-scoped) — unchanged
 function subscribeTodaysLeaderboard() {
   if (!todaysLbList) return;
   const dkey = localDateKey();
@@ -308,21 +339,18 @@ function subscribeTodaysLeaderboard() {
    Recording answers & attempts
 --------------------------------- */
 
-// Per-correct answer: updates TODAY and OVERALL live
-// Per-correct answer: updates TODAY and OVERALL live (reads first, then writes)
-// Per-correct answer: bump TODAY + OVERALL using atomic increments (no transaction)
+// Per-correct answer: bump TODAY using atomic increments (no overall writes here)
+// (Overall is now computed as SUM of all days on the client)
 window.__fb_recordAnswer = async function ({ mode = 'jp-en', isCorrect = false } = {}) {
   const user = auth.currentUser;
   if (!user || !isCorrect) return;
 
   const dkey       = localDateKey();
   const dailyRef   = doc(db, 'users', user.uid, 'daily', dkey);
-  const overallRef = doc(db, 'users', user.uid, 'overall', 'stats');
   const lbDaily    = doc(db, 'dailyLeaderboard', dkey, 'users', user.uid);
-  const lbOverall  = doc(db, 'overallLeaderboard', user.uid);
   const uref       = doc(db, 'users', user.uid);
 
-  // read display name (outside any transaction)
+  // read display name
   const usnap = await getDoc(uref);
   const displayName = usnap.exists() ? (usnap.data().displayName || 'Anonymous') : 'Anonymous';
 
@@ -334,22 +362,16 @@ window.__fb_recordAnswer = async function ({ mode = 'jp-en', isCorrect = false }
   // ensure docs exist (merge) so updateDoc doesn't fail
   await Promise.all([
     setDoc(dailyRef,   { date: dkey, uid: user.uid, displayName }, { merge: true }),
-    setDoc(overallRef, { uid: user.uid },                           { merge: true }),
     setDoc(lbDaily,    { uid: user.uid, displayName },              { merge: true }),
-    setDoc(lbOverall,  { uid: user.uid, displayName },              { merge: true }),
   ]);
 
-  // bump the chosen correct counter + score (+1 for each correct answer)
+  // bump the chosen correct counter + score (+1 per correct)
   const base = { updatedAt: serverTimestamp() };
   await Promise.all([
     updateDoc(dailyRef,   { ...incField, score: increment(1), ...base }),
     updateDoc(lbDaily,    { ...incField, score: increment(1), ...base }),
-    updateDoc(overallRef, { ...incField, score: increment(1), ...base }),
-    updateDoc(lbOverall,  { ...incField, score: increment(1), ...base }),
   ]);
 };
-
-
 
 // End of a practice run: store an attempt (for Progress)
 window.__fb_finishAttempt = async function ({ deckName, mode, correct, wrong, skipped, total }) {
@@ -359,10 +381,10 @@ window.__fb_finishAttempt = async function ({ deckName, mode, correct, wrong, sk
   const attemptsCol = collection(db, 'users', user.uid, 'attempts');
   await addDoc(attemptsCol, { deckName, mode, correct, wrong, skipped, total, createdAt: Date.now(), createdAtServer: serverTimestamp() });
 
-  await __touchLeaderboardDocs(user.uid);
+  await __touchTodayDoc(user.uid);
 };
 
-// Save Score on demand (manual attempt + touch leaderboards)
+// Save Score on demand (manual attempt)
 window.__fb_saveScore = async function ({ deckName, mode, correct, wrong, skipped, total }) {
   const user = auth.currentUser;
   if (!user) throw new Error('Not signed in');
@@ -370,7 +392,7 @@ window.__fb_saveScore = async function ({ deckName, mode, correct, wrong, skippe
   const attemptsCol = collection(db, 'users', user.uid, 'attempts');
   await addDoc(attemptsCol, { deckName, mode, correct, wrong, skipped, total, createdAt: Date.now(), createdAtServer: serverTimestamp() });
 
-  await __touchLeaderboardDocs(user.uid);
+  await __touchTodayDoc(user.uid);
 };
 
 // Fetch recent attempts (for Progress)
@@ -389,26 +411,21 @@ window.__fb_fetchAttempts = async function (limitN = 20) {
   return list;
 };
 
-// Ensure leaderboard docs exist and update their updatedAt
-async function __touchLeaderboardDocs(uid) {
+// Ensure today's leaderboard doc exists (so Today's LB shows the user row)
+async function __touchTodayDoc(uid) {
   const uref = doc(db, 'users', uid);
   const usnap = await getDoc(uref);
   const displayName = usnap.exists() ? (usnap.data().displayName || 'Anonymous') : 'Anonymous';
 
   const dkey = localDateKey();
-
-  const lbOverall = doc(db, 'overallLeaderboard', uid);
   const lbDaily   = doc(db, 'dailyLeaderboard', dkey, 'users', uid);
 
-  await setDoc(lbOverall, { uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0, updatedAt: serverTimestamp() }, { merge: true });
   await setDoc(lbDaily,   { uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0, updatedAt: serverTimestamp() }, { merge: true });
 }
 
-// Wipe ALL of the current user's data (attempts, daily/overall aggregates,
+// Wipe ALL of the current user's data (attempts, daily aggregates,
 // leaderboard rows for all days present in user's daily docs, taskCompletion statuses).
 // Keeps the base users/{uid} profile doc and admin lists.
-// Wipe ALL of the current user's data (attempts, daily/overall aggregates,
-// leaderboard rows, and taskCompletion task docs). Keeps users/{uid} doc.
 window.__fb_fullReset = async function () {
   const user = auth.currentUser;
   if (!user) throw new Error('Not signed in');
@@ -425,21 +442,15 @@ window.__fb_fullReset = async function () {
   const dayIds = [];
   dailySnap.forEach(d => { refs.push(d.ref); dayIds.push(d.id); });
 
-  // overall aggregate
-  refs.push(doc(db, 'users', uid, 'overall', 'stats'));
-
-  // taskCompletion/{date}/tasks/*  (we delete tasks; parent date doc optional)
+  // taskCompletion/{date}/tasks/*
   const tcDatesSnap = await getDocs(collection(db, 'users', uid, 'taskCompletion'));
   for (const dateDoc of tcDatesSnap.docs) {
     const dateId = dateDoc.id;
     const tasksSnap = await getDocs(collection(db, 'users', uid, 'taskCompletion', dateId, 'tasks'));
     tasksSnap.forEach(t => refs.push(t.ref));
-    // You can also delete the parent date doc if you want; rules now allow it.
-    // We'll try it after the batched deletes, individually, and ignore failures.
   }
 
-  // leaderboard: overall + each discovered date
-  refs.push(doc(db, 'overallLeaderboard', uid));
+  // leaderboard rows: each discovered date (we no longer use overallLeaderboard collection)
   for (const dateId of dayIds) {
     refs.push(doc(db, 'dailyLeaderboard', dateId, 'users', uid));
   }
@@ -454,41 +465,26 @@ window.__fb_fullReset = async function () {
     await batch.commit();
   }
 
-  // Best-effort: remove empty taskCompletion date docs themselves
-  // (safe to skip; UI doesn't need them)
+  // Remove empty taskCompletion date docs
   try {
-    for (const dateDoc of tcDatesSnap.docs) {
+    const tcDatesSnap2 = await getDocs(collection(db, 'users', uid, 'taskCompletion'));
+    for (const dateDoc of tcDatesSnap2.docs) {
       await deleteDoc(dateDoc.ref);
     }
   } catch (e) {
     console.warn('Non-fatal: could not delete some taskCompletion date docs', e);
   }
 
-  // Recreate placeholders so UI listeners have a row to render (optional)
+  // Recreate today's placeholder so UI listeners have a row to render
   const us = await getDoc(doc(db, 'users', uid));
   const displayName = us.exists() ? (us.data().displayName || 'Anonymous') : 'Anonymous';
+  const today = localDateKey();
 
-  const today = (() => {
-    const n = new Date();
-    const y = n.getFullYear();
-    const m = String(n.getMonth() + 1).padStart(2, '0');
-    const d = String(n.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  })();
-
-  await Promise.all([
-    setDoc(doc(db, 'overallLeaderboard', uid), {
-      uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0,
-      updatedAt: serverTimestamp()
-    }, { merge: true }),
-    setDoc(doc(db, 'dailyLeaderboard', today, 'users', uid), {
-      uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0,
-      updatedAt: serverTimestamp()
-    }, { merge: true }),
-  ]);
+  await setDoc(doc(db, 'dailyLeaderboard', today, 'users', uid), {
+    uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
 };
-
-
 
 // Optional: expose sign out
 window.__signOut = () => signOut(auth);

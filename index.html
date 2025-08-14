@@ -22,7 +22,7 @@
   <div id="app-root" class="layout hidden">
     <nav class="sidebar">
       <h2>📘 Menu</h2>
-      <button onclick="showSection('deck-select')">📚 Select Deck</button>
+      <button onclick="showSection('deck-select')">📚 Vocab</button>
       <button onclick="showSection('grammar-section')">📖 Grammar</button>
       <button onclick="showSection('progress-section')">📈 Progress</button>
       <button onclick="showSection('overall-leaderboard-section')">🏆 Overall Leaderboard</button>
@@ -56,9 +56,9 @@
       </header>
 
       <main>
-        <!-- Decks -->
+        <!-- Vocab (was: Select Deck) -->
         <section id="deck-select">
-          <h2>Select a Deck</h2>
+          <h2>Vocab</h2>
           <p id="deck-status" class="muted" style="margin:8px 0"></p>
           <div id="deck-buttons"></div>
         </section>
@@ -108,7 +108,7 @@
               <div id="progress-last">No attempts yet.</div>
             </div>
             <div class="card">
-              <h3>Previous Attempt</h3>
+              <h3>Previous Attempt (same deck)</h3>
               <div id="progress-prev">—</div>
             </div>
             <div class="card">
@@ -131,7 +131,7 @@
           </div>
         </section>
 
-        <!-- Overall Leaderboard -->
+        <!-- Overall Leaderboard (now summed across days) -->
         <section id="overall-leaderboard-section" class="hidden">
           <h2>🏆 Overall Leaderboard</h2>
           <ul id="overall-leaderboard-list"></ul>

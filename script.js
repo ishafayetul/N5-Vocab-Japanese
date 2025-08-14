@@ -170,7 +170,7 @@ function checkAnswer(selected, correct, wordObj) {
 
   if (selected === correct) {
     score.correct++;
-    // update daily & overall live (Firebase will aggregate)
+    // update daily live (Firebase will aggregate to Today + Overall client-side)
     window.__fb_recordAnswer?.({
       deckName: currentDeckName,
       mode,
@@ -210,7 +210,7 @@ function skipQuestion() {
   nextQuestion();
 }
 
-// NEW: Save Score AND finish current session (return to Deck Select)
+// NEW: Save Score AND finish current session (return to Vocab list)
 // Save & Finish (global)
 window.saveCurrentScore = async function () {
   const btn = document.querySelector('#practice .save');
@@ -226,7 +226,7 @@ window.saveCurrentScore = async function () {
     });
     await renderProgress();           // refresh Progress view
     alert('Score saved to Progress ✅');
-    // Finish session and go back to Deck Select
+    // Finish session and go back to Vocab
     currentDeck = [];
     currentDeckName = "";
     currentIndex = 0;
@@ -322,7 +322,7 @@ function clearMistakes() {
 // Danger reset: cloud + local
 async function resetSite() {
   const sure = confirm(
-    "⚠️ This will permanently erase ALL of your data:\n• Attempts & Progress\n• Daily & Overall aggregates\n• Your entries on Today's & Overall Leaderboards\n• Task completion statuses\n\nProceed?"
+    "⚠️ This will permanently erase ALL of your data:\n• Attempts & Progress\n• Daily aggregates\n• Your entries on Today's Leaderboard\n• Task completion statuses\n\nProceed?"
   );
   if (!sure) return;
 
@@ -396,11 +396,11 @@ async function renderProgress() {
   if (!window.__fb_fetchAttempts) return;
 
   try {
-    const attempts = await window.__fb_fetchAttempts(20); // latest 20
+    const attempts = await window.__fb_fetchAttempts(50); // fetch more so we can find same-deck prev
     const tbody = $("progress-table")?.querySelector("tbody");
     if (tbody) {
       tbody.innerHTML = "";
-      attempts.forEach(a => {
+      attempts.slice(0, 20).forEach(a => {
         const tr = document.createElement("tr");
         const when = a.createdAt ? new Date(a.createdAt).toLocaleString() : "—";
         tr.innerHTML = `
@@ -417,7 +417,14 @@ async function renderProgress() {
     }
 
     const last = attempts[0];
-    const prev = attempts[1];
+    // Find the most recent previous attempt on the SAME DECK
+    let prev = null;
+    if (last) {
+      prev = attempts.find(a =>
+        a.deckName === last.deckName &&
+        a.createdAt < last.createdAt
+      ) || null;
+    }
 
     const lastBox = $("progress-last");
     const prevBox = $("progress-prev");
@@ -452,7 +459,9 @@ async function renderProgress() {
         const d = (last.correct || 0) - (prev.correct || 0);
         const cls = d >= 0 ? "delta-up" : "delta-down";
         const sign = d > 0 ? "+" : (d < 0 ? "" : "±");
-        deltaBox.innerHTML = `<span class="${cls}">${sign}${d} correct vs previous</span>`;
+        deltaBox.innerHTML = `<span class="${cls}">${sign}${d} correct vs previous (same deck)</span>`;
+      } else if (last && !prev) {
+        deltaBox.textContent = "No previous attempt for this deck.";
       } else {
         deltaBox.textContent = "—";
       }
