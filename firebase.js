@@ -9,6 +9,7 @@ import {
   runTransaction, getDocs, increment, writeBatch, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
+
 // --- Firebase project config ---
 const firebaseConfig = {
   apiKey: "AIzaSyCP-JzANiomwA-Q5MB5fnNoz0tUjdNX3Og",
@@ -406,20 +407,20 @@ async function __touchLeaderboardDocs(uid) {
 // Wipe ALL of the current user's data (attempts, daily/overall aggregates,
 // leaderboard rows for all days present in user's daily docs, taskCompletion statuses).
 // Keeps the base users/{uid} profile doc and admin lists.
+// Wipe ALL of the current user's data (attempts, daily/overall aggregates,
+// leaderboard rows, and taskCompletion task docs). Keeps users/{uid} doc.
 window.__fb_fullReset = async function () {
   const user = auth.currentUser;
   if (!user) throw new Error('Not signed in');
 
   const uid = user.uid;
-
-  // 1) Collect doc refs to delete
   const refs = [];
 
   // attempts
   const attemptsSnap = await getDocs(collection(db, 'users', uid, 'attempts'));
   attemptsSnap.forEach(d => refs.push(d.ref));
 
-  // per-day aggregates (also use the date ids later to clean dailyLeaderboard)
+  // daily aggregate docs (collect day IDs to clear dailyLeaderboard)
   const dailySnap = await getDocs(collection(db, 'users', uid, 'daily'));
   const dayIds = [];
   dailySnap.forEach(d => { refs.push(d.ref); dayIds.push(d.id); });
@@ -427,23 +428,23 @@ window.__fb_fullReset = async function () {
   // overall aggregate
   refs.push(doc(db, 'users', uid, 'overall', 'stats'));
 
-  // taskCompletion/{date}/tasks/*
+  // taskCompletion/{date}/tasks/*  (we delete tasks; parent date doc optional)
   const tcDatesSnap = await getDocs(collection(db, 'users', uid, 'taskCompletion'));
   for (const dateDoc of tcDatesSnap.docs) {
     const dateId = dateDoc.id;
     const tasksSnap = await getDocs(collection(db, 'users', uid, 'taskCompletion', dateId, 'tasks'));
     tasksSnap.forEach(t => refs.push(t.ref));
-    // optional: delete placeholder date doc (ok if it never existed)
-    refs.push(doc(db, 'users', uid, 'taskCompletion', dateId));
+    // You can also delete the parent date doc if you want; rules now allow it.
+    // We'll try it after the batched deletes, individually, and ignore failures.
   }
 
-  // leaderboard: overall + all dayIds we discovered above
+  // leaderboard: overall + each discovered date
   refs.push(doc(db, 'overallLeaderboard', uid));
   for (const dateId of dayIds) {
     refs.push(doc(db, 'dailyLeaderboard', dateId, 'users', uid));
   }
 
-  // 2) Batched delete (chunks of 450 to stay under 500/commit)
+  // Batched deletes in chunks
   const CHUNK = 450;
   for (let i = 0; i < refs.length; i += CHUNK) {
     const batch = writeBatch(db);
@@ -453,9 +454,21 @@ window.__fb_fullReset = async function () {
     await batch.commit();
   }
 
-  // 3) Recreate empty leaderboard placeholders so your listeners don't error (optional)
-  const displayName = (await getDoc(doc(db, 'users', uid))).data()?.displayName || 'Anonymous';
-  const today = (function () {
+  // Best-effort: remove empty taskCompletion date docs themselves
+  // (safe to skip; UI doesn't need them)
+  try {
+    for (const dateDoc of tcDatesSnap.docs) {
+      await deleteDoc(dateDoc.ref);
+    }
+  } catch (e) {
+    console.warn('Non-fatal: could not delete some taskCompletion date docs', e);
+  }
+
+  // Recreate placeholders so UI listeners have a row to render (optional)
+  const us = await getDoc(doc(db, 'users', uid));
+  const displayName = us.exists() ? (us.data().displayName || 'Anonymous') : 'Anonymous';
+
+  const today = (() => {
     const n = new Date();
     const y = n.getFullYear();
     const m = String(n.getMonth() + 1).padStart(2, '0');
@@ -463,7 +476,6 @@ window.__fb_fullReset = async function () {
     return `${y}-${m}-${d}`;
   })();
 
-  // Touch current day + overall with zeros so UI shows 0 instead of missing row
   await Promise.all([
     setDoc(doc(db, 'overallLeaderboard', uid), {
       uid, displayName, jpEnCorrect: 0, enJpCorrect: 0, tasksCompleted: 0, score: 0,
@@ -475,6 +487,7 @@ window.__fb_fullReset = async function () {
     }, { merge: true }),
   ]);
 };
+
 
 
 // Optional: expose sign out
