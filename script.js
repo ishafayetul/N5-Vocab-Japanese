@@ -1,4 +1,4 @@
-// script.js — decks loader + quiz UI
+// script.js — decks loader + quiz UI + grammar list
 
 let allDecks = {};                // { deckName: [{front, back, romaji}] }
 let currentDeck = [];
@@ -10,31 +10,34 @@ let score = { correct: 0, wrong: 0, skipped: 0 };
 let mistakes = JSON.parse(localStorage.getItem("mistakes") || "[]");
 let masteryMap = JSON.parse(localStorage.getItem("masteryMap") || "{}");
 
-// ---- small helpers ---------------------------------------------------------
+// ---- helpers ---------------------------------------------------------------
 const $ = (id) => document.getElementById(id);
 const setText = (id, txt) => { const el = $(id); if (el) el.innerText = txt; };
-const setHTML = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
 
-function statusLine(msg) {
-  const s = $("deck-status");
+function statusLine(id, msg) {
+  const s = $(id);
   if (s) s.textContent = msg;
-  console.log("[decks]", msg);
+  console.log(`[status:${id}]`, msg);
 }
 
+// Load both Decks and Grammar as soon as the page is ready
 window.onload = () => {
   loadDeckManifest();
+  loadGrammarManifest();
   updateScore();
 };
 
 // Gate-aware hook (called by firebase.js after login, optional)
 window.__initAfterLogin = () => {
-  // nothing required right now; decks load at page start
+  // If you want to refresh after login, uncomment:
+  // loadDeckManifest();
+  // loadGrammarManifest();
 };
 
 // ---- sections --------------------------------------------------------------
 function showSection(id) {
   const sections = [
-    "deck-select", "mistakes-section",
+    "deck-select", "grammar-section", "mistakes-section",
     "practice", "mode-select", "learn", "leaderboard-section"
   ];
   sections.forEach(sec => {
@@ -45,38 +48,35 @@ function showSection(id) {
   if (target) target.classList.remove("hidden");
 }
 
-// ---- data loading ----------------------------------------------------------
+// ---- DECKS: data loading ---------------------------------------------------
 async function loadDeckManifest() {
   try {
-    statusLine("Loading decks…");
+    statusLine("deck-status", "Loading decks…");
     const res = await fetch("vocab_decks/deck_manifest.json");
     if (!res.ok) throw new Error(`HTTP ${res.status} for vocab_decks/deck_manifest.json`);
 
-    // If the server misroutes, the body may be HTML; guard against that:
     const text = await res.text();
     if (text.trim().startsWith("<")) {
       throw new Error("Manifest is HTML (check path/case for vocab_decks/deck_manifest.json)");
     }
     /** @type {string[]} */
     const deckList = JSON.parse(text);
-
     deckList.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
-    // Load each CSV
     allDecks = {};
     for (const file of deckList) {
       const name = file.replace(".csv", "");
       const url = `vocab_decks/${file}`;
-      statusLine(`Loading ${file}…`);
+      statusLine("deck-status", `Loading ${file}…`);
       const deck = await fetchAndParseCSV(url);
       allDecks[name] = deck;
     }
 
     renderDeckButtons();
-    statusLine(`Loaded ${Object.keys(allDecks).length} deck(s).`);
+    statusLine("deck-status", `Loaded ${Object.keys(allDecks).length} deck(s).`);
   } catch (err) {
     console.error("Failed to load decks:", err);
-    statusLine(`Failed to load decks: ${err.message}`);
+    statusLine("deck-status", `Failed to load decks: ${err.message}`);
   }
 }
 
@@ -85,10 +85,7 @@ async function fetchAndParseCSV(url) {
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
   const text = await res.text();
 
-  // Normalize newlines and ignore blank lines
   const lines = text.replace(/\r\n?/g, "\n").split("\n").filter(Boolean);
-
-  // Very simple CSV: word,meaning[,romaji]
   const rows = lines.map((line) => {
     const parts = line.split(",");
     const word   = (parts[0] || "").trim();
@@ -100,7 +97,6 @@ async function fetchAndParseCSV(url) {
   return rows;
 }
 
-// ---- UI wiring -------------------------------------------------------------
 function renderDeckButtons() {
   const container = $("deck-buttons");
   if (!container) return;
@@ -125,6 +121,7 @@ function selectDeck(name) {
   showSection("mode-select");
 }
 
+// ---- PRACTICE --------------------------------------------------------------
 function startPractice(selectedMode) {
   mode = selectedMode;
   currentIndex = 0;
@@ -137,10 +134,7 @@ function startPractice(selectedMode) {
 
 function showQuestion() {
   const q = currentDeck[currentIndex];
-  if (!q) {
-    // if no card, consider the deck finished
-    return nextQuestion();
-  }
+  if (!q) return nextQuestion();
 
   const front  = (mode === "jp-en") ? q.front : q.back;
   const answer = (mode === "jp-en") ? q.back  : q.front;
@@ -163,7 +157,6 @@ function showQuestion() {
 function generateOptions(correct) {
   const pool = currentDeck.map((q) => (mode === "jp-en" ? q.back : q.front)).filter(Boolean);
   const unique = [...new Set(pool.filter((opt) => opt !== correct))];
-
   shuffleArray(unique);
   const distractors = unique.slice(0, 3);
   const options = [correct, ...distractors];
@@ -181,7 +174,6 @@ function checkAnswer(selected, correct, wordObj) {
 
   if (selected === correct) {
     score.correct++;
-    // record to firebase (per-day, per-deck, per-mode)
     window.__fb_recordAnswer?.({
       deckName: currentDeckName,
       mode,
@@ -237,7 +229,7 @@ function updateScore() {
   setText("skipped", String(score.skipped));
 }
 
-// ---- learn mode ------------------------------------------------------------
+// ---- LEARN mode ------------------------------------------------------------
 function startLearnMode() {
   currentIndex = 0;
   if (!currentDeck.length) return alert("Pick a deck first!");
@@ -264,7 +256,7 @@ function nextLearn() {
   }
 }
 
-// ---- local progress management --------------------------------------------
+// ---- MISTAKES --------------------------------------------------------------
 function startMistakePractice() {
   if (mistakes.length === 0) return alert("No mistakes yet!");
   currentDeck = mistakes.slice();
@@ -288,6 +280,38 @@ function resetSite() {
     localStorage.removeItem("masteryMap");
     alert("All data reset.");
     location.reload();
+  }
+}
+
+// ---- GRAMMAR: manifest loader + buttons -----------------------------------
+async function loadGrammarManifest() {
+  try {
+    statusLine("grammar-status", "Loading grammar lessons…");
+    const res = await fetch("grammar/grammar_manifest.json");
+    if (!res.ok) throw new Error(`HTTP ${res.status} for grammar/grammar_manifest.json`);
+
+    const text = await res.text();
+    if (text.trim().startsWith("<")) {
+      throw new Error("Grammar manifest is HTML (check path/case for grammar/grammar_manifest.json)");
+    }
+    /** @type {string[]} */
+    const list = JSON.parse(text);
+
+    const container = $("grammar-list");
+    if (!container) return;
+    container.innerHTML = "";
+
+    list.forEach((file) => {
+      const btn = document.createElement("button");
+      btn.textContent = file.replace(".pdf", "");
+      btn.onclick = () => window.open(`grammar/${file}`, "_blank");
+      container.appendChild(btn);
+    });
+
+    statusLine("grammar-status", `Loaded ${list.length} grammar file(s).`);
+  } catch (err) {
+    console.error("Failed to load grammar manifest:", err);
+    statusLine("grammar-status", `Failed to load grammar: ${err.message}`);
   }
 }
 
