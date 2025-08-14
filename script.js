@@ -552,3 +552,59 @@ function showMeaning() {
   const correct = mode === "jp-en" ? card.back : card.front;
   setText("extra-info", `Meaning: ${correct}`);
 }
+
+window.resetSite = async function () {
+  const sure = confirm("⚠️ This will erase all your progress, leaderboard scores, and tasks.\nYour sign-in will remain.\n\nContinue?");
+  if (!sure) return;
+
+  const btn = event?.target;
+  if (btn) btn.disabled = true;
+
+  try {
+    const user = getAuth().currentUser;
+    if (!user) throw new Error("No signed-in user");
+
+    const db = getFirestore();
+
+    // 1. Delete all user attempts
+    const attemptsSnap = await getDocs(collection(db, 'users', user.uid, 'attempts'));
+    for (const docSnap of attemptsSnap.docs) {
+      await deleteDoc(docSnap.ref);
+    }
+
+    // 2. Delete all daily leaderboard entries for this user
+    const lbSnap = await getDocs(collectionGroup(db, 'users'));
+    for (const docSnap of lbSnap.docs) {
+      if (docSnap.id === user.uid && docSnap.ref.path.includes('dailyLeaderboard')) {
+        await deleteDoc(docSnap.ref);
+      }
+    }
+
+    // 3. Delete overall leaderboard row
+    await deleteDoc(doc(db, 'overallLeaderboard', user.uid)).catch(() => {});
+
+    // 4. Delete daily + overall aggregates under user doc
+    const dailyAggSnap = await getDocs(collection(db, 'users', user.uid, 'daily'));
+    for (const docSnap of dailyAggSnap.docs) {
+      await deleteDoc(docSnap.ref);
+    }
+    const overallAggSnap = await getDocs(collection(db, 'users', user.uid, 'overall'));
+    for (const docSnap of overallAggSnap.docs) {
+      await deleteDoc(docSnap.ref);
+    }
+
+    // 5. Clear local mistakes & mastery
+    localStorage.removeItem('mistakes');
+    localStorage.removeItem('masteryMap');
+    localStorage.removeItem('sessionBuf');
+    localStorage.removeItem('pendingSession');
+
+    alert("✅ All progress erased. You are still signed in.");
+    location.reload();
+  } catch (e) {
+    console.error("Full reset failed:", e);
+    alert("Reset failed: " + (e?.message || e));
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
