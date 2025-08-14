@@ -422,5 +422,25 @@ async function __fb_commitLocalPendingSession() {
   localStorage.removeItem('pendingSession');
 }
 
+// --- Progress: fetch recent attempts for the signed-in user ---
+window.__fb_fetchAttempts = async function (limitN = 20) {
+  const user = getAuth().currentUser; // reuse the same auth from firebase.js
+  if (!user) return [];
+  const db = getFirestore();
+
+  const colRef = collection(db, 'users', user.uid, 'attempts');
+  const qy = query(colRef, orderBy('createdAt', 'desc'), limit(limitN));
+
+  const snap = await getDocs(qy);
+  const list = [];
+  snap.forEach(docSnap => {
+    const d = docSnap.data() || {};
+    // prefer client timestamp; fall back to server
+    const ts = d.createdAt || (d.createdAtServer?.toMillis ? d.createdAtServer.toMillis() : Date.now());
+    list.push({ id: docSnap.id, ...d, createdAt: ts });
+  });
+  return list;
+};
+
 // Expose sign out
 window.__signOut = () => signOut(auth);
