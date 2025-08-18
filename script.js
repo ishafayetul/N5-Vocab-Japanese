@@ -179,22 +179,65 @@ async function loadDeckManifest() {
   }
 }
 
+function parseCSV(text){
+  const rows = [];
+  let row = [];
+  let cur = '';
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if (inQuotes){
+      if (ch === '"'){
+        if (text[i+1] === '"'){ cur += '"'; i++; }
+        else { inQuotes = false; }
+      } else cur += ch;
+    } else {
+      if (ch === '"') inQuotes = true;
+      else if (ch === ','){ row.push(cur.trim()); cur = ''; }
+      else if (ch === '\n'){ row.push(cur.trim()); rows.push(row); row = []; cur = ''; }
+      else if (ch === '\r'){ /* ignore */ }
+      else cur += ch;
+    }
+  }
+  if (cur.length || inQuotes || row.length){ row.push(cur.trim()); rows.push(row); }
+  return rows.filter(r => r.some(c => c && c.length));
+}
+
 async function fetchAndParseCSV(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  const text = await res.text();
+  // Strip BOM if present, keep original newlines for parseCSV
+  const text = (await res.text()).replace(/^\uFEFF/, "");
 
-  const lines = text.replace(/\r\n?/g, "\n").split("\n").filter(Boolean);
-  const rows = lines.map((line) => {
-    const parts = line.split(",");
-    const word   = (parts[0] || "").trim();
-    const meaning = (parts[1] || "").trim();
-    const romaji  = (parts[2] || "").trim();
-    return { front: word, back: meaning, romaji };
-  }).filter(r => r.front && r.back);
+  // Use the robust CSV parser you wrote
+  const table = parseCSV(text);
+
+  // Optional: detect and drop a header row like:
+  // ["front","back","romaji"] or ["word","meaning","romaji"]
+  const looksLikeHeader = (row) => {
+    if (!row || row.length === 0) return false;
+    const h = row.map(c => (c || "").trim().toLowerCase());
+    const set = new Set(h);
+    return (
+      set.has("front") || set.has("back") || set.has("romaji") ||
+      set.has("word")  || set.has("meaning")
+    );
+  };
+
+  const rows = (table.length && looksLikeHeader(table[0]) ? table.slice(1) : table)
+    .map(cols => {
+      const [word = "", meaning = "", romaji = ""] = cols;
+      return {
+        front:  (word    || "").trim(),
+        back:   (meaning || "").trim(),
+        romaji: (romaji  || "").trim(),
+      };
+    })
+    .filter(r => r.front && r.back); // require at least the two main fields
 
   return rows;
 }
+
 
 function renderDeckButtons() {
   const container = $("deck-buttons");
