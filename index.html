@@ -24,6 +24,7 @@
       <h2>📘 Menu</h2>
       <button onclick="showSection('deck-select')">📚 Vocab</button>
       <button onclick="showSection('grammar-section')">📖 Grammar</button>
+      <button onclick="showSection('practice-grammar')">✍️ Practice Grammar</button>
       <button onclick="showSection('progress-section')">📈 Progress</button>
       <button onclick="showSection('overall-leaderboard-section')">🏆 Overall Leaderboard</button>
       <button onclick="showSection('todays-leaderboard-section')">📅 Today’s Leaderboard</button>
@@ -73,36 +74,66 @@
           <button onclick="startPractice('en-jp')">English → Japanese</button>
         </section>
 
-        <!-- Learn -->
+        <!-- Learn (flashcard + prev/next + toggles) -->
         <section id="learn" class="hidden">
-          <div id="learn-box"></div>
-          <button onclick="nextLearn()">Next</button>
+          <div class="flashcard" id="learn-box"></div>
+          <div class="practice-actions">
+            <button onclick="prevLearn()">⬅️ Previous</button>
+            <button onclick="nextLearn()">➡️ Next</button>
+            <button onclick="showLearnRomaji()">👁 Show Romaji</button>
+            <button onclick="showLearnMeaning()">💡 Show Meaning</button>
+          </div>
+          <div id="learn-extra" class="muted" style="margin-top:8px;"></div>
         </section>
 
-        <!-- Practice -->
+        <!-- Practice (MCQ) -->
         <section id="practice" class="hidden">
-          <!-- NEW: Deck progress -->
+          <!-- Deck progress -->
           <div id="deck-progress" class="deck-progress">
             <div class="deck-progress-bar" id="deck-progress-bar"></div>
             <div class="deck-progress-text" id="deck-progress-text">0 / 0 (0%)</div>
           </div>
 
-          <div id="question-box"></div>
+          <div class="flashcard" id="question-box"></div>
           <ul id="options"></ul>
           <div class="practice-actions">
             <button onclick="skipQuestion()">Skip</button>
             <button onclick="showRomaji()">👁 Show Romaji</button>
             <button onclick="showMeaning()">💡 Show Meaning</button>
-            <!-- Removed the Save button from here -->
           </div>
           <div id="extra-info" style="margin-top: 10px; font-size: 16px;"></div>
         </section>
 
-        <!-- Grammar -->
+        <!-- Grammar (PDF list) -->
         <section id="grammar-section" class="hidden">
           <h2>Grammar Lessons</h2>
           <p id="grammar-status" class="muted" style="margin:8px 0"></p>
           <div id="grammar-list"></div>
+        </section>
+
+        <!-- ✍️ Practice Grammar (type the answer) -->
+        <section id="practice-grammar" class="hidden">
+          <h2>Practice Grammar</h2>
+          <p id="pg-status" class="muted" style="margin:8px 0">Loading practice sets…</p>
+          <div id="pg-file-buttons" class="pg-files"></div>
+
+          <!-- Shown when a set is started -->
+          <div id="pg-area" class="hidden">
+            <div id="pg-progress" class="deck-progress">
+              <div class="deck-progress-bar" id="pg-progress-bar"></div>
+              <div class="deck-progress-text" id="pg-progress-text">0 / 0 (0%)</div>
+            </div>
+
+            <div class="flashcard" id="pg-card"></div>
+
+            <div class="pg-input-row">
+              <input id="pg-input" class="pg-input" placeholder="Type your answer…" />
+              <button id="pg-submit" onclick="pgSubmit()">Submit</button>
+              <button id="pg-show-answer" onclick="pgShowAnswer()">Show Answer</button>
+            </div>
+
+            <div id="pg-feedback" class="pg-feedback muted"></div>
+          </div>
         </section>
 
         <!-- Progress -->

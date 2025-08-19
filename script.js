@@ -1,4 +1,4 @@
-// script.js — decks loader + quiz UI + grammar list + progress UI
+// script.js — decks loader + quiz UI + grammar practice + progress UI
 // NOTE: All Firebase access is delegated to firebase.js helpers on window.*
 // This file contains NO direct Firebase imports.
 
@@ -16,17 +16,29 @@ let masteryMap = JSON.parse(localStorage.getItem("masteryMap") || "{}");
 // Session buffer (temporary storage; committed on demand/auto via firebase.js)
 let sessionBuf = JSON.parse(localStorage.getItem("sessionBuf") || "null") || {
   deckName: "",
-  mode: "jp-en",
+  mode: "jp-en",      // 'jp-en' | 'en-jp' | 'grammar'
   correct: 0,
   wrong: 0,
   skipped: 0,
   total: 0,
   jpEnCorrect: 0,
-  enJpCorrect: 0
+  enJpCorrect: 0,
+  grammarCorrect: 0   // NEW: counted for grammar typing
 };
 
 let currentSectionId = "deck-select";
 let committing = false;
+
+// Practice Grammar state
+const pgState = {
+  files: [],          // ['grammar-lesson-01.csv', ...]
+  setName: "",        // active set file name (no path)
+  items: [],          // [{q, a}, ...]
+  order: [],          // shuffled indices
+  i: 0,               // pointer into order
+  correct: 0,
+  wrong: 0
+};
 
 // ---------------- DOM helpers ----------------
 const $ = (id) => document.getElementById(id);
@@ -73,7 +85,9 @@ async function autoCommitIfNeeded(reason = "") {
       skipped: sessionBuf.skipped,
       total: sessionBuf.total,
       jpEnCorrect: sessionBuf.jpEnCorrect,
-      enJpCorrect: sessionBuf.enJpCorrect
+      enJpCorrect: sessionBuf.enJpCorrect,
+      // grammarCorrect is included so firebase.js can start counting it
+      grammarCorrect: sessionBuf.grammarCorrect || 0
     };
     await window.__fb_commitSession(payload);
 
@@ -84,6 +98,7 @@ async function autoCommitIfNeeded(reason = "") {
     sessionBuf.total = 0;
     sessionBuf.jpEnCorrect = 0;
     sessionBuf.enJpCorrect = 0;
+    sessionBuf.grammarCorrect = 0;
     persistSession();
 
     // Refresh progress summaries
@@ -100,7 +115,8 @@ async function autoCommitIfNeeded(reason = "") {
 // ---------------- App lifecycle ----------------
 window.onload = () => {
   loadDeckManifest();
-  loadGrammarManifest();
+  loadGrammarManifest();      // PDF lessons list (existing feature)
+  loadGrammarPracticeManifest(); // NEW: practice grammar manifests
   renderProgress();
   updateScore();
 };
@@ -128,9 +144,13 @@ window.addEventListener('beforeunload', () => {
 
 // ---------------- Section Router ----------------
 function showSection(id) {
-  // Leaving Practice? autosave the deck's buffered progress
+  // Leaving Vocab Practice? autosave the deck's buffered progress
   if (currentSectionId === "practice" && id !== "practice") {
-    autoCommitIfNeeded("leaving practice");
+    autoCommitIfNeeded("leaving vocab practice");
+  }
+  // Leaving Practice Grammar? autosave as well
+  if (currentSectionId === "practice-grammar" && id !== "practice-grammar") {
+    autoCommitIfNeeded("leaving grammar practice");
   }
 
   document.querySelectorAll('.main-content main > section').forEach(sec => {
@@ -142,14 +162,15 @@ function showSection(id) {
 
   currentSectionId = id;
 
-  // Keep progress bar accurate if we re-enter Practice
+  // Keep progress bars accurate if we re-enter
   if (id === "practice") updateDeckProgress();
+  if (id === "practice-grammar") pgUpdateProgress();
 }
 
 // Make router global for inline onclicks in HTML
 window.showSection = showSection;
 
-// ---------------- DECKS ----------------
+// ---------------- DECKS (Vocab) ----------------
 async function loadDeckManifest() {
   try {
     statusLine("deck-status", "Loading decks…");
@@ -209,7 +230,7 @@ async function fetchAndParseCSV(url) {
   // Strip BOM if present, keep original newlines for parseCSV
   const text = (await res.text()).replace(/^\uFEFF/, "");
 
-  // Use the robust CSV parser you wrote
+  // Use the robust CSV parser
   const table = parseCSV(text);
 
   // Optional: detect and drop a header row like:
@@ -220,7 +241,7 @@ async function fetchAndParseCSV(url) {
     const set = new Set(h);
     return (
       set.has("front") || set.has("back") || set.has("romaji") ||
-      set.has("word")  || set.has("meaning")
+      set.has("word")  || set.has("meaning") || set.has("question") || set.has("answer")
     );
   };
 
@@ -237,7 +258,6 @@ async function fetchAndParseCSV(url) {
 
   return rows;
 }
-
 
 function renderDeckButtons() {
   const container = $("deck-buttons");
@@ -271,13 +291,14 @@ function selectDeck(name) {
     deckName: name,
     mode: "jp-en",
     correct: 0, wrong: 0, skipped: 0, total: 0,
-    jpEnCorrect: 0, enJpCorrect: 0
+    jpEnCorrect: 0, enJpCorrect: 0,
+    grammarCorrect: 0
   };
   persistSession();
   showSection("mode-select");
 }
 
-// ---------------- PRACTICE ----------------
+// ---------------- PRACTICE (Vocab MCQ) ----------------
 function startPractice(selectedMode) {
   mode = selectedMode;
   sessionBuf.mode = selectedMode;
@@ -299,6 +320,8 @@ function showQuestion() {
   const answer = (mode === "jp-en") ? q.back  : q.front;
   const options = generateOptions(answer);
 
+  const qb = $("question-box");
+  if (qb) qb.className = "flashcard"; // visually consistent if CSS present
   setText("question-box", front);
   setText("extra-info", "");
   const optionsList = $("options");
@@ -403,7 +426,7 @@ function updateScore() {
   setText("skipped", String(score.skipped));
 }
 
-// ---------------- LEARN mode ----------------
+// ---------------- LEARN mode (Flashcard + Prev/Next + Show buttons) ----------------
 function startLearnMode() {
   currentIndex = 0;
   if (!currentDeck.length) return alert("Pick a deck first!");
@@ -415,22 +438,48 @@ window.startLearnMode = startLearnMode;
 function showLearnCard() {
   const word = currentDeck[currentIndex];
   if (!word) return;
-  const jp = word.front;
-  const en = word.back;
-  const ro = word.romaji || "";
-  setText("learn-box", `${jp} – ${en} – ${ro}`);
+
+  const box = $("learn-box");
+  if (box) {
+    // flashcard-like render (text only; CSS in style.css can style .flashcard)
+    box.className = "flashcard";
+    box.textContent = (word.front || "—");
+  }
+
+  // wipe any extra display area if present
+  const extra = $("learn-extra");
+  if (extra) extra.textContent = "";
 }
 
 function nextLearn() {
-  currentIndex++;
-  if (currentIndex >= currentDeck.length) {
-    alert("🎉 Finished learning this deck!");
-    showSection("deck-select");
-  } else {
-    showLearnCard();
-  }
+  if (!currentDeck.length) return;
+  currentIndex = Math.min(currentIndex + 1, currentDeck.length - 1);
+  showLearnCard();
 }
 window.nextLearn = nextLearn;
+
+function prevLearn() {
+  if (!currentDeck.length) return;
+  currentIndex = Math.max(currentIndex - 1, 0);
+  showLearnCard();
+}
+window.prevLearn = prevLearn;
+
+function showLearnRomaji() {
+  const word = currentDeck[currentIndex];
+  if (!word) return;
+  const extra = $("learn-extra");
+  if (extra) extra.textContent = `Romaji: ${word.romaji || "(no romaji)"}`;
+}
+window.showLearnRomaji = showLearnRomaji;
+
+function showLearnMeaning() {
+  const word = currentDeck[currentIndex];
+  if (!word) return;
+  const extra = $("learn-extra");
+  if (extra) extra.textContent = `Meaning: ${word.back || "(no meaning)"}`;
+}
+window.showLearnMeaning = showLearnMeaning;
 
 // ---------------- MISTAKES ----------------
 function startMistakePractice() {
@@ -452,7 +501,7 @@ function clearMistakes() {
 }
 window.clearMistakes = clearMistakes;
 
-// ---------------- GRAMMAR ----------------
+// ---------------- GRAMMAR (PDF links; existing feature) ----------------
 async function loadGrammarManifest() {
   try {
     statusLine("grammar-status", "Loading grammar lessons…");
@@ -491,6 +540,171 @@ async function loadGrammarManifest() {
   } catch (err) {
     console.error("Failed to load grammar manifest:", err);
     statusLine("grammar-status", `Failed to load grammar: ${err.message}`);
+  }
+}
+
+// ---------------- PRACTICE GRAMMAR (type the answer) ----------------
+async function loadGrammarPracticeManifest() {
+  const statusId = "pg-status";
+  try {
+    const statusEl = $(statusId);
+    if (statusEl) statusEl.textContent = "Loading practice grammar sets…";
+    // Try "/practice-grammar/manifest.csv"
+    const res = await fetch("practice-grammar/manifest.csv");
+    if (!res.ok) throw new Error(`HTTP ${res.status} for practice-grammar/manifest.csv`);
+    const text = (await res.text()).replace(/^\uFEFF/, "");
+    // Each line = filename.csv
+    const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    pgState.files = lines;
+
+    const container = $("pg-file-buttons");
+    if (container) {
+      container.innerHTML = "";
+      lines.forEach(file => {
+        const btn = document.createElement("button");
+        btn.textContent = file.replace(/\.csv$/i, "");
+        btn.onclick = () => pgStartSet(file);
+        container.appendChild(btn);
+      });
+    }
+
+    if (statusEl) statusEl.textContent = `Loaded ${lines.length} set(s). Choose one to start.`;
+  } catch (err) {
+    console.warn("Practice grammar manifest failed:", err);
+    const statusEl = $(statusId);
+    if (statusEl) statusEl.textContent = `Failed to load practice sets: ${err.message}`;
+  }
+}
+
+async function pgStartSet(fileName) {
+  try {
+    const statusEl = $("pg-status");
+    if (statusEl) statusEl.textContent = `Loading ${fileName}…`;
+
+    const res = await fetch(`practice-grammar/${fileName}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status} for practice-grammar/${fileName}`);
+    const text = (await res.text()).replace(/^\uFEFF/, "");
+
+    // Parse as CSV without header → [question, answer]
+    const rows = parseCSV(text)
+      .map(cols => ({ q: (cols[0] || "").trim(), a: (cols[1] || "").trim() }))
+      .filter(x => x.q && x.a);
+
+    if (!rows.length) throw new Error("No valid Q/A rows found.");
+
+    pgState.setName = fileName;
+    pgState.items = rows;
+    pgState.order = shuffleArray([...rows.keys()]);
+    pgState.i = 0;
+    pgState.correct = 0;
+    pgState.wrong = 0;
+
+    // Prepare session buffer for grammar
+    sessionBuf.deckName = `Grammar: ${fileName.replace(/\.csv$/i, "")}`;
+    sessionBuf.mode = "grammar";
+    persistSession();
+
+    // Show area
+    const area = $("pg-area");
+    if (area) area.classList.remove("hidden");
+
+    pgRender();
+    pgUpdateProgress();
+
+    const statusId = $("pg-status");
+    if (statusId) statusId.textContent = `Loaded ${rows.length} questions.`;
+    showSection("practice-grammar");
+  } catch (e) {
+    alert("Failed to start set: " + (e?.message || e));
+  }
+}
+
+function pgRender() {
+  const idx = pgState.order[pgState.i];
+  const item = pgState.items[idx];
+  const card = $("pg-card");
+  if (card) {
+    card.className = "flashcard";
+    card.textContent = item ? item.q : "(finished)";
+  }
+  const input = $("pg-input");
+  if (input) {
+    input.value = "";
+    input.focus();
+  }
+  const fb = $("pg-feedback");
+  if (fb) fb.textContent = "";
+}
+
+function pgUpdateProgress() {
+  const total = pgState.items.length || 0;
+  const done = Math.min(pgState.i, total);
+  const p = percent(done, total);
+  const bar = $("pg-progress-bar");
+  const txt = $("pg-progress-text");
+  if (bar) bar.style.width = `${p}%`;
+  if (txt) txt.textContent = `${done} / ${total} (${p}%)`;
+}
+
+function normalizeAnswer(s) {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFKC")
+    .replace(/\s+/g, " ")
+    .replace(/[。、，,。!！?？;；:：]/g, "")
+    .trim();
+}
+
+function pgSubmit() {
+  const idx = pgState.order[pgState.i];
+  const item = pgState.items[idx];
+  if (!item) return;
+
+  const input = $("pg-input");
+  const fb = $("pg-feedback");
+  const userAns = input ? input.value : "";
+  const ok = normalizeAnswer(userAns) === normalizeAnswer(item.a);
+
+  if (ok) {
+    if (fb) fb.textContent = "✅ Correct!";
+    pgState.correct++;
+    sessionBuf.correct++;
+    sessionBuf.total++;
+    sessionBuf.grammarCorrect = (sessionBuf.grammarCorrect || 0) + 1;
+  } else {
+    if (fb) fb.textContent = `❌ Wrong.`;
+    pgState.wrong++;
+    sessionBuf.wrong++;
+    sessionBuf.total++;
+  }
+  persistSession();
+
+  // Wait 2s, then next
+  setTimeout(pgNext, 2000);
+}
+window.pgSubmit = pgSubmit;
+
+function pgShowAnswer() {
+  const idx = pgState.order[pgState.i];
+  const item = pgState.items[idx];
+  const fb = $("pg-feedback");
+  if (fb && item) fb.textContent = `💡 Answer: ${item.a}`;
+}
+window.pgShowAnswer = pgShowAnswer;
+
+function pgNext() {
+  pgState.i++;
+  pgUpdateProgress();
+  if (pgState.i >= pgState.items.length) {
+    alert(`Finished! ✅ ${pgState.correct} ❌ ${pgState.wrong}\nSaving your progress…`);
+    // Auto-save this grammar session
+    autoCommitIfNeeded("finish grammar set");
+    // Return to Practice Grammar landing
+    const area = $("pg-area");
+    if (area) area.classList.add("hidden");
+    showSection("practice-grammar");
+  } else {
+    pgRender();
   }
 }
 
