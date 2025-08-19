@@ -30,14 +30,18 @@ let sessionBuf = JSON.parse(localStorage.getItem("sessionBuf") || "null") || {
 let currentSectionId = "deck-select";
 let committing = false;
 
-// Grammar Practice (optional; auto-enables if files exist)
-const grammarSets = {}; // { setName: [{front, back, romaji?, note?}, ...] }
+// State containers
+const grammarSets = grammarSets || {}; // keep if already defined above
 const grammarRun = {
   setName: "",
-  index: 0,
+  items: [],         // [{front, back, romaji?, note?}]
+  order: [],         // shuffled indices
+  idx: 0,            // pointer in order[]
   correct: 0,
   wrong: 0,
-  reveal: false
+  submitted: false,  // did user submit for this question?
+  revealed: false,   // did user click show answer?
+  userAnswer: ""
 };
 
 /* =========================
@@ -537,9 +541,13 @@ async function loadGrammarManifest() {
   }
 }
 
-/* ---------- Grammar Practice (optional) ---------- */
 async function loadGrammarPracticeManifest() {
-  // Try a few common paths; if none exist, show a friendly note.
+  // Ensure host exists (buttons area + practice area)
+  const host = ensureGrammarPracticeHost();
+  const listBox = $("gp-list");
+  const box = $("gp-practice");
+
+  // Helper to try JSON
   const tryJSON = async (url) => {
     const r = await fetch(url);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -554,22 +562,17 @@ async function loadGrammarPracticeManifest() {
     ["grammar_practice/manifest.json", "grammar_practice/"],
     ["grammar/practice_manifest.json", "grammar/"]
   ];
-
   for (const [m, b] of candidates) {
     try { manifest = await tryJSON(m); base = b; break; } catch {}
   }
 
-  const host = ensureGrammarPracticeHost(); // adds heading + containers
-  const listBox = $("gp-list");
-  const box = $("gp-practice");
-
   if (!manifest || !Array.isArray(manifest) || manifest.length === 0) {
-    if (listBox) listBox.innerHTML = `<div class="muted">No grammar practice sets found. (Add <code>grammar_practice/manifest.json</code> to enable.)</div>`;
+    if (listBox) listBox.innerHTML = `<div class="muted">No grammar practice sets found. (Add <code>grammar_practice/manifest.json</code>.)</div>`;
     if (box) box.innerHTML = "";
     return;
   }
 
-  // manifest is expected like: ["Set-01.csv", "Set-02.csv", ...]
+  // Render set buttons
   listBox.innerHTML = "";
   for (const file of manifest) {
     const btn = document.createElement("button");
@@ -582,11 +585,11 @@ async function loadGrammarPracticeManifest() {
   }
 }
 
+
 function ensureGrammarPracticeHost() {
   const container = $("grammar-list");
   if (!container) return null;
 
-  // If not already injected, inject host
   if (!document.getElementById("gp-host")) {
     const h3 = document.createElement("h3");
     h3.textContent = "Practice Grammar";
@@ -610,18 +613,14 @@ async function loadGrammarSet(url, setName) {
     const text = (await res.text()).replace(/^\uFEFF/, "");
     const rows = parseCSV(text).filter(r => r.some(Boolean));
 
-    // Support a few schemas:
-    // 1) [front, back, romaji?, note?]
-    // 2) [question, answer, note?]
     const out = rows.map(cols => {
       const [a="", b="", c="", d=""] = cols;
-      let front = (a||"").trim();
-      let back  = (b||"").trim();
-      let romaji= (c||"").trim();
-      let note  = (d||"").trim();
-
-      // If it looks like Q/A only, keep romaji empty
-      return { front, back, romaji, note };
+      return {
+        front:  (a||"").trim(),
+        back:   (b||"").trim(),
+        romaji: (c||"").trim(),
+        note:   (d||"").trim()
+      };
     }).filter(x => x.front && x.back);
 
     grammarSets[setName] = out;
@@ -631,59 +630,160 @@ async function loadGrammarSet(url, setName) {
 }
 
 function startGrammarPractice(setName) {
-  grammarRun.setName = setName;
-  grammarRun.index = 0;
-  grammarRun.correct = 0;
-  grammarRun.wrong = 0;
-  grammarRun.reveal = false;
-  renderGrammarPracticeCard();
-}
-
-function renderGrammarPracticeCard() {
-  const items = grammarSets[grammarRun.setName] || [];
-  const box = $("gp-practice");
-  if (!box) return;
-
-  if (items.length === 0) {
-    box.innerHTML = `<div class="muted">No items in this grammar set.</div>`;
+  const items = grammarSets[setName] || [];
+  if (!items.length) {
+    alert("This set has no items.");
     return;
   }
 
-  if (grammarRun.index >= items.length) {
+  // Build randomized order once
+  const order = Array.from({ length: items.length }, (_, i) => i);
+  shuffleArray(order);
+
+  grammarRun.setName   = setName;
+  grammarRun.items     = items;
+  grammarRun.order     = order;
+  grammarRun.idx       = 0;
+  grammarRun.correct   = 0;
+  grammarRun.wrong     = 0;
+  grammarRun.submitted = false;
+  grammarRun.revealed  = false;
+  grammarRun.userAnswer= "";
+
+  // Hide set buttons (like Vocab → Mode select transition)
+  const listBox = $("gp-list");
+  if (listBox) listBox.classList.add("hidden");
+
+  renderGrammarPracticeCard();
+}
+
+
+function renderGrammarPracticeCard() {
+  const box = $("gp-practice");
+  if (!box) return;
+
+  const total = grammarRun.items.length;
+  if (grammarRun.idx >= total) {
     finishGrammarPractice();
     return;
   }
 
-  const it = items[grammarRun.index];
-  const showBack = grammarRun.reveal;
+  const i = grammarRun.order[grammarRun.idx];
+  const it = grammarRun.items[i];
 
-  box.innerHTML = `
-    <div style="font-weight:700;margin-bottom:8px;">${grammarRun.setName}</div>
-    <div style="font-size:20px;"><b>Q:</b> ${it.front}</div>
-    <div style="margin:8px 0;${showBack?'':'display:none;'}"><b>A:</b> ${it.back}</div>
-    ${it.romaji ? `<div class="muted" style="${showBack?'':'display:none;'}">Romaji: ${it.romaji}</div>` : ``}
-    ${it.note ? `<div class="muted" style="${showBack?'':'display:none;'}">Note: ${it.note}</div>` : ``}
-
-    <div class="practice-actions" style="justify-content:space-between;margin-top:10px;">
-      <div>
-        <button id="gp-show" ${showBack ? 'disabled' : ''} onclick="gpReveal()">👁 Show Answer</button>
-      </div>
-      <div>
-        <button onclick="gpMark(false)" ${showBack ? '' : 'disabled'}>❌ I was wrong</button>
-        <button onclick="gpMark(true)" ${showBack ? '' : 'disabled'}>✅ I was right</button>
-      </div>
-    </div>
-
-    <div class="muted" style="margin-top:8px;">
-      ${grammarRun.index + 1} / ${items.length}
+  const progressPct = percent(grammarRun.idx, total);
+  const progressHTML = `
+    <div class="deck-progress grammar-progress">
+      <div class="deck-progress-bar" style="width:${progressPct}%;"></div>
+      <div class="deck-progress-text">${grammarRun.idx} / ${total} (${progressPct}%)</div>
     </div>
   `;
+
+  // When submitted: show difference & correct answer under the flashcard
+  const submittedBlock = grammarRun.submitted || grammarRun.revealed ? `
+    <div class="answer-feedback ${grammarRun.submitted ? (isAnswerCorrect(grammarRun.userAnswer, it.back) ? 'correct':'wrong') : ''}">
+      ${grammarRun.submitted
+        ? (isAnswerCorrect(grammarRun.userAnswer, it.back)
+           ? '✅ Correct!'
+           : '❌ Not quite.')
+        : '👁 Showing the answer.'}
+    </div>
+    <div class="card" style="margin-top:8px; font-size:16px; text-align:left;">
+      <div><b>Your answer:</b> ${grammarRun.submitted ? diffMarkup(grammarRun.userAnswer, it.back) : '<i>(no answer submitted)</i>'}</div>
+      <div style="margin-top:6px;"><b>Correct answer:</b> ${escapeHTML(it.back)}</div>
+      ${it.romaji ? `<div class="muted" style="margin-top:4px;">Romaji: ${escapeHTML(it.romaji)}</div>` : ``}
+      ${it.note ? `<div class="muted" style="margin-top:4px;">Note: ${escapeHTML(it.note)}</div>` : ``}
+    </div>
+  ` : ``;
+
+  box.innerHTML = `
+    ${progressHTML}
+    <div id="gp-card" class="flashcard" style="margin-top:8px;">
+      <div style="font-weight:700;margin-bottom:8px;">${escapeHTML(grammarRun.setName)}</div>
+      <div style="font-size:20px;"><b>Q:</b> ${escapeHTML(it.front)}</div>
+    </div>
+
+    <div class="answer-row">
+      <input id="gp-input" class="answer-input" placeholder="Type your answer…" autocomplete="off" />
+      <button id="gp-submit" onclick="gpSubmit()">Submit</button>
+      <button id="gp-show" onclick="gpReveal()">👁 Show Answer</button>
+      <button id="gp-next" onclick="gpNext()" ${ (grammarRun.submitted || grammarRun.revealed) ? '' : 'disabled' }>Next ▶</button>
+    </div>
+
+    ${submittedBlock}
+
+    <div class="muted" style="margin-top:8px;">
+      <button style="background:#6b7280" onclick="gpBackToSets()">⏮ Back to Sets</button>
+      <span style="margin-left:8px;">${grammarRun.idx + 1} / ${total}</span>
+    </div>
+  `;
+
+  // focus the input on render
+  const inp = $("gp-input");
+  if (inp) {
+    inp.value = "";
+    inp.focus();
+    inp.onkeydown = (e) => { if (e.key === "Enter") gpSubmit(); };
+  }
 }
 
-window.gpReveal = function () {
-  grammarRun.reveal = true;
+
+function gpSubmit() {
+  if (grammarRun.submitted || grammarRun.revealed) return; // prevent double submit
+
+  const i = grammarRun.order[grammarRun.idx];
+  const it = grammarRun.items[i];
+  const inp = $("gp-input");
+  const val = (inp?.value || "").trim();
+
+  grammarRun.userAnswer = val;
+  grammarRun.submitted  = true;
+
+  if (isAnswerCorrect(val, it.back)) grammarRun.correct++;
+  else grammarRun.wrong++;
+
+  // Enable Next after submit
+  const nextBtn = $("gp-next");
+  if (nextBtn) nextBtn.disabled = false;
+
   renderGrammarPracticeCard();
-};
+}
+
+function gpReveal() {
+  if (grammarRun.revealed) return;
+  grammarRun.revealed = true;
+
+  // Enable Next after reveal
+  const nextBtn = $("gp-next");
+  if (nextBtn) nextBtn.disabled = false;
+
+  renderGrammarPracticeCard();
+}
+
+function gpNext() {
+  grammarRun.idx++;
+  grammarRun.submitted = false;
+  grammarRun.revealed  = false;
+  grammarRun.userAnswer= "";
+  renderGrammarPracticeCard();
+}
+
+function gpBackToSets() {
+  const listBox = $("gp-list");
+  if (listBox) listBox.classList.remove("hidden");
+  const box = $("gp-practice");
+  if (box) box.innerHTML = "";
+  // Reset run state (not strictly necessary)
+  grammarRun.setName = "";
+  grammarRun.items = [];
+  grammarRun.order = [];
+  grammarRun.idx = 0;
+  grammarRun.correct = 0;
+  grammarRun.wrong = 0;
+  grammarRun.submitted = false;
+  grammarRun.revealed = false;
+  grammarRun.userAnswer = "";
+}
 
 window.gpMark = function (isRight) {
   if (isRight) grammarRun.correct++;
@@ -694,43 +794,81 @@ window.gpMark = function (isRight) {
 };
 
 async function finishGrammarPractice() {
-  const items = grammarSets[grammarRun.setName] || [];
   const box = $("gp-practice");
-  if (!box) return;
+  const total = grammarRun.items.length;
 
-  // Try to commit Grammar results if backend supports it
-  (async () => {
-    try {
-      if (window.__fb_commitSession && grammarRun.correct + grammarRun.wrong > 0) {
-        await window.__fb_commitSession({
-          deckName: grammarRun.setName,
-          mode: 'grammar',
-          correct: grammarRun.correct,
-          wrong: grammarRun.wrong,
-          skipped: 0,
-          total: grammarRun.correct + grammarRun.wrong,
-          // jp/en increments are 0 for grammar; backend will just add attempt + score if desired
-          jpEnCorrect: 0,
-          enJpCorrect: 0
-        });
-      }
-    } catch (e) {
-      console.warn('[grammar commit] skipped:', e?.message || e);
+  // Commit attempt as 'grammar' mode (no jp/en increments)
+  try {
+    if (window.__fb_commitSession && (grammarRun.correct + grammarRun.wrong) > 0) {
+      await window.__fb_commitSession({
+        deckName: grammarRun.setName,
+        mode: 'grammar',
+        correct: grammarRun.correct,
+        wrong: grammarRun.wrong,
+        skipped: 0,
+        total: grammarRun.correct + grammarRun.wrong,
+        jpEnCorrect: 0,
+        enJpCorrect: 0
+      });
     }
-  })();
+  } catch (e) {
+    console.warn('[grammar commit] skipped:', e?.message || e);
+  }
 
   box.innerHTML = `
     <div class="card">
-      <div style="font-weight:700;margin-bottom:6px;">${grammarRun.setName} — Finished</div>
+      <div style="font-weight:700;margin-bottom:6px;">${escapeHTML(grammarRun.setName)} — Finished</div>
       <div>✅ Correct: <b>${grammarRun.correct}</b></div>
       <div>❌ Wrong: <b>${grammarRun.wrong}</b></div>
       <div>📦 Total: <b>${grammarRun.correct + grammarRun.wrong}</b></div>
       <div class="practice-actions" style="margin-top:10px;">
         <button onclick="startGrammarPractice('${grammarRun.setName}')">↻ Retry</button>
+        <button onclick="gpBackToSets()">⏮ Back to Sets</button>
         <button onclick="showSection('grammar-section')">🏁 Back to Grammar</button>
       </div>
     </div>
   `;
+}
+
+/* ---------- Small helpers for the new UX ---------- */
+
+function isAnswerCorrect(user, correct) {
+  // Strict compare after trimming; tweak logic if needed
+  return (user || "").trim() === (correct || "").trim();
+}
+
+// Mark character-level mismatches in the USER answer (red)
+function diffMarkup(user, correct) {
+  const u = [...(user || "")];
+  const c = [...(correct || "")];
+  const max = Math.max(u.length, c.length);
+
+  let html = "";
+  for (let i = 0; i < max; i++) {
+    const uc = u[i] ?? "";
+    const cc = c[i] ?? "";
+
+    if (uc === "") {
+      // user missing char (show nothing)
+      continue;
+    }
+    if (uc === cc) {
+      html += escapeHTML(uc);
+    } else {
+      html += `<span style="color:#dc2626; text-decoration:underline;">${escapeHTML(uc)}</span>`;
+    }
+  }
+
+  // If user has extra trailing characters, they’re already marked red above.
+  // If correct is longer than user, we don’t insert placeholders in user line.
+
+  return html || "<i>(empty)</i>";
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, (m) => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[m]));
 }
 
 /* =========================
