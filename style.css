@@ -17,7 +17,6 @@
   --shadow: 0 10px 24px rgba(0,0,0,.12);
   --green: #16a34a;
   --red: #dc2626;
-  --warning: #fff7ed;
 }
 
 * { box-sizing: border-box; }
@@ -130,116 +129,6 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 .wrong{ background: var(--danger) !important; }
 
 /* =========================
-   Flashcard (shared by Learn, Vocab MCQ, Practice Grammar)
-   ========================= */
-.flashcard{
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  min-height: 120px;
-  padding: 18px 20px;
-  display:flex; align-items:center; justify-content:center;
-  font-size: 22px;
-  text-align: center;
-  transition: transform .18s ease, box-shadow .18s ease;
-}
-.flashcard:focus-within, .flashcard:hover{
-  transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgba(0,0,0,.14);
-}
-
-/* Learn box as a flashcard if the div ID is used instead of .flashcard class */
-#learn-box{
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  min-height: 120px;
-  padding: 18px 20px;
-  display:flex; align-items:center; justify-content:center;
-  font-size: 22px;
-  text-align: center;
-}
-
-/* Question box (MCQ) */
-#question-box{
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  min-height: 120px;
-  padding: 18px 20px;
-  display:flex; align-items:center; justify-content:center;
-  font-size: 22px;
-  text-align: center;
-}
-
-/* Learn actions alignment (Prev/Next/Show...) */
-#learn .practice-actions{
-  justify-content:center;
-}
-
-/* =========================
-   Deck progress (Practice + Grammar)
-   ========================= */
-.deck-progress{
-  margin: 8px 0 12px;
-  background: #eef2ff;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: var(--shadow);
-}
-.deck-progress-bar{
-  height: 10px;
-  width: 0%;
-  background: var(--primary);
-  transition: width .25s ease;
-}
-.deck-progress-text{
-  padding: 8px 10px;
-  font-size: 14px;
-  color: #111;
-}
-
-/* =========================
-   Practice Grammar
-   ========================= */
-.pg-files{ display:flex; flex-wrap:wrap; gap:10px; margin: 6px 0 12px; }
-.pg-files button{ border-radius: 999px; padding: 8px 14px; }
-
-.pg-input-row{
-  display:flex; gap:8px; flex-wrap:wrap;
-  margin-top: 12px;
-  align-items: center;
-}
-.pg-input{
-  flex: 1 1 260px;
-  min-width: 220px;
-  padding: 12px 14px;
-  font-size: 16px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: #fff;
-  outline: none;
-  transition: box-shadow .18s ease, border-color .18s ease, background .18s ease;
-}
-.pg-input:focus{
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 4px rgba(59,130,246,.15);
-}
-.pg-feedback{
-  margin-top: 8px;
-  font-size: 15px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: transparent;
-}
-.pg-feedback.ok{ background:#ecfdf5; color:#065f46; }
-.pg-feedback.bad{ background:#fef2f2; color:#7f1d1d; }
-
-/* =========================
    Leaderboards
    ========================= */
 #overall-leaderboard-list,
@@ -341,6 +230,101 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 .admin-row input{ flex:1; padding:8px 10px; border:1px solid var(--border); border-radius:8px; }
 
 /* =========================
+   Flashcards (Vocab Learn + Practice Grammar)
+   ========================= */
+.flashcard,
+#learn-box,
+#question-box{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 22px;
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font-size: 26px;
+  line-height: 1.35;
+}
+#learn-box{ margin: 8px 0 14px; }
+#question-box{ margin: 8px 0 10px; }
+
+/* Vocab Learn: meaning line shown beneath word (JS fills) */
+.learn-meaning{
+  margin-top: 8px;
+  font-size: 18px;
+  color: var(--muted);
+}
+
+/* Practice Grammar: answer row (type + submit / show) */
+.answer-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top: 10px;
+}
+.answer-input{
+  flex: 1 1 240px;
+  padding: 12px 14px;
+  font-size: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  outline: none;
+  transition: box-shadow .18s ease, border-color .18s ease;
+}
+.answer-input:focus{
+  border-color: #c7d2fe;
+  box-shadow: 0 0 0 4px rgba(99,102,241,.15);
+}
+
+.answer-feedback{
+  margin-top: 8px;
+  font-size: 16px;
+}
+.answer-feedback.correct{ color: #166534; }
+.answer-feedback.wrong{ color: #991b1b; }
+
+/* Tiny helper for key-hints if needed */
+.kbd{
+  display:inline-block;
+  padding: 2px 6px;
+  border:1px solid var(--border);
+  border-bottom-width: 3px;
+  border-radius:6px;
+  font-size: 12px;
+  background:#fff;
+}
+
+/* =========================
+   Progress bars
+   ========================= */
+.deck-progress{
+  margin: 8px 0 12px;
+  background: #eef2ff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.deck-progress-bar{
+  height: 10px;
+  width: 0%;
+  background: var(--primary);
+  transition: width .25s ease;
+}
+.deck-progress-text{
+  padding: 8px 10px;
+  font-size: 14px;
+  color: #111;
+}
+
+/* Optional: grammar progress variant */
+.grammar-progress{ background:#ecfeff; }
+
+/* =========================
    Responsive
    ========================= */
 @media (max-width: 900px){
@@ -362,8 +346,7 @@ button:disabled { opacity: .6; cursor: not-allowed; }
   h2{ font-size: 20px; }
   #options li{ font-size: 16px; }
   .progress-grid{ grid-template-columns: 1fr; }
-  .flashcard, #learn-box, #question-box{ font-size: 20px; min-height: 100px; }
-  .pg-input{ flex-basis: 100%; }
+  #learn-box, #question-box { font-size: 22px; }
 }
 
 @media (max-width: 480px){
@@ -371,7 +354,7 @@ button:disabled { opacity: .6; cursor: not-allowed; }
   .sidebar button{ min-width: 120px; font-size: 13px; padding: 8px; }
   button{ font-size: 14px; }
   #options li{ font-size: 15px; }
-  .flashcard, #learn-box, #question-box{ font-size: 18px; }
+  #learn-box, #question-box { font-size: 20px; }
 }
 
 /* Reserve room so content isn't covered by the fixed flyout on desktop */

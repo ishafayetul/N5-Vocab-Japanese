@@ -11,7 +11,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
 /* ------------------------------------------------------------------
-   Firebase project config
+   Firebase config
 ------------------------------------------------------------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyCP-JzANiomwA-Q5MB5fnNoz0tUjdNX3Og",
@@ -29,25 +29,25 @@ const db   = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 /* ------------------------------------------------------------------
-   Constants / helpers
+   DOM helpers / constants
 ------------------------------------------------------------------- */
-const TASK_BONUS = 10; // per task completed
+const TASK_BONUS = 10; // per task completed in Today’s leaderboard
 
-const el = (id) => document.getElementById(id);
-const gate       = el('auth-gate');
-const appRoot    = el('app-root');
-const authBtn    = el('auth-btn');
-const authErr    = el('auth-error');
+const $ = (id) => document.getElementById(id);
+const gate       = $('auth-gate');
+const appRoot    = $('app-root');
+const authBtn    = $('auth-btn');
+const authErr    = $('auth-error');
 
-const todoFlyout = el('todo-flyout');
-const todoTimer  = el('todo-timer');
-const todoList   = el('todo-list');
-const adminRow   = el('admin-row');
-const adminInput = el('admin-task-input');
-const adminAdd   = el('admin-task-add');
+const todoFlyout = $('todo-flyout');
+const todoTimer  = $('todo-timer');
+const todoList   = $('todo-list');
+const adminRow   = $('admin-row');
+const adminInput = $('admin-task-input');
+const adminAdd   = $('admin-task-add');
 
-const overallLbList = el('overall-leaderboard-list');
-const todaysLbList  = el('todays-leaderboard-list');
+const overallLbList = $('overall-leaderboard-list');
+const todaysLbList  = $('todays-leaderboard-list');
 
 const showError = (msg) => { if (authErr) { authErr.textContent = msg; authErr.style.display = 'block'; } };
 const hideError = () => { if (authErr) authErr.style.display = 'none'; };
@@ -91,12 +91,12 @@ window.__fb_fullReset = async function () {
   const attemptsSnap = await getDocs(collection(db, 'users', uid, 'attempts'));
   attemptsSnap.forEach(d => refs.push(d.ref));
 
-  // daily aggregate docs (collect day IDs to clear dailyLeaderboard)
+  // per-day aggregates (also gather day IDs to clear dailyLeaderboard)
   const dailySnap = await getDocs(collection(db, 'users', uid, 'daily'));
   const dayIds = [];
   dailySnap.forEach(d => { refs.push(d.ref); dayIds.push(d.id); });
 
-  // overall aggregate placeholder
+  // overall stats (if you keep one)
   refs.push(doc(db, 'users', uid, 'overall', 'stats'));
 
   // taskCompletion/{date}/tasks/*
@@ -107,7 +107,7 @@ window.__fb_fullReset = async function () {
     tasksSnap.forEach(t => refs.push(t.ref));
   }
 
-  // ensure we also nuke today's status mirrors
+  // also mirror: today's tasks in user space
   const today = localDateKey();
   const todaysTasks = await getDocs(collection(db, 'dailyTasks', today, 'tasks'));
   for (const t of todaysTasks.docs) {
@@ -120,7 +120,7 @@ window.__fb_fullReset = async function () {
     refs.push(doc(db, 'dailyLeaderboard', dateId, 'users', uid));
   }
 
-  // batched deletes
+  // batched deletes in chunks
   const CHUNK = 450;
   for (let i = 0; i < refs.length; i += CHUNK) {
     const batch = writeBatch(db);
@@ -224,18 +224,18 @@ onAuthStateChanged(auth, async (user) => {
         };
       }
 
-      // Start streams
+      // Streams
       startCountdown();
       if (todoList) subscribeTodayTasks(user.uid);
       if (todaysLbList) subscribeTodaysLeaderboard();
       if (overallLbList) subscribeOverallLeaderboard();
 
-      // Auto-commit any pending session left locally
+      // Commit any locally saved pending session (e.g., closed tab before commit)
       try { await __fb_commitLocalPendingSession(); } catch (e) {
         console.warn('[pending-session] commit skipped:', e?.message || e);
       }
 
-      // Let app JS continue
+      // Let UI JS continue
       window.__initAfterLogin?.();
     } else {
       appRoot?.classList.add('hidden'); if (appRoot) appRoot.style.display = 'none';
@@ -248,7 +248,7 @@ onAuthStateChanged(auth, async (user) => {
       if (unsubTasksStatus) { unsubTasksStatus(); unsubTasksStatus = null; }
     }
   } catch (err) {
-    console.error('[auth] onAuthStateChanged handler error:', err);
+    console.error('[auth] onAuthStateChanged error:', err);
     showError(err?.message || 'Unexpected error');
   }
 });
@@ -342,7 +342,7 @@ async function markTask(uid, dkey, taskId, text, done) {
     const enJp = data.enJpCorrect   || 0;
     const gram = data.grammarCorrect|| 0;
 
-    // Score formula: 1 point per correct answer across all modes + task bonus
+    // Score formula: 1 per correct (all modes) + task bonus
     const score = jpEn + enJp + gram + tasksCompleted * TASK_BONUS;
 
     tx.set(dailyRef, {
@@ -570,5 +570,5 @@ window.__fb_fetchAttempts = async function (limitN = 20) {
   return list;
 };
 
-// Expose sign out
+// Expose sign out if needed elsewhere
 window.__signOut = () => signOut(auth);

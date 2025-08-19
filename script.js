@@ -2,7 +2,9 @@
 // NOTE: All Firebase access is delegated to firebase.js helpers on window.*
 // This file contains NO direct Firebase imports.
 
-// ---------------- State ----------------
+/* =========================
+   State
+   ========================= */
 let allDecks = {};                // { deckName: [{front, back, romaji}] }
 let currentDeck = [];
 let currentDeckName = "";
@@ -13,50 +15,55 @@ let score = { correct: 0, wrong: 0, skipped: 0 };
 let mistakes = JSON.parse(localStorage.getItem("mistakes") || "[]");
 let masteryMap = JSON.parse(localStorage.getItem("masteryMap") || "{}");
 
-// Session buffer (temporary storage; committed on demand/auto via firebase.js)
+// Vocab session resume state (per sign-in session)
+let vocabRun = JSON.parse(localStorage.getItem("vocabRun") || "null") || {
+  deckName: "",
+  mode: "jp-en",
+  order: [],      // array of indices for shuffled order
+  index: 0,
+  score: { correct: 0, wrong: 0, skipped: 0 }
+};
+
+// Buffered counters for Firestore (committed in bursts via firebase.js)
 let sessionBuf = JSON.parse(localStorage.getItem("sessionBuf") || "null") || {
   deckName: "",
-  mode: "jp-en",      // 'jp-en' | 'en-jp' | 'grammar'
+  mode: "jp-en",
   correct: 0,
   wrong: 0,
   skipped: 0,
   total: 0,
   jpEnCorrect: 0,
-  enJpCorrect: 0,
-  grammarCorrect: 0   // NEW: counted for grammar typing
+  enJpCorrect: 0
 };
 
 let currentSectionId = "deck-select";
 let committing = false;
 
-// Practice Grammar state
-const pgState = {
-  files: [],          // ['grammar-lesson-01.csv', ...]
-  setName: "",        // active set file name (no path)
-  items: [],          // [{q, a}, ...]
-  order: [],          // shuffled indices
-  i: 0,               // pointer into order
+/* =========================
+   Grammar practice state
+   ========================= */
+let grammarSets = {}; // { setName: [{q, a}] }
+let grammarRun = JSON.parse(localStorage.getItem("grammarRun") || "null") || {
+  setName: "",
+  order: [],
+  index: 0,
   correct: 0,
   wrong: 0
 };
 
-// ---------------- DOM helpers ----------------
+/* =========================
+   DOM helpers
+   ========================= */
 const $ = (id) => document.getElementById(id);
 const setText = (id, txt) => { const el = $(id); if (el) el.innerText = txt; };
-function statusLine(id, msg) {
-  const s = $(id);
-  if (s) s.textContent = msg;
-  console.log(`[status:${id}]`, msg);
-}
-function persistSession() {
-  localStorage.setItem("sessionBuf", JSON.stringify(sessionBuf));
-}
-function percent(n, d) {
-  if (!d) return 0;
-  return Math.floor((n / d) * 100);
-}
+function statusLine(id, msg) { const s = $(id); if (s) s.textContent = msg; }
+function percent(n, d) { if (!d) return 0; return Math.floor((n / d) * 100); }
+function persist(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+function persistSession(){ persist("sessionBuf", sessionBuf); }
 
-// ---------------- Deck progress UI ----------------
+/* =========================
+   Deck progress (Vocab Practice)
+   ========================= */
 function updateDeckProgress() {
   const totalQs = currentDeck.length || 0;
   const done = Math.min(currentIndex, totalQs);
@@ -67,16 +74,16 @@ function updateDeckProgress() {
   if (txt) txt.textContent = `${done} / ${totalQs} (${p}%)`;
 }
 
-// ---------------- Autosave bridge ----------------
+/* =========================
+   Autosave bridge
+   ========================= */
 async function autoCommitIfNeeded(reason = "") {
-  // Only commit if firebase helper exists and we have data
   if (!window.__fb_commitSession) return;
   if (committing) return;
   if (!sessionBuf || sessionBuf.total <= 0) return;
 
   try {
     committing = true;
-    console.log("[autosave] committing buffered session", { reason, sessionBuf });
     const payload = {
       deckName: sessionBuf.deckName || 'Unknown Deck',
       mode: sessionBuf.mode,
@@ -85,40 +92,38 @@ async function autoCommitIfNeeded(reason = "") {
       skipped: sessionBuf.skipped,
       total: sessionBuf.total,
       jpEnCorrect: sessionBuf.jpEnCorrect,
-      enJpCorrect: sessionBuf.enJpCorrect,
-      // grammarCorrect is included so firebase.js can start counting it
-      grammarCorrect: sessionBuf.grammarCorrect || 0
+      enJpCorrect: sessionBuf.enJpCorrect
     };
     await window.__fb_commitSession(payload);
 
-    // Reset counts but keep deck & mode to allow continuing smoothly
+    // Reset counters but keep deck & mode for a smooth continue
     sessionBuf.correct = 0;
     sessionBuf.wrong = 0;
     sessionBuf.skipped = 0;
     sessionBuf.total = 0;
     sessionBuf.jpEnCorrect = 0;
     sessionBuf.enJpCorrect = 0;
-    sessionBuf.grammarCorrect = 0;
     persistSession();
 
-    // Refresh progress summaries
     await renderProgress();
-    console.log("[autosave] saved ✔");
   } catch (e) {
-    console.warn("[autosave] failed → keeping local buffer:", e?.message || e);
-    // Leave sessionBuf intact; firebase.js will try to commit pendingSession next launch
+    console.warn("[autosave] failed, will keep local buffer:", e?.message || e);
   } finally {
     committing = false;
   }
 }
 
-// ---------------- App lifecycle ----------------
+/* =========================
+   Lifecycle
+   ========================= */
 window.onload = () => {
   loadDeckManifest();
-  loadGrammarManifest();      // PDF lessons list (existing feature)
-  loadGrammarPracticeManifest(); // NEW: practice grammar manifests
+  loadGrammarManifest();        // PDFs
+  loadGrammarPracticeManifest(); // NEW: Practice Grammar sets
   renderProgress();
   updateScore();
+  // If there’s an active vocab run, keep the user where they are if they are already in practice
+  // (we resume explicitly when they select the deck again).
 };
 
 // Called by firebase.js when auth is ready
@@ -126,31 +131,25 @@ window.__initAfterLogin = () => {
   renderProgress();
 };
 
-// Best-effort: persist pending session for next launch auto-commit
+// best-effort safeguard
 window.addEventListener('pagehide', () => {
   try {
-    if (sessionBuf.total > 0) {
-      localStorage.setItem('pendingSession', JSON.stringify(sessionBuf));
-    }
+    if (sessionBuf.total > 0) localStorage.setItem('pendingSession', JSON.stringify(sessionBuf));
   } catch {}
 });
 window.addEventListener('beforeunload', () => {
   try {
-    if (sessionBuf.total > 0) {
-      localStorage.setItem('pendingSession', JSON.stringify(sessionBuf));
-    }
+    if (sessionBuf.total > 0) localStorage.setItem('pendingSession', JSON.stringify(sessionBuf));
   } catch {}
 });
 
-// ---------------- Section Router ----------------
+/* =========================
+   Section Router
+   ========================= */
 function showSection(id) {
   // Leaving Vocab Practice? autosave the deck's buffered progress
   if (currentSectionId === "practice" && id !== "practice") {
     autoCommitIfNeeded("leaving vocab practice");
-  }
-  // Leaving Practice Grammar? autosave as well
-  if (currentSectionId === "practice-grammar" && id !== "practice-grammar") {
-    autoCommitIfNeeded("leaving grammar practice");
   }
 
   document.querySelectorAll('.main-content main > section').forEach(sec => {
@@ -158,27 +157,23 @@ function showSection(id) {
   });
   const target = document.getElementById(id);
   if (target) target.classList.remove('hidden');
-  else console.warn('showSection: no element with id:', id);
 
   currentSectionId = id;
 
-  // Keep progress bars accurate if we re-enter
   if (id === "practice") updateDeckProgress();
-  if (id === "practice-grammar") pgUpdateProgress();
 }
-
-// Make router global for inline onclicks in HTML
 window.showSection = showSection;
 
-// ---------------- DECKS (Vocab) ----------------
+/* =========================
+   VOCAB DECKS
+   ========================= */
 async function loadDeckManifest() {
   try {
     statusLine("deck-status", "Loading decks…");
     const res = await fetch("vocab_decks/deck_manifest.json");
-    if (!res.ok) throw new Error(`HTTP ${res.status} for vocab_decks/deck_manifest.json`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
-    if (text.trim().startsWith("<")) throw new Error("Manifest is HTML (check path/case for vocab_decks/deck_manifest.json)");
-
+    if (text.trim().startsWith("<")) throw new Error("Manifest looks like HTML; check path.");
     /** @type {string[]} */
     const deckList = JSON.parse(text);
     deckList.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
@@ -186,17 +181,15 @@ async function loadDeckManifest() {
     allDecks = {};
     for (const file of deckList) {
       const name = file.replace(".csv", "");
-      const url = `vocab_decks/${file}`;
       statusLine("deck-status", `Loading ${file}…`);
-      const deck = await fetchAndParseCSV(url);
-      allDecks[name] = deck;
+      allDecks[name] = await fetchAndParseVocabCSV(`vocab_decks/${file}`);
     }
 
     renderDeckButtons();
     statusLine("deck-status", `Loaded ${Object.keys(allDecks).length} deck(s).`);
   } catch (err) {
     console.error("Failed to load decks:", err);
-    statusLine("deck-status", `Failed to load decks: ${err.message}`);
+    statusLine("deck-status", `Failed: ${err.message}`);
   }
 }
 
@@ -224,37 +217,28 @@ function parseCSV(text){
   return rows.filter(r => r.some(c => c && c.length));
 }
 
-async function fetchAndParseCSV(url) {
+async function fetchAndParseVocabCSV(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  // Strip BOM if present, keep original newlines for parseCSV
   const text = (await res.text()).replace(/^\uFEFF/, "");
-
-  // Use the robust CSV parser
   const table = parseCSV(text);
 
-  // Optional: detect and drop a header row like:
-  // ["front","back","romaji"] or ["word","meaning","romaji"]
   const looksLikeHeader = (row) => {
     if (!row || row.length === 0) return false;
     const h = row.map(c => (c || "").trim().toLowerCase());
     const set = new Set(h);
     return (
       set.has("front") || set.has("back") || set.has("romaji") ||
-      set.has("word")  || set.has("meaning") || set.has("question") || set.has("answer")
+      set.has("word")  || set.has("meaning")
     );
   };
 
   const rows = (table.length && looksLikeHeader(table[0]) ? table.slice(1) : table)
     .map(cols => {
       const [word = "", meaning = "", romaji = ""] = cols;
-      return {
-        front:  (word    || "").trim(),
-        back:   (meaning || "").trim(),
-        romaji: (romaji  || "").trim(),
-      };
+      return { front: (word||"").trim(), back:(meaning||"").trim(), romaji:(romaji||"").trim() };
     })
-    .filter(r => r.front && r.back); // require at least the two main fields
+    .filter(r => r.front && r.back);
 
   return rows;
 }
@@ -281,47 +265,76 @@ function renderDeckButtons() {
 function selectDeck(name) {
   currentDeck = allDecks[name] || [];
   currentDeckName = name;
-  currentIndex = 0;
-  if (currentDeck.length === 0) {
-    alert(`Deck "${name}" is empty or failed to load.`);
+
+  // If there is a saved run for this deck, resume it
+  const canResume = vocabRun.deckName === name && Array.isArray(vocabRun.order) && vocabRun.order.length === currentDeck.length;
+  if (canResume) {
+    mode = vocabRun.mode || "jp-en";
+    currentIndex = vocabRun.index || 0;
+    score = vocabRun.score || { correct:0, wrong:0, skipped:0 };
+    sessionBuf.deckName = name;
+    sessionBuf.mode = mode;
+    showSection("mode-select");
+    statusLine("deck-status", `Resuming ${name} at ${currentIndex + 1}/${currentDeck.length}`);
     return;
   }
-  // reset session buffer for a fresh run on this deck
+
+  // otherwise fresh run
+  currentIndex = 0;
+  score = { correct: 0, wrong: 0, skipped: 0 };
   sessionBuf = {
     deckName: name,
     mode: "jp-en",
     correct: 0, wrong: 0, skipped: 0, total: 0,
-    jpEnCorrect: 0, enJpCorrect: 0,
-    grammarCorrect: 0
+    jpEnCorrect: 0, enJpCorrect: 0
   };
   persistSession();
+  vocabRun = { deckName: name, mode: "jp-en", order: [], index: 0, score: { correct:0, wrong:0, skipped:0 } };
+  persist("vocabRun", vocabRun);
   showSection("mode-select");
 }
 
-// ---------------- PRACTICE (Vocab MCQ) ----------------
+/* =========================
+   VOCAB PRACTICE
+   ========================= */
 function startPractice(selectedMode) {
   mode = selectedMode;
   sessionBuf.mode = selectedMode;
-  currentIndex = 0;
   score = { correct: 0, wrong: 0, skipped: 0 };
-  shuffleArray(currentDeck);
+
+  // Initialize or reuse shuffled order for resume
+  const size = currentDeck.length;
+  if (!Array.isArray(vocabRun.order) || vocabRun.order.length !== size || vocabRun.deckName !== currentDeckName || vocabRun.mode !== mode) {
+    const order = Array.from({length: size}, (_, i) => i);
+    shuffleArray(order);
+    vocabRun = { deckName: currentDeckName, mode, order, index: 0, score: { correct:0, wrong:0, skipped:0 } };
+  } else {
+    // Use existing resume state
+  }
+  persist("vocabRun", vocabRun);
+
+  currentIndex = vocabRun.index || 0;
   showSection("practice");
   updateScore();
   updateDeckProgress();
   showQuestion();
 }
-window.startPractice = startPractice; // used by inline onclicks
+window.startPractice = startPractice;
+
+function mapIndex(i){
+  // translate logical position to actual item via shuffled order
+  if (!vocabRun.order || !vocabRun.order.length) return i;
+  return vocabRun.order[i] ?? i;
+}
 
 function showQuestion() {
-  const q = currentDeck[currentIndex];
+  const q = currentDeck[mapIndex(currentIndex)];
   if (!q) return nextQuestion();
 
   const front  = (mode === "jp-en") ? q.front : q.back;
   const answer = (mode === "jp-en") ? q.back  : q.front;
   const options = generateOptions(answer);
 
-  const qb = $("question-box");
-  if (qb) qb.className = "flashcard"; // visually consistent if CSS present
   setText("question-box", front);
   setText("extra-info", "");
   const optionsList = $("options");
@@ -343,8 +356,7 @@ function generateOptions(correct) {
   const unique = [...new Set(pool.filter((opt) => opt !== correct))];
   shuffleArray(unique);
   const distractors = unique.slice(0, 3);
-  const options = [correct, ...distractors];
-  return shuffleArray(options);
+  return shuffleArray([correct, ...distractors]);
 }
 
 function checkAnswer(selected, correct, wordObj) {
@@ -358,51 +370,50 @@ function checkAnswer(selected, correct, wordObj) {
 
   if (selected === correct) {
     score.correct++;
+    vocabRun.score.correct++;
     sessionBuf.correct++;
     sessionBuf.total++;
-    if (mode === 'jp-en') sessionBuf.jpEnCorrect++;
-    else sessionBuf.enJpCorrect++;
+    if (mode === 'jp-en') sessionBuf.jpEnCorrect++; else sessionBuf.enJpCorrect++;
 
     masteryMap[key] = (masteryMap[key] || 0) + 1;
     if (masteryMap[key] >= 5) {
-      mistakes = mistakes.filter(
-        (m) => m.front !== wordObj.front || m.back !== wordObj.back
-      );
+      mistakes = mistakes.filter(m => m.front !== wordObj.front || m.back !== wordObj.back);
     }
   } else {
     score.wrong++;
+    vocabRun.score.wrong++;
     sessionBuf.wrong++;
     sessionBuf.total++;
-
     masteryMap[key] = 0;
     mistakes.push(wordObj);
   }
 
-  localStorage.setItem("mistakes", JSON.stringify(mistakes));
-  localStorage.setItem("masteryMap", JSON.stringify(masteryMap));
+  persist("mistakes", mistakes);
+  persist("masteryMap", masteryMap);
   persistSession();
+  persist("vocabRun", vocabRun);
   updateScore();
-  setTimeout(() => {
-    nextQuestion();
-    updateDeckProgress();
-  }, 600);
+
+  setTimeout(() => { nextQuestion(); updateDeckProgress(); }, 600);
 }
 
 function skipQuestion() {
-  const wordObj = currentDeck[currentIndex];
+  const wordObj = currentDeck[mapIndex(currentIndex)];
   if (!wordObj) return;
-  const key = wordObj.front + "|" + wordObj.back;
 
   score.skipped++;
+  vocabRun.score.skipped++;
   sessionBuf.skipped++;
   sessionBuf.total++;
 
+  const key = wordObj.front + "|" + wordObj.back;
   masteryMap[key] = 0;
   mistakes.push(wordObj);
 
-  localStorage.setItem("mistakes", JSON.stringify(mistakes));
-  localStorage.setItem("masteryMap", JSON.stringify(masteryMap));
+  persist("mistakes", mistakes);
+  persist("masteryMap", masteryMap);
   persistSession();
+  persist("vocabRun", vocabRun);
   updateScore();
   nextQuestion();
   updateDeckProgress();
@@ -411,9 +422,14 @@ window.skipQuestion = skipQuestion;
 
 function nextQuestion() {
   currentIndex++;
+  vocabRun.index = currentIndex;
+  persist("vocabRun", vocabRun);
+
   if (currentIndex >= currentDeck.length) {
-    // Finished the deck → navigate to Vocab; autosave happens via showSection()
     alert(`Finished! ✅ ${score.correct} ❌ ${score.wrong} ➖ ${score.skipped}\nSaving your progress…`);
+    // clear this run so next time starts fresh unless reselected
+    vocabRun = { deckName: "", mode: "jp-en", order: [], index: 0, score: {correct:0,wrong:0,skipped:0} };
+    persist("vocabRun", vocabRun);
     showSection("deck-select");
   } else {
     showQuestion();
@@ -426,67 +442,86 @@ function updateScore() {
   setText("skipped", String(score.skipped));
 }
 
-// ---------------- LEARN mode (Flashcard + Prev/Next + Show buttons) ----------------
+/* =========================
+   VOCAB LEARN mode (modified)
+   - Show word big
+   - Show meaning under it
+   - Romaji toggle button (as requested)
+   ========================= */
 function startLearnMode() {
-  currentIndex = 0;
+  currentIndex = vocabRun.index && vocabRun.deckName === currentDeckName ? vocabRun.index : 0;
   if (!currentDeck.length) return alert("Pick a deck first!");
   showSection("learn");
-  showLearnCard();
+  renderLearnCard();
 }
 window.startLearnMode = startLearnMode;
 
-function showLearnCard() {
-  const word = currentDeck[currentIndex];
-  if (!word) return;
-
+function renderLearnCard() {
   const box = $("learn-box");
-  if (box) {
-    // flashcard-like render (text only; CSS in style.css can style .flashcard)
-    box.className = "flashcard";
-    box.textContent = (word.front || "—");
-  }
+  const word = currentDeck[mapIndex(currentIndex)] || currentDeck[currentIndex];
+  if (!word || !box) return;
 
-  // wipe any extra display area if present
-  const extra = $("learn-extra");
-  if (extra) extra.textContent = "";
+  box.innerHTML = `
+    <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--shadow);max-width:680px;">
+      <div style="font-size:28px;font-weight:800;margin-bottom:10px">${word.front}</div>
+      <div style="font-size:18px;color:#333;margin-bottom:8px">${word.back}</div>
+      <div id="learn-romaji" class="muted" style="display:none;margin-top:4px;"></div>
+      <div style="margin-top:12px;">
+        <button id="btn-learn-romaji">👁 Show Romaji</button>
+        <button id="btn-learn-prev">◀ Prev</button>
+        <button id="btn-learn-next">Next ▶</button>
+      </div>
+    </div>
+  `;
+
+  const romajiDiv = $("learn-romaji");
+  const btnR = $("btn-learn-romaji");
+  btnR.onclick = () => {
+    if (!romajiDiv) return;
+    if (romajiDiv.style.display === "none") {
+      romajiDiv.textContent = word.romaji || "(no romaji)";
+      romajiDiv.style.display = "block";
+      btnR.textContent = "🙈 Hide Romaji";
+    } else {
+      romajiDiv.style.display = "none";
+      btnR.textContent = "👁 Show Romaji";
+    }
+  };
+
+  $("btn-learn-prev").onclick = () => {
+    if (currentIndex > 0) { currentIndex--; vocabRun.index = currentIndex; persist("vocabRun", vocabRun); renderLearnCard(); }
+  };
+  $("btn-learn-next").onclick = () => nextLearn();
 }
 
 function nextLearn() {
-  if (!currentDeck.length) return;
-  currentIndex = Math.min(currentIndex + 1, currentDeck.length - 1);
-  showLearnCard();
+  currentIndex++;
+  vocabRun.index = currentIndex;
+  persist("vocabRun", vocabRun);
+  if (currentIndex >= currentDeck.length) {
+    alert("🎉 Finished learning this deck!");
+    showSection("deck-select");
+  } else {
+    renderLearnCard();
+  }
 }
 window.nextLearn = nextLearn;
 
-function prevLearn() {
-  if (!currentDeck.length) return;
-  currentIndex = Math.max(currentIndex - 1, 0);
-  showLearnCard();
-}
-window.prevLearn = prevLearn;
-
-function showLearnRomaji() {
-  const word = currentDeck[currentIndex];
-  if (!word) return;
-  const extra = $("learn-extra");
-  if (extra) extra.textContent = `Romaji: ${word.romaji || "(no romaji)"}`;
-}
-window.showLearnRomaji = showLearnRomaji;
-
-function showLearnMeaning() {
-  const word = currentDeck[currentIndex];
-  if (!word) return;
-  const extra = $("learn-extra");
-  if (extra) extra.textContent = `Meaning: ${word.back || "(no meaning)"}`;
-}
-window.showLearnMeaning = showLearnMeaning;
-
-// ---------------- MISTAKES ----------------
+/* =========================
+   MISTAKES
+   ========================= */
 function startMistakePractice() {
   if (mistakes.length === 0) return alert("No mistakes yet!");
   currentDeck = mistakes.slice();
   currentDeckName = "Mistakes";
   currentIndex = 0;
+
+  // reset vocabRun for mistakes deck
+  const order = Array.from({length: currentDeck.length}, (_, i) => i);
+  shuffleArray(order);
+  vocabRun = { deckName: "Mistakes", mode, order, index: 0, score: {correct:0,wrong:0,skipped:0} };
+  persist("vocabRun", vocabRun);
+
   showSection("practice");
   startPractice(mode);
 }
@@ -495,17 +530,18 @@ window.startMistakePractice = startMistakePractice;
 function clearMistakes() {
   if (confirm("Clear all mistake words?")) {
     mistakes = [];
-    localStorage.setItem("mistakes", JSON.stringify([]));
+    persist("mistakes", []);
     alert("Mistakes cleared.");
   }
 }
 window.clearMistakes = clearMistakes;
 
-// ---------------- GRAMMAR (PDF links; existing feature) ----------------
+/* =========================
+   GRAMMAR (PDF list, existing)
+   ========================= */
 async function loadGrammarManifest() {
   try {
     statusLine("grammar-status", "Loading grammar lessons…");
-
     let base = "grammar/";
     let list = null;
 
@@ -520,7 +556,7 @@ async function loadGrammarManifest() {
     try {
       list = await tryLoad("grammar/grammar_manifest.json");
       base = "grammar/";
-    } catch (e1) {
+    } catch {
       list = await tryLoad("grammar_manifest.json");
       base = "";
     }
@@ -529,189 +565,250 @@ async function loadGrammarManifest() {
     if (!container) return;
     container.innerHTML = "";
 
+    // PDFs at the top
+    const pdfWrap = document.createElement("div");
+    pdfWrap.style.marginBottom = "12px";
+    const pdfTitle = document.createElement("h3");
+    pdfTitle.textContent = "Grammar PDFs";
+    pdfWrap.appendChild(pdfTitle);
+
+    const btnRow = document.createElement("div");
     list.forEach((file) => {
       const btn = document.createElement("button");
       btn.textContent = file.replace(".pdf", "");
       btn.onclick = () => window.open(`${base}${file}`, "_blank");
-      container.appendChild(btn);
+      btnRow.appendChild(btn);
     });
+    pdfWrap.appendChild(btnRow);
+    container.appendChild(pdfWrap);
 
-    statusLine("grammar-status", `Loaded ${list.length} grammar file(s).`);
+    // Placeholder for Practice Grammar list will be appended by loadGrammarPracticeManifest()
+    const pgTitle = document.createElement("h3");
+    pgTitle.textContent = "Practice Grammar";
+    container.appendChild(pgTitle);
+
+    const pgHost = document.createElement("div");
+    pgHost.id = "grammar-practice-host";
+    container.appendChild(pgHost);
+
+    statusLine("grammar-status", `Loaded ${list.length} PDF file(s).`);
   } catch (err) {
     console.error("Failed to load grammar manifest:", err);
-    statusLine("grammar-status", `Failed to load grammar: ${err.message}`);
+    statusLine("grammar-status", `Failed to load PDFs: ${err.message}`);
   }
 }
 
-// ---------------- PRACTICE GRAMMAR (type the answer) ----------------
-async function loadGrammarPracticeManifest() {
-  const statusId = "pg-status";
-  try {
-    const statusEl = $(statusId);
-    if (statusEl) statusEl.textContent = "Loading practice grammar sets…";
-    // Try "/practice-grammar/manifest.csv"
-    const res = await fetch("practice-grammar/manifest.csv");
-    if (!res.ok) throw new Error(`HTTP ${res.status} for practice-grammar/manifest.csv`);
-    const text = (await res.text()).replace(/^\uFEFF/, "");
-    // Each line = filename.csv
-    const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-    pgState.files = lines;
+/* =========================
+   GRAMMAR PRACTICE (NEW)
+   - Loads /practice-grammar/manifest.csv (list of csv filenames)
+   - Each csv has question,answer (no header)
+   - Typing input; check; show answer; random order; 2s advance; progressbar
+   - Hides the set list while practicing; supports resume per session
+   ========================= */
+async function loadGrammarPracticeManifest(){
+  try{
+    const host = $("grammar-practice-host");
+    if (!host) return; // created by loadGrammarManifest
+    host.innerHTML = "Loading practice sets…";
 
-    const container = $("pg-file-buttons");
-    if (container) {
-      container.innerHTML = "";
-      lines.forEach(file => {
-        const btn = document.createElement("button");
-        btn.textContent = file.replace(/\.csv$/i, "");
-        btn.onclick = () => pgStartSet(file);
-        container.appendChild(btn);
-      });
+    const res = await fetch("/practice-grammar/manifest.csv");
+    if (!res.ok) throw new Error(`HTTP ${res.status} for /practice-grammar/manifest.csv`);
+    const raw = await res.text();
+    const lines = raw.replace(/^\uFEFF/, "").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+
+    // Load all sets’ contents (lazy on click could be done too, but small files are fine)
+    grammarSets = {};
+    for (const fname of lines) {
+      const csvUrl = `/practice-grammar/${fname}`;
+      grammarSets[fname.replace(".csv","")] = await fetchAndParseGrammarCSV(csvUrl);
     }
 
-    if (statusEl) statusEl.textContent = `Loaded ${lines.length} set(s). Choose one to start.`;
-  } catch (err) {
-    console.warn("Practice grammar manifest failed:", err);
-    const statusEl = $(statusId);
-    if (statusEl) statusEl.textContent = `Failed to load practice sets: ${err.message}`;
+    renderGrammarSetList();
+  }catch(e){
+    console.error("Grammar practice manifest failed:", e);
+    const host = $("grammar-practice-host");
+    if (host) host.textContent = `Failed to load practice sets: ${e.message}`;
   }
 }
 
-async function pgStartSet(fileName) {
-  try {
-    const statusEl = $("pg-status");
-    if (statusEl) statusEl.textContent = `Loading ${fileName}…`;
+async function fetchAndParseGrammarCSV(url){
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+  const text = (await res.text()).replace(/^\uFEFF/, "");
+  const rows = parseCSV(text).map(r => ({ q: (r[0]||"").trim(), a: (r[1]||"").trim() }))
+                             .filter(r => r.q && r.a);
+  return rows;
+}
 
-    const res = await fetch(`practice-grammar/${fileName}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status} for practice-grammar/${fileName}`);
-    const text = (await res.text()).replace(/^\uFEFF/, "");
+function renderGrammarSetList(){
+  const host = $("grammar-practice-host");
+  if (!host) return;
+  host.innerHTML = "";
 
-    // Parse as CSV without header → [question, answer]
-    const rows = parseCSV(text)
-      .map(cols => ({ q: (cols[0] || "").trim(), a: (cols[1] || "").trim() }))
-      .filter(x => x.q && x.a);
+  const listWrap = document.createElement("div");
+  listWrap.id = "gp-list";
+  Object.keys(grammarSets).forEach(setName => {
+    const btn = document.createElement("button");
+    btn.textContent = setName;
+    btn.onclick = () => startGrammarPractice(setName);
+    listWrap.appendChild(btn);
+  });
+  host.appendChild(listWrap);
 
-    if (!rows.length) throw new Error("No valid Q/A rows found.");
+  const practiceWrap = document.createElement("div");
+  practiceWrap.id = "gp-practice";
+  practiceWrap.style.display = "none";
+  host.appendChild(practiceWrap);
 
-    pgState.setName = fileName;
-    pgState.items = rows;
-    pgState.order = shuffleArray([...rows.keys()]);
-    pgState.i = 0;
-    pgState.correct = 0;
-    pgState.wrong = 0;
-
-    // Prepare session buffer for grammar
-    sessionBuf.deckName = `Grammar: ${fileName.replace(/\.csv$/i, "")}`;
-    sessionBuf.mode = "grammar";
-    persistSession();
-
-    // Show area
-    const area = $("pg-area");
-    if (area) area.classList.remove("hidden");
-
-    pgRender();
-    pgUpdateProgress();
-
-    const statusId = $("pg-status");
-    if (statusId) statusId.textContent = `Loaded ${rows.length} questions.`;
-    showSection("practice-grammar");
-  } catch (e) {
-    alert("Failed to start set: " + (e?.message || e));
+  // If there’s a resumable grammar run, offer auto-resume banner
+  if (grammarRun.setName && grammarSets[grammarRun.setName]) {
+    const note = document.createElement("p");
+    note.className = "muted";
+    note.textContent = `You have an unfinished practice: ${grammarRun.setName} (${grammarRun.index}/${grammarSets[grammarRun.setName].length}). Click the set to resume.`;
+    host.prepend(note);
   }
 }
 
-function pgRender() {
-  const idx = pgState.order[pgState.i];
-  const item = pgState.items[idx];
-  const card = $("pg-card");
-  if (card) {
-    card.className = "flashcard";
-    card.textContent = item ? item.q : "(finished)";
+function startGrammarPractice(setName){
+  const items = grammarSets[setName] || [];
+  if (items.length === 0) { alert("This set is empty."); return; }
+
+  // Resume or create a shuffled order
+  if (grammarRun.setName !== setName || !Array.isArray(grammarRun.order) || grammarRun.order.length !== items.length) {
+    const order = Array.from({length: items.length}, (_, i) => i);
+    shuffleArray(order);
+    grammarRun = { setName, order, index: 0, correct: 0, wrong: 0 };
   }
-  const input = $("pg-input");
-  if (input) {
-    input.value = "";
-    input.focus();
+  persist("grammarRun", grammarRun);
+
+  // Hide list, show practice
+  const list = $("gp-list");
+  const box = $("gp-practice");
+  if (list && box) { list.style.display = "none"; box.style.display = ""; }
+
+  renderGrammarPracticeCard();
+}
+
+function mapGrammarIndex(i){
+  if (!grammarRun.order || !grammarRun.order.length) return i;
+  return grammarRun.order[i] ?? i;
+}
+
+function renderGrammarPracticeCard(){
+  const box = $("gp-practice");
+  const items = grammarSets[grammarRun.setName] || [];
+  const n = items.length;
+  const i = grammarRun.index;
+  const item = items[mapGrammarIndex(i)];
+
+  if (!box) return;
+  if (!item) { finishGrammarPractice(); return; }
+
+  const p = percent(i, n);
+  box.innerHTML = `
+    <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--shadow);max-width:780px;">
+      <div style="font-weight:700;margin-bottom:8px">${grammarRun.setName}</div>
+
+      <div style="margin:8px 0 12px">
+        <div style="height:10px;background:#eef2ff;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <div style="width:${p}%;height:10px;background:var(--primary);transition:width .25s ease"></div>
+        </div>
+        <div class="muted" style="margin-top:6px">${i} / ${n} (${p}%)</div>
+      </div>
+
+      <div style="font-size:24px;font-weight:800;margin-bottom:12px;border:1px dashed var(--border);border-radius:12px;padding:14px;">
+        ${item.q}
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input id="gp-input" placeholder="Type your answer…" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:16px" />
+        <button id="gp-submit">Submit</button>
+        <button id="gp-skip">Skip</button>
+        <button id="gp-show">💡 Show Answer</button>
+      </div>
+
+      <div id="gp-feedback" style="margin-top:12px;font-size:16px;"></div>
+    </div>
+  `;
+
+  const input = $("gp-input");
+  const submit = $("gp-submit");
+  const skip = $("gp-skip");
+  const showBtn = $("gp-show");
+  const feedback = $("gp-feedback");
+
+  function norm(s){ return (s||"").trim().toLowerCase(); }
+
+  function lockUI(disabled=true){
+    if (input) input.disabled = disabled;
+    if (submit) submit.disabled = disabled;
+    if (skip) skip.disabled = disabled;
+    if (showBtn) showBtn.disabled = disabled;
   }
-  const fb = $("pg-feedback");
-  if (fb) fb.textContent = "";
+
+  submit.onclick = () => {
+    const user = input.value;
+    if (!user) { input.focus(); return; }
+    const ok = norm(user) === norm(item.a);
+    if (ok){
+      grammarRun.correct++;
+      feedback.innerHTML = `<span style="color:var(--green);font-weight:700">✅ Correct!</span>`;
+    } else {
+      grammarRun.wrong++;
+      feedback.innerHTML = `<span style="color:var(--red);font-weight:700">❌ Wrong.</span> <span class="muted">Correct: ${item.a}</span>`;
+    }
+    lockUI(true);
+    grammarRun.index++;
+    persist("grammarRun", grammarRun);
+    setTimeout(renderGrammarPracticeCard, 2000);
+  };
+
+  skip.onclick = () => {
+    grammarRun.index++;
+    persist("grammarRun", grammarRun);
+    renderGrammarPracticeCard();
+  };
+
+  showBtn.onclick = () => {
+    feedback.innerHTML = `<span class="muted">Answer: ${item.a}</span>`;
+    input?.focus();
+  };
+
+  input?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") submit.click();
+  });
+
+  input?.focus();
 }
 
-function pgUpdateProgress() {
-  const total = pgState.items.length || 0;
-  const done = Math.min(pgState.i, total);
-  const p = percent(done, total);
-  const bar = $("pg-progress-bar");
-  const txt = $("pg-progress-text");
-  if (bar) bar.style.width = `${p}%`;
-  if (txt) txt.textContent = `${done} / ${total} (${p}%)`;
+function finishGrammarPractice(){
+  const items = grammarSets[grammarRun.setName] || [];
+  const box = $("gp-practice");
+  if (!box) return;
+
+  box.innerHTML = `
+    <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--shadow);max-width:780px;">
+      <h3>Finished: ${grammarRun.setName}</h3>
+      <p>✅ ${grammarRun.correct} &nbsp; ❌ ${grammarRun.wrong} &nbsp; / ${items.length}</p>
+      <button id="gp-back">← Back to Sets</button>
+    </div>
+  `;
+
+  $("gp-back").onclick = () => {
+    // clear run
+    grammarRun = { setName:"", order:[], index:0, correct:0, wrong:0 };
+    persist("grammarRun", grammarRun);
+    const list = $("gp-list");
+    if (list) list.style.display = "";
+    if (box) box.style.display = "none";
+  };
 }
 
-function normalizeAnswer(s) {
-  return (s || "")
-    .toLowerCase()
-    .normalize("NFKC")
-    .replace(/\s+/g, " ")
-    .replace(/[。、，,。!！?？;；:：]/g, "")
-    .trim();
-}
-
-function pgSubmit() {
-  const idx = pgState.order[pgState.i];
-  const item = pgState.items[idx];
-  if (!item) return;
-
-  const input = $("pg-input");
-  const fb = $("pg-feedback");
-  const userAns = input ? input.value : "";
-  const ok = normalizeAnswer(userAns) === normalizeAnswer(item.a);
-
-  if (ok) {
-    if (fb) fb.textContent = "✅ Correct!";
-    pgState.correct++;
-    sessionBuf.correct++;
-    sessionBuf.total++;
-    sessionBuf.grammarCorrect = (sessionBuf.grammarCorrect || 0) + 1;
-  } else {
-    if (fb) fb.textContent = `❌ Wrong.`;
-    pgState.wrong++;
-    sessionBuf.wrong++;
-    sessionBuf.total++;
-  }
-  persistSession();
-
-  // Wait 2s, then next
-  setTimeout(pgNext, 2000);
-}
-window.pgSubmit = pgSubmit;
-
-function pgShowAnswer() {
-  const idx = pgState.order[pgState.i];
-  const item = pgState.items[idx];
-  const fb = $("pg-feedback");
-  if (fb && item) fb.textContent = `💡 Answer: ${item.a}`;
-}
-window.pgShowAnswer = pgShowAnswer;
-
-function pgNext() {
-  pgState.i++;
-  pgUpdateProgress();
-  if (pgState.i >= pgState.items.length) {
-    alert(`Finished! ✅ ${pgState.correct} ❌ ${pgState.wrong}\nSaving your progress…`);
-    // Auto-save this grammar session
-    autoCommitIfNeeded("finish grammar set");
-    // Return to Practice Grammar landing
-    const area = $("pg-area");
-    if (area) area.classList.add("hidden");
-    showSection("practice-grammar");
-  } else {
-    pgRender();
-  }
-}
-
-// ---------------- PROGRESS (reads via firebase.js) ----------------
+/* =========================
+   PROGRESS (reads via firebase.js)
+   ========================= */
 async function renderProgress() {
-  if (!window.__fb_fetchAttempts) return; // firebase.js exposes this
-
+  if (!window.__fb_fetchAttempts) return;
   try {
     const attempts = await window.__fb_fetchAttempts(50);
     const tbody = $("progress-table")?.querySelector("tbody");
@@ -752,9 +849,7 @@ async function renderProgress() {
           <div>✅ ${last.correct || 0} | ❌ ${last.wrong || 0} | ➖ ${last.skipped || 0}</div>
           <div class="muted">${new Date(last.createdAt).toLocaleString()}</div>
         `;
-      } else {
-        lastBox.textContent = "No attempts yet.";
-      }
+      } else lastBox.textContent = "No attempts yet.";
     }
 
     if (prevBox) {
@@ -764,9 +859,7 @@ async function renderProgress() {
           <div>✅ ${prev.correct || 0} | ❌ ${prev.wrong || 0} | ➖ ${prev.skipped || 0}</div>
           <div class="muted">${new Date(prev.createdAt).toLocaleString()}</div>
         `;
-      } else {
-        prevBox.textContent = "—";
-      }
+      } else prevBox.textContent = "—";
     }
 
     if (deltaBox) {
@@ -775,11 +868,8 @@ async function renderProgress() {
         const cls = d >= 0 ? "delta-up" : "delta-down";
         const sign = d > 0 ? "+" : (d < 0 ? "" : "±");
         deltaBox.innerHTML = `<span class="${cls}">${sign}${d} correct vs previous (same deck)</span>`;
-      } else if (last && !prev) {
-        deltaBox.textContent = "No previous attempt for this deck.";
-      } else {
-        deltaBox.textContent = "—";
-      }
+      } else if (last && !prev) deltaBox.textContent = "No previous attempt for this deck.";
+      else deltaBox.textContent = "—";
     }
   } catch (e) {
     console.warn("renderProgress failed:", e);
@@ -787,7 +877,9 @@ async function renderProgress() {
 }
 window.renderProgress = renderProgress;
 
-// ---------------- Utilities ----------------
+/* =========================
+   Utilities
+   ========================= */
 function shuffleArray(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -797,7 +889,7 @@ function shuffleArray(arr) {
 }
 
 function showRomaji() {
-  const card = currentDeck[currentIndex];
+  const card = currentDeck[mapIndex(currentIndex)];
   if (!card) return;
   const romaji = card.romaji || "(no romaji)";
   setText("extra-info", `Romaji: ${romaji}`);
@@ -805,21 +897,21 @@ function showRomaji() {
 window.showRomaji = showRomaji;
 
 function showMeaning() {
-  const card = currentDeck[currentIndex];
+  const card = currentDeck[mapIndex(currentIndex)];
   if (!card) return;
   const correct = mode === "jp-en" ? card.back : card.front;
   setText("extra-info", `Meaning: ${correct}`);
 }
 window.showMeaning = showMeaning;
 
-// ---------------- Navbar actions ----------------
+/* =========================
+   Navbar actions
+   ========================= */
 window.saveCurrentScore = async function () {
   try {
     await autoCommitIfNeeded("manual save");
     alert('Progress saved ✅');
-  } catch {
-    // autoCommitIfNeeded already logs/handles errors
-  }
+  } catch {}
 };
 
 window.resetSite = async function () {
@@ -830,7 +922,6 @@ window.resetSite = async function () {
   if (btn) btn.disabled = true;
 
   try {
-    // Delegate to firebase.js where auth/db are available
     if (!window.__fb_fullReset) throw new Error("__fb_fullReset is not available.");
     await window.__fb_fullReset();
 
@@ -839,6 +930,8 @@ window.resetSite = async function () {
     localStorage.removeItem("masteryMap");
     localStorage.removeItem("sessionBuf");
     localStorage.removeItem("pendingSession");
+    localStorage.removeItem("vocabRun");
+    localStorage.removeItem("grammarRun");
 
     alert("✅ All progress erased. You are still signed in.");
     location.reload();

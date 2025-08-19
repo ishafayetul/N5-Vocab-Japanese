@@ -23,13 +23,13 @@
     <nav class="sidebar">
       <h2>📘 Menu</h2>
       <button onclick="showSection('deck-select')">📚 Vocab</button>
-      <button onclick="showSection('grammar-section')">📖 Grammar</button>
-      <button onclick="showSection('practice-grammar')">✍️ Practice Grammar</button>
+      <button onclick="showSection('grammar-practice-select')">📝 Practice Grammar</button>
+      <button onclick="showSection('grammar-section')">📖 Grammar (PDFs)</button>
       <button onclick="showSection('progress-section')">📈 Progress</button>
       <button onclick="showSection('overall-leaderboard-section')">🏆 Overall Leaderboard</button>
       <button onclick="showSection('todays-leaderboard-section')">📅 Today’s Leaderboard</button>
       <button onclick="showSection('mistakes-section')">❗ Mistakes</button>
-      <!-- NEW: Save Progress moved to navbar -->
+      <!-- Save Progress -->
       <button onclick="saveCurrentScore()">💾 Save Progress</button>
       <button onclick="resetSite()">🔁 Reset</button>
     </nav>
@@ -74,27 +74,29 @@
           <button onclick="startPractice('en-jp')">English → Japanese</button>
         </section>
 
-        <!-- Learn (flashcard + prev/next + toggles) -->
+        <!-- Learn (flashcard with meaning shown, romaji toggle; prev/next controls) -->
         <section id="learn" class="hidden">
-          <div class="flashcard" id="learn-box"></div>
-          <div class="practice-actions">
-            <button onclick="prevLearn()">⬅️ Previous</button>
-            <button onclick="nextLearn()">➡️ Next</button>
-            <button onclick="showLearnRomaji()">👁 Show Romaji</button>
-            <button onclick="showLearnMeaning()">💡 Show Meaning</button>
+          <div id="learn-card" class="flashcard">
+            <div id="learn-word" class="learn-word"></div>
+            <div id="learn-meaning" class="learn-meaning"></div>
+            <div id="learn-romaji" class="learn-romaji muted hidden"></div>
           </div>
-          <div id="learn-extra" class="muted" style="margin-top:8px;"></div>
+          <div class="practice-actions">
+            <button onclick="toggleLearnRomaji()" id="btn-learn-romaji">👁 Show Romaji</button>
+            <div style="flex:1"></div>
+            <button onclick="prevLearn()" id="btn-learn-prev">⬅️ Previous</button>
+            <button onclick="nextLearn()" id="btn-learn-next">➡️ Next</button>
+          </div>
         </section>
 
-        <!-- Practice (MCQ) -->
+        <!-- Practice (Vocab MCQ) -->
         <section id="practice" class="hidden">
-          <!-- Deck progress -->
           <div id="deck-progress" class="deck-progress">
             <div class="deck-progress-bar" id="deck-progress-bar"></div>
             <div class="deck-progress-text" id="deck-progress-text">0 / 0 (0%)</div>
           </div>
 
-          <div class="flashcard" id="question-box"></div>
+          <div id="question-box" class="flashcard"></div>
           <ul id="options"></ul>
           <div class="practice-actions">
             <button onclick="skipQuestion()">Skip</button>
@@ -104,36 +106,40 @@
           <div id="extra-info" style="margin-top: 10px; font-size: 16px;"></div>
         </section>
 
-        <!-- Grammar (PDF list) -->
-        <section id="grammar-section" class="hidden">
-          <h2>Grammar Lessons</h2>
-          <p id="grammar-status" class="muted" style="margin:8px 0"></p>
-          <div id="grammar-list"></div>
+        <!-- Practice Grammar: set chooser -->
+        <section id="grammar-practice-select" class="hidden">
+          <h2>Practice Grammar</h2>
+          <p id="pg-status" class="muted" style="margin:8px 0"></p>
+          <div id="pg-set-buttons"></div>
         </section>
 
-        <!-- ✍️ Practice Grammar (type the answer) -->
-        <section id="practice-grammar" class="hidden">
-          <h2>Practice Grammar</h2>
-          <p id="pg-status" class="muted" style="margin:8px 0">Loading practice sets…</p>
-          <div id="pg-file-buttons" class="pg-files"></div>
-
-          <!-- Shown when a set is started -->
-          <div id="pg-area" class="hidden">
-            <div id="pg-progress" class="deck-progress">
-              <div class="deck-progress-bar" id="pg-progress-bar"></div>
-              <div class="deck-progress-text" id="pg-progress-text">0 / 0 (0%)</div>
-            </div>
-
-            <div class="flashcard" id="pg-card"></div>
-
-            <div class="pg-input-row">
-              <input id="pg-input" class="pg-input" placeholder="Type your answer…" />
-              <button id="pg-submit" onclick="pgSubmit()">Submit</button>
-              <button id="pg-show-answer" onclick="pgShowAnswer()">Show Answer</button>
-            </div>
-
-            <div id="pg-feedback" class="pg-feedback muted"></div>
+        <!-- Practice Grammar: play -->
+        <section id="grammar-practice" class="hidden">
+          <div id="pg-progress" class="deck-progress">
+            <div class="deck-progress-bar" id="pg-progress-bar"></div>
+            <div class="deck-progress-text" id="pg-progress-text">0 / 0 (0%)</div>
           </div>
+
+          <div id="pg-card" class="flashcard"></div>
+
+          <div class="answer-row">
+            <input id="pg-input" class="answer-input" placeholder="Type your answer…" autocomplete="off" />
+            <button id="pg-submit">Submit</button>
+            <button id="pg-show-answer" class="secondary">Show Answer</button>
+          </div>
+
+          <div id="pg-feedback" class="muted" style="min-height: 22px;"></div>
+
+          <div class="practice-actions">
+            <button id="pg-exit" class="secondary">← Back to Sets</button>
+          </div>
+        </section>
+
+        <!-- Grammar (PDFs) -->
+        <section id="grammar-section" class="hidden">
+          <h2>Grammar Lessons (PDF)</h2>
+          <p id="grammar-status" class="muted" style="margin:8px 0"></p>
+          <div id="grammar-list"></div>
         </section>
 
         <!-- Progress -->
