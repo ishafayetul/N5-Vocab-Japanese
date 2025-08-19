@@ -602,7 +602,7 @@ async function loadGrammarManifest() {
    GRAMMAR PRACTICE (NEW)
    - Loads /practice-grammar/manifest.csv (list of csv filenames)
    - Each csv has question,answer (no header)
-   - Typing input; check; show answer; random order; 2s advance; progressbar
+   - Typing input; check; show answer; random order; manual Next; progressbar
    - Hides the set list while practicing; supports resume per session
    ========================= */
 async function loadGrammarPracticeManifest(){
@@ -616,7 +616,7 @@ async function loadGrammarPracticeManifest(){
     const raw = await res.text();
     const lines = raw.replace(/^\uFEFF/, "").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
 
-    // Load all sets’ contents (lazy on click could be done too, but small files are fine)
+    // Load all sets’ contents
     grammarSets = {};
     for (const fname of lines) {
       const csvUrl = `/practice-grammar/${fname}`;
@@ -660,7 +660,7 @@ function renderGrammarSetList(){
   practiceWrap.style.display = "none";
   host.appendChild(practiceWrap);
 
-  // If there’s a resumable grammar run, offer auto-resume banner
+  // If there’s a resumable grammar run, show a tiny banner
   if (grammarRun.setName && grammarSets[grammarRun.setName]) {
     const note = document.createElement("p");
     note.className = "muted";
@@ -694,6 +694,36 @@ function mapGrammarIndex(i){
   return grammarRun.order[i] ?? i;
 }
 
+// --- helpers for mismatch highlighting ---
+function escapeHTML(s=""){
+  return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function highlightMismatch(correctRaw, userRaw){
+  // highlight, in the CORRECT answer, the segment that doesn't match the user's answer
+  const a = (correctRaw || "").trim();
+  const b = (userRaw || "").trim();
+  const al = a.toLowerCase(), bl = b.toLowerCase();
+
+  // common prefix
+  let i = 0;
+  while (i < al.length && i < bl.length && al[i] === bl[i]) i++;
+
+  // common suffix
+  let ai = al.length - 1, bi = bl.length - 1;
+  while (ai >= i && bi >= i && al[ai] === bl[bi]) { ai--; bi--; }
+
+  const pre = escapeHTML(a.slice(0, i));
+  const mid = escapeHTML(a.slice(i, ai + 1));
+  const suf = escapeHTML(a.slice(ai + 1));
+
+  // If everything matches, no red highlight
+  if (i >= a.length) return escapeHTML(a);
+
+  return `${pre}<span style="color:var(--red);">${mid}</span>${suf}`;
+}
+function enableNav(btn, on=true){ if (btn) btn.disabled = !on; }
+
+// --- updated Practice Grammar card (no auto-advance; Next button flow) ---
 function renderGrammarPracticeCard(){
   const box = $("gp-practice");
   const items = grammarSets[grammarRun.setName] || [];
@@ -718,73 +748,116 @@ function renderGrammarPracticeCard(){
 
       <div style="font-size:24px;font-weight:800;margin-bottom:12px;border:1px dashed var(--border);border-radius:12px;padding:14px;">
         ${item.q}
+        <div id="gp-answer" class="answer-feedback" style="margin-top:12px;"></div>
       </div>
 
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <input id="gp-input" placeholder="Type your answer…" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:16px" />
         <button id="gp-submit">Submit</button>
-        <button id="gp-skip">Skip</button>
         <button id="gp-show">💡 Show Answer</button>
+        <button id="gp-next" class="secondary" disabled>Next ➡️</button>
+        <button id="gp-skip" class="secondary">Skip</button>
       </div>
 
       <div id="gp-feedback" style="margin-top:12px;font-size:16px;"></div>
     </div>
   `;
 
-  const input = $("gp-input");
-  const submit = $("gp-submit");
-  const skip = $("gp-skip");
-  const showBtn = $("gp-show");
+  const input    = $("gp-input");
+  const submit   = $("gp-submit");
+  const showBtn  = $("gp-show");
+  const nextBtn  = $("gp-next");
+  const skip     = $("gp-skip");
   const feedback = $("gp-feedback");
+  const ansBox   = $("gp-answer");
 
   function norm(s){ return (s||"").trim().toLowerCase(); }
-
   function lockUI(disabled=true){
     if (input) input.disabled = disabled;
     if (submit) submit.disabled = disabled;
-    if (skip) skip.disabled = disabled;
     if (showBtn) showBtn.disabled = disabled;
+    // Next stays enabled after submit/show
   }
 
+  // SUBMIT: check, show correct answer under the question, highlight mismatches, then enable Next
   submit.onclick = () => {
     const user = input.value;
     if (!user) { input.focus(); return; }
     const ok = norm(user) === norm(item.a);
-    if (ok){
-      grammarRun.correct++;
-      feedback.innerHTML = `<span style="color:var(--green);font-weight:700">✅ Correct!</span>`;
-    } else {
-      grammarRun.wrong++;
-      feedback.innerHTML = `<span style="color:var(--red);font-weight:700">❌ Wrong.</span> <span class="muted">Correct: ${item.a}</span>`;
-    }
-    lockUI(true);
-    grammarRun.index++;
+
+    const shown = ok
+      ? `<span style="color:var(--green);font-weight:700">✅ Correct!</span>`
+      : `<span style="color:var(--red);font-weight:700">❌ Wrong.</span>`;
+
+    feedback.innerHTML = shown;
+    // Show the correct answer below the question with mismatch highlighted
+    const markup = highlightMismatch(item.a, user);
+    ansBox.innerHTML = `
+      <div class="muted" style="margin-bottom:6px">Correct answer:</div>
+      <div style="font-weight:700">${markup}</div>
+      <div class="muted" style="margin-top:6px">Your answer: ${escapeHTML(user)}</div>
+    `;
+
+    if (ok) grammarRun.correct++; else grammarRun.wrong++;
     persist("grammarRun", grammarRun);
-    setTimeout(renderGrammarPracticeCard, 2000);
+
+    lockUI(true);
+    enableNav(nextBtn, true);   // user advances manually
   };
 
+  // SHOW ANSWER: reveal it (no scoring), allow Next
+  showBtn.onclick = () => {
+    ansBox.innerHTML = `
+      <div class="muted" style="margin-bottom:6px">Correct answer:</div>
+      <div style="font-weight:700">${escapeHTML(item.a)}</div>
+    `;
+    feedback.textContent = "";
+    lockUI(true);
+    enableNav(nextBtn, true);
+  };
+
+  // NEXT: move to the next question
+  nextBtn.onclick = () => {
+    grammarRun.index++;
+    persist("grammarRun", grammarRun);
+    renderGrammarPracticeCard();
+  };
+
+  // SKIP: move to next immediately; no scoring
   skip.onclick = () => {
     grammarRun.index++;
     persist("grammarRun", grammarRun);
     renderGrammarPracticeCard();
   };
 
-  showBtn.onclick = () => {
-    feedback.innerHTML = `<span class="muted">Answer: ${item.a}</span>`;
-    input?.focus();
-  };
-
   input?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") submit.click();
   });
-
   input?.focus();
 }
 
-function finishGrammarPractice(){
+
+async function finishGrammarPractice(){
   const items = grammarSets[grammarRun.setName] || [];
   const box = $("gp-practice");
   if (!box) return;
+
+  // Commit Grammar results once (only if something was answered)
+  try {
+    if (window.__fb_commitSession && (grammarRun.correct + grammarRun.wrong) > 0) {
+      await window.__fb_commitSession({
+        deckName: grammarRun.setName || 'Grammar Practice',
+        mode: 'grammar',
+        correct: grammarRun.correct,
+        wrong: grammarRun.wrong,
+        skipped: 0,
+        total: grammarRun.correct + grammarRun.wrong,
+        grammarCorrect: grammarRun.correct   // counted in daily + leaderboard
+      });
+    }
+  } catch (e) {
+    console.warn('[grammar commit] skipped:', e?.message || e);
+  }
 
   box.innerHTML = `
     <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--shadow);max-width:780px;">
@@ -795,7 +868,6 @@ function finishGrammarPractice(){
   `;
 
   $("gp-back").onclick = () => {
-    // clear run
     grammarRun = { setName:"", order:[], index:0, correct:0, wrong:0 };
     persist("grammarRun", grammarRun);
     const list = $("gp-list");
@@ -803,6 +875,7 @@ function finishGrammarPractice(){
     if (box) box.style.display = "none";
   };
 }
+
 
 /* =========================
    PROGRESS (reads via firebase.js)
