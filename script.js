@@ -631,26 +631,62 @@ function normalizeAnswer(s) {
 }
 
 function highlightDiff(userRaw, correctRaw) {
-  const u = userRaw || "";
-  const c = correctRaw || "";
-  // longest common prefix
-  let i = 0;
-  while (i < u.length && i < c.length && u[i] === c[i]) i++;
-  // longest common suffix (after prefix)
-  let j = 0;
-  while (j < (u.length - i) && j < (c.length - i) && u[u.length - 1 - j] === c[c.length - 1 - j]) j++;
+  // Work at Unicode codepoint level
+  const uArr = [...(userRaw || "")];
+  const cArr = [...(correctRaw || "")];
+  let i = 0, j = 0;
+  let out = "";
 
-  const prefix = u.slice(0, i);
-  const umid   = u.slice(i, u.length - j);
-  const suffix = u.slice(u.length - j);
+  const esc = (s) => (s || "").replace(/[&<>"']/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[ch]));
 
-  // If user missing middle entirely (shorter than correct), show a marker
-  const midHTML = umid.length
-    ? `<span class="diff-wrong">${escapeHtml(umid)}</span>`
-    : `<span class="diff-wrong">(missing)</span>`;
+  while (i < uArr.length || j < cArr.length) {
+    const uc = uArr[i];
+    const cc = cArr[j];
 
-  return `${escapeHtml(prefix)}${midHTML}${escapeHtml(suffix)}`;
+    // match
+    if (i < uArr.length && j < cArr.length && uc === cc) {
+      out += esc(uc);
+      i++; j++;
+      continue;
+    }
+
+    // lookahead to decide: extra typed vs missing char
+    const uNextMatches = (i + 1 < uArr.length) && (uArr[i + 1] === cc);
+    const cNextMatches = (j + 1 < cArr.length) && (cArr[j + 1] === uc);
+
+    // user typed an extra char not in this position → show that char in red
+    if (i < uArr.length && (j >= cArr.length || uNextMatches)) {
+      out += `<span class="diff-wrong">${esc(uc)}</span>`;
+      i++;
+      continue;
+    }
+
+    // user is missing a char from the correct answer → insert that char in red
+    if (j < cArr.length && (i >= uArr.length || cNextMatches)) {
+      out += `<span class="diff-wrong">${esc(cc)}</span>`;
+      j++;
+      continue;
+    }
+
+    // substitution (both differ) → mark the user's char red, advance both
+    if (i < uArr.length && j < cArr.length) {
+      out += `<span class="diff-wrong">${esc(uc)}</span>`;
+      i++; j++;
+      continue;
+    }
+
+    // leftovers
+    if (i < uArr.length) {
+      out += `<span class="diff-wrong">${esc(uArr[i++])}</span>`;
+    } else if (j < cArr.length) {
+      out += `<span class="diff-wrong">${esc(cArr[j++])}</span>`;
+    }
+  }
+  return out;
 }
+
 
 function escapeHtml(s) {
   return (s || "").replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
