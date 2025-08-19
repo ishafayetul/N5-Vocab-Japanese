@@ -31,7 +31,8 @@ let currentSectionId = "deck-select";
 let committing = false;
 
 // State containers
-const grammarSets = grammarSets || {}; // keep if already defined above
+// Grammar practice decks loaded from CSVs
+const grammarSets = {};
 const grammarRun = {
   setName: "",
   items: [],         // [{front, back, romaji?, note?}]
@@ -590,20 +591,20 @@ function ensureGrammarPracticeHost() {
   const container = $("grammar-list");
   if (!container) return null;
 
-  if (!document.getElementById("gp-host")) {
+  if (!document.getElementById("grammar-practice-host")) {
     const h3 = document.createElement("h3");
     h3.textContent = "Practice Grammar";
     container.appendChild(h3);
 
     const host = document.createElement("div");
-    host.id = "gp-host";
+    host.id = "grammar-practice-host";
     host.innerHTML = `
       <div id="gp-list" style="margin-bottom:10px;"></div>
       <div id="gp-practice" class="card"></div>
     `;
     container.appendChild(host);
   }
-  return $("gp-host");
+  return $("grammar-practice-host");
 }
 
 async function loadGrammarSet(url, setName) {
@@ -761,11 +762,18 @@ function gpReveal() {
 }
 
 function gpNext() {
-  grammarRun.idx++;
-  grammarRun.submitted = false;
-  grammarRun.revealed  = false;
-  grammarRun.userAnswer= "";
-  renderGrammarPracticeCard();
+  // Disable the next button while waiting
+  const nextBtn = $("gp-next");
+  if (nextBtn) nextBtn.disabled = true;
+
+  // Small delay so the user can review the answer before moving on
+  setTimeout(() => {
+    grammarRun.idx++;
+    grammarRun.submitted = false;
+    grammarRun.revealed  = false;
+    grammarRun.userAnswer= "";
+    renderGrammarPracticeCard();
+  }, 2000);
 }
 
 function gpBackToSets() {
@@ -788,8 +796,10 @@ function gpBackToSets() {
 window.gpMark = function (isRight) {
   if (isRight) grammarRun.correct++;
   else grammarRun.wrong++;
-  grammarRun.index++;
-  grammarRun.reveal = false;
+  grammarRun.idx++;
+  grammarRun.submitted = false;
+  grammarRun.revealed = false;
+  grammarRun.userAnswer = "";
   renderGrammarPracticeCard();
 };
 
