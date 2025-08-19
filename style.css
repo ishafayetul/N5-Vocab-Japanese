@@ -382,5 +382,5 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 .diff-wrong { color: var(--red); font-weight: 600; }
 
 /* Optional: nicer spacing inside Learn card */
-.learn-word { font-size: 5em; margin-bottom: 6px; }
+.learn-word { font-size: 3.5em; margin-bottom: 6px; }
 .learn-meaning { font-size: 0.95em; margin-top: 6px; }
