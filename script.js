@@ -169,8 +169,8 @@ async function loadDeckManifest() {
   try {
     statusLine("deck-status", "Loading decks…");
     // UPDATED PATH per new file structure
-    const res = await fetch("vocab_decks/manifest.json");
-    if (!res.ok) throw new Error(`HTTP ${res.status} for vocab_decks/manifest.json`);
+    const res = await fetch("vocab_decks/deck_manifest.json");
+    if (!res.ok) throw new Error(`HTTP ${res.status} for vocab_decks/deck_manifest.json`);
     const text = await res.text();
     if (text.trim().startsWith("<")) throw new Error("Manifest is HTML (check path/case for vocab_decks/manifest.json)");
 
@@ -489,8 +489,8 @@ async function loadGrammarManifest() {
     statusLine("grammar-status", "Loading grammar lessons…");
 
     // UPDATED PATH per new file structure
-    const r = await fetch("grammar/manifest.json");
-    if (!r.ok) throw new Error(`HTTP ${r.status} for grammar/manifest.json`);
+    const r = await fetch("grammar/grammar_manifest.json");
+    if (!r.ok) throw new Error(`HTTP ${r.status} for grammar/grammar_manifest.json`);
     const t = await r.text();
     if (t.trim().startsWith("<")) throw new Error("Got HTML instead of JSON");
     const list = JSON.parse(t);
