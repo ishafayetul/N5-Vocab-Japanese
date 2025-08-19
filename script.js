@@ -31,13 +31,14 @@ let committing = false;
 
 // Practice Grammar state
 const pgState = {
-  files: [],          // ['grammar-lesson-01.csv', ...]
+  files: [],          // ['lesson-01.csv', ...]
   setName: "",        // active set file name (no path)
   items: [],          // [{q, a}, ...]
   order: [],          // shuffled indices
   i: 0,               // pointer into order
   correct: 0,
-  wrong: 0
+  wrong: 0,
+  answered: false     // prevent resubmission until Next
 };
 
 // ---------------- DOM helpers ----------------
@@ -69,7 +70,6 @@ function updateDeckProgress() {
 
 // ---------------- Autosave bridge ----------------
 async function autoCommitIfNeeded(reason = "") {
-  // Only commit if firebase helper exists and we have data
   if (!window.__fb_commitSession) return;
   if (committing) return;
   if (!sessionBuf || sessionBuf.total <= 0) return;
@@ -86,12 +86,10 @@ async function autoCommitIfNeeded(reason = "") {
       total: sessionBuf.total,
       jpEnCorrect: sessionBuf.jpEnCorrect,
       enJpCorrect: sessionBuf.enJpCorrect,
-      // grammarCorrect is included so firebase.js can start counting it
       grammarCorrect: sessionBuf.grammarCorrect || 0
     };
     await window.__fb_commitSession(payload);
 
-    // Reset counts but keep deck & mode to allow continuing smoothly
     sessionBuf.correct = 0;
     sessionBuf.wrong = 0;
     sessionBuf.skipped = 0;
@@ -101,12 +99,10 @@ async function autoCommitIfNeeded(reason = "") {
     sessionBuf.grammarCorrect = 0;
     persistSession();
 
-    // Refresh progress summaries
     await renderProgress();
     console.log("[autosave] saved ✔");
   } catch (e) {
     console.warn("[autosave] failed → keeping local buffer:", e?.message || e);
-    // Leave sessionBuf intact; firebase.js will try to commit pendingSession next launch
   } finally {
     committing = false;
   }
@@ -115,18 +111,16 @@ async function autoCommitIfNeeded(reason = "") {
 // ---------------- App lifecycle ----------------
 window.onload = () => {
   loadDeckManifest();
-  loadGrammarManifest();      // PDF lessons list (existing feature)
-  loadGrammarPracticeManifest(); // NEW: practice grammar manifests
+  loadGrammarManifest();      // PDF lessons list
+  loadGrammarPracticeManifest(); // Practice grammar sets
   renderProgress();
   updateScore();
 };
 
-// Called by firebase.js when auth is ready
 window.__initAfterLogin = () => {
   renderProgress();
 };
 
-// Best-effort: persist pending session for next launch auto-commit
 window.addEventListener('pagehide', () => {
   try {
     if (sessionBuf.total > 0) {
@@ -144,13 +138,16 @@ window.addEventListener('beforeunload', () => {
 
 // ---------------- Section Router ----------------
 function showSection(id) {
-  // Leaving Vocab Practice? autosave the deck's buffered progress
   if (currentSectionId === "practice" && id !== "practice") {
     autoCommitIfNeeded("leaving vocab practice");
   }
-  // Leaving Practice Grammar? autosave as well
   if (currentSectionId === "practice-grammar" && id !== "practice-grammar") {
     autoCommitIfNeeded("leaving grammar practice");
+    // ensure set list is visible when leaving
+    const filesBox = $("pg-file-buttons");
+    if (filesBox) filesBox.classList.remove('hidden');
+    const area = $("pg-area");
+    if (area) area.classList.add('hidden');
   }
 
   document.querySelectorAll('.main-content main > section').forEach(sec => {
@@ -162,22 +159,20 @@ function showSection(id) {
 
   currentSectionId = id;
 
-  // Keep progress bars accurate if we re-enter
   if (id === "practice") updateDeckProgress();
   if (id === "practice-grammar") pgUpdateProgress();
 }
-
-// Make router global for inline onclicks in HTML
 window.showSection = showSection;
 
 // ---------------- DECKS (Vocab) ----------------
 async function loadDeckManifest() {
   try {
     statusLine("deck-status", "Loading decks…");
-    const res = await fetch("vocab_decks/deck_manifest.json");
-    if (!res.ok) throw new Error(`HTTP ${res.status} for vocab_decks/deck_manifest.json`);
+    // UPDATED PATH per new file structure
+    const res = await fetch("vocab_decks/manifest.json");
+    if (!res.ok) throw new Error(`HTTP ${res.status} for vocab_decks/manifest.json`);
     const text = await res.text();
-    if (text.trim().startsWith("<")) throw new Error("Manifest is HTML (check path/case for vocab_decks/deck_manifest.json)");
+    if (text.trim().startsWith("<")) throw new Error("Manifest is HTML (check path/case for vocab_decks/manifest.json)");
 
     /** @type {string[]} */
     const deckList = JSON.parse(text);
@@ -227,14 +222,9 @@ function parseCSV(text){
 async function fetchAndParseCSV(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  // Strip BOM if present, keep original newlines for parseCSV
   const text = (await res.text()).replace(/^\uFEFF/, "");
-
-  // Use the robust CSV parser
   const table = parseCSV(text);
 
-  // Optional: detect and drop a header row like:
-  // ["front","back","romaji"] or ["word","meaning","romaji"]
   const looksLikeHeader = (row) => {
     if (!row || row.length === 0) return false;
     const h = row.map(c => (c || "").trim().toLowerCase());
@@ -254,7 +244,7 @@ async function fetchAndParseCSV(url) {
         romaji: (romaji  || "").trim(),
       };
     })
-    .filter(r => r.front && r.back); // require at least the two main fields
+    .filter(r => r.front && r.back);
 
   return rows;
 }
@@ -268,7 +258,6 @@ function renderDeckButtons() {
     const btn = document.createElement("button");
     btn.textContent = name;
     btn.onclick = async () => {
-      // If switching decks while having progress, auto-save first
       if (sessionBuf.total > 0 && sessionBuf.deckName && sessionBuf.deckName !== name) {
         await autoCommitIfNeeded("switching decks");
       }
@@ -286,7 +275,6 @@ function selectDeck(name) {
     alert(`Deck "${name}" is empty or failed to load.`);
     return;
   }
-  // reset session buffer for a fresh run on this deck
   sessionBuf = {
     deckName: name,
     mode: "jp-en",
@@ -310,7 +298,7 @@ function startPractice(selectedMode) {
   updateDeckProgress();
   showQuestion();
 }
-window.startPractice = startPractice; // used by inline onclicks
+window.startPractice = startPractice;
 
 function showQuestion() {
   const q = currentDeck[currentIndex];
@@ -321,7 +309,7 @@ function showQuestion() {
   const options = generateOptions(answer);
 
   const qb = $("question-box");
-  if (qb) qb.className = "flashcard"; // visually consistent if CSS present
+  if (qb) qb.className = "flashcard";
   setText("question-box", front);
   setText("extra-info", "");
   const optionsList = $("options");
@@ -412,7 +400,6 @@ window.skipQuestion = skipQuestion;
 function nextQuestion() {
   currentIndex++;
   if (currentIndex >= currentDeck.length) {
-    // Finished the deck → navigate to Vocab; autosave happens via showSection()
     alert(`Finished! ✅ ${score.correct} ❌ ${score.wrong} ➖ ${score.skipped}\nSaving your progress…`);
     showSection("deck-select");
   } else {
@@ -426,7 +413,7 @@ function updateScore() {
   setText("skipped", String(score.skipped));
 }
 
-// ---------------- LEARN mode (Flashcard + Prev/Next + Show buttons) ----------------
+// ---------------- LEARN mode (Flashcard + Prev/Next + Show Romaji) ----------------
 function startLearnMode() {
   currentIndex = 0;
   if (!currentDeck.length) return alert("Pick a deck first!");
@@ -441,12 +428,15 @@ function showLearnCard() {
 
   const box = $("learn-box");
   if (box) {
-    // flashcard-like render (text only; CSS in style.css can style .flashcard)
+    // Show word + meaning inside the flashcard (meaning always shown by default)
     box.className = "flashcard";
-    box.textContent = (word.front || "—");
+    box.innerHTML = `
+      <div class="learn-word">${word.front || "—"}</div>
+      <div class="learn-meaning muted">Meaning: ${word.back || "(no meaning)"}</div>
+    `;
   }
 
-  // wipe any extra display area if present
+  // Clear romaji line under the card
   const extra = $("learn-extra");
   if (extra) extra.textContent = "";
 }
@@ -473,14 +463,6 @@ function showLearnRomaji() {
 }
 window.showLearnRomaji = showLearnRomaji;
 
-function showLearnMeaning() {
-  const word = currentDeck[currentIndex];
-  if (!word) return;
-  const extra = $("learn-extra");
-  if (extra) extra.textContent = `Meaning: ${word.back || "(no meaning)"}`;
-}
-window.showLearnMeaning = showLearnMeaning;
-
 // ---------------- MISTAKES ----------------
 function startMistakePractice() {
   if (mistakes.length === 0) return alert("No mistakes yet!");
@@ -501,29 +483,17 @@ function clearMistakes() {
 }
 window.clearMistakes = clearMistakes;
 
-// ---------------- GRAMMAR (PDF links; existing feature) ----------------
+// ---------------- GRAMMAR (PDF links) ----------------
 async function loadGrammarManifest() {
   try {
     statusLine("grammar-status", "Loading grammar lessons…");
 
-    let base = "grammar/";
-    let list = null;
-
-    const tryLoad = async (url) => {
-      const r = await fetch(url);
-      if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
-      const t = await r.text();
-      if (t.trim().startsWith("<")) throw new Error("Got HTML instead of JSON");
-      return JSON.parse(t);
-    };
-
-    try {
-      list = await tryLoad("grammar/grammar_manifest.json");
-      base = "grammar/";
-    } catch (e1) {
-      list = await tryLoad("grammar_manifest.json");
-      base = "";
-    }
+    // UPDATED PATH per new file structure
+    const r = await fetch("grammar/manifest.json");
+    if (!r.ok) throw new Error(`HTTP ${r.status} for grammar/manifest.json`);
+    const t = await r.text();
+    if (t.trim().startsWith("<")) throw new Error("Got HTML instead of JSON");
+    const list = JSON.parse(t);
 
     const container = $("grammar-list");
     if (!container) return;
@@ -532,7 +502,7 @@ async function loadGrammarManifest() {
     list.forEach((file) => {
       const btn = document.createElement("button");
       btn.textContent = file.replace(".pdf", "");
-      btn.onclick = () => window.open(`${base}${file}`, "_blank");
+      btn.onclick = () => window.open(`grammar/${file}`, "_blank");
       container.appendChild(btn);
     });
 
@@ -549,11 +519,9 @@ async function loadGrammarPracticeManifest() {
   try {
     const statusEl = $(statusId);
     if (statusEl) statusEl.textContent = "Loading practice grammar sets…";
-    // Try "/practice-grammar/manifest.csv"
     const res = await fetch("practice-grammar/manifest.csv");
     if (!res.ok) throw new Error(`HTTP ${res.status} for practice-grammar/manifest.csv`);
     const text = (await res.text()).replace(/^\uFEFF/, "");
-    // Each line = filename.csv
     const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
     pgState.files = lines;
 
@@ -585,11 +553,9 @@ async function pgStartSet(fileName) {
     if (!res.ok) throw new Error(`HTTP ${res.status} for practice-grammar/${fileName}`);
     const text = (await res.text()).replace(/^\uFEFF/, "");
 
-    // Parse as CSV without header → [question, answer]
     const rows = parseCSV(text)
       .map(cols => ({ q: (cols[0] || "").trim(), a: (cols[1] || "").trim() }))
       .filter(x => x.q && x.a);
-
     if (!rows.length) throw new Error("No valid Q/A rows found.");
 
     pgState.setName = fileName;
@@ -598,21 +564,24 @@ async function pgStartSet(fileName) {
     pgState.i = 0;
     pgState.correct = 0;
     pgState.wrong = 0;
+    pgState.answered = false;
 
-    // Prepare session buffer for grammar
     sessionBuf.deckName = `Grammar: ${fileName.replace(/\.csv$/i, "")}`;
     sessionBuf.mode = "grammar";
     persistSession();
 
-    // Show area
+    // Hide set buttons like Vocab section behavior
+    const filesBox = $("pg-file-buttons");
+    if (filesBox) filesBox.classList.add('hidden');
+
+    // Show practice area
     const area = $("pg-area");
     if (area) area.classList.remove("hidden");
 
     pgRender();
     pgUpdateProgress();
 
-    const statusId = $("pg-status");
-    if (statusId) statusId.textContent = `Loaded ${rows.length} questions.`;
+    if (statusEl) statusEl.textContent = `Loaded ${rows.length} questions.`;
     showSection("practice-grammar");
   } catch (e) {
     alert("Failed to start set: " + (e?.message || e));
@@ -630,10 +599,16 @@ function pgRender() {
   const input = $("pg-input");
   if (input) {
     input.value = "";
+    input.disabled = false;
     input.focus();
   }
+  const submitBtn = $("pg-submit");
+  if (submitBtn) submitBtn.disabled = false;
+
   const fb = $("pg-feedback");
-  if (fb) fb.textContent = "";
+  if (fb) fb.innerHTML = "";
+
+  pgState.answered = false;
 }
 
 function pgUpdateProgress() {
@@ -655,32 +630,68 @@ function normalizeAnswer(s) {
     .trim();
 }
 
+function highlightDiff(userRaw, correctRaw) {
+  const u = userRaw || "";
+  const c = correctRaw || "";
+  // longest common prefix
+  let i = 0;
+  while (i < u.length && i < c.length && u[i] === c[i]) i++;
+  // longest common suffix (after prefix)
+  let j = 0;
+  while (j < (u.length - i) && j < (c.length - i) && u[u.length - 1 - j] === c[c.length - 1 - j]) j++;
+
+  const prefix = u.slice(0, i);
+  const umid   = u.slice(i, u.length - j);
+  const suffix = u.slice(u.length - j);
+
+  // If user missing middle entirely (shorter than correct), show a marker
+  const midHTML = umid.length
+    ? `<span class="diff-wrong">${escapeHtml(umid)}</span>`
+    : `<span class="diff-wrong">(missing)</span>`;
+
+  return `${escapeHtml(prefix)}${midHTML}${escapeHtml(suffix)}`;
+}
+
+function escapeHtml(s) {
+  return (s || "").replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
+}
+
 function pgSubmit() {
   const idx = pgState.order[pgState.i];
   const item = pgState.items[idx];
-  if (!item) return;
+  if (!item || pgState.answered) return;
 
   const input = $("pg-input");
   const fb = $("pg-feedback");
-  const userAns = input ? input.value : "";
-  const ok = normalizeAnswer(userAns) === normalizeAnswer(item.a);
+  const userAnsRaw = input ? input.value : "";
+
+  const ok = normalizeAnswer(userAnsRaw) === normalizeAnswer(item.a);
+
+  // Show correct answer always, plus mismatch view
+  if (fb) {
+    const userDiffHtml = highlightDiff(userAnsRaw, item.a);
+    fb.innerHTML = ok
+      ? `✅ Correct!<br><b>Answer:</b> ${escapeHtml(item.a)}<br><b>Your answer:</b> ${escapeHtml(userAnsRaw)}`
+      : `❌ Wrong.<br><b>Answer:</b> ${escapeHtml(item.a)}<br><b>Your answer:</b> ${userDiffHtml}`;
+  }
 
   if (ok) {
-    if (fb) fb.textContent = "✅ Correct!";
     pgState.correct++;
     sessionBuf.correct++;
     sessionBuf.total++;
     sessionBuf.grammarCorrect = (sessionBuf.grammarCorrect || 0) + 1;
   } else {
-    if (fb) fb.textContent = `❌ Wrong.`;
     pgState.wrong++;
     sessionBuf.wrong++;
     sessionBuf.total++;
   }
   persistSession();
 
-  // Wait 2s, then next
-  setTimeout(pgNext, 2000);
+  // Lock input until Next is clicked; question won't auto-advance
+  if (input) input.disabled = true;
+  const submitBtn = $("pg-submit");
+  if (submitBtn) submitBtn.disabled = true;
+  pgState.answered = true;
 }
 window.pgSubmit = pgSubmit;
 
@@ -688,29 +699,39 @@ function pgShowAnswer() {
   const idx = pgState.order[pgState.i];
   const item = pgState.items[idx];
   const fb = $("pg-feedback");
-  if (fb && item) fb.textContent = `💡 Answer: ${item.a}`;
+  if (fb && item) fb.innerHTML = `💡 Answer: ${escapeHtml(item.a)}`;
 }
 window.pgShowAnswer = pgShowAnswer;
 
 function pgNext() {
+  // re-enable input for next question
+  const input = $("pg-input");
+  if (input) { input.disabled = false; }
+  const submitBtn = $("pg-submit");
+  if (submitBtn) submitBtn.disabled = false;
+
   pgState.i++;
   pgUpdateProgress();
   if (pgState.i >= pgState.items.length) {
     alert(`Finished! ✅ ${pgState.correct} ❌ ${pgState.wrong}\nSaving your progress…`);
-    // Auto-save this grammar session
     autoCommitIfNeeded("finish grammar set");
-    // Return to Practice Grammar landing
+
+    // Hide practice area, show files list again
     const area = $("pg-area");
     if (area) area.classList.add("hidden");
+    const filesBox = $("pg-file-buttons");
+    if (filesBox) filesBox.classList.remove('hidden');
+
     showSection("practice-grammar");
   } else {
     pgRender();
   }
 }
+window.pgNext = pgNext;
 
 // ---------------- PROGRESS (reads via firebase.js) ----------------
 async function renderProgress() {
-  if (!window.__fb_fetchAttempts) return; // firebase.js exposes this
+  if (!window.__fb_fetchAttempts) return;
 
   try {
     const attempts = await window.__fb_fetchAttempts(50);
@@ -818,7 +839,6 @@ window.saveCurrentScore = async function () {
     await autoCommitIfNeeded("manual save");
     alert('Progress saved ✅');
   } catch {
-    // autoCommitIfNeeded already logs/handles errors
   }
 };
 
@@ -830,11 +850,9 @@ window.resetSite = async function () {
   if (btn) btn.disabled = true;
 
   try {
-    // Delegate to firebase.js where auth/db are available
     if (!window.__fb_fullReset) throw new Error("__fb_fullReset is not available.");
     await window.__fb_fullReset();
 
-    // Clear local caches
     localStorage.removeItem("mistakes");
     localStorage.removeItem("masteryMap");
     localStorage.removeItem("sessionBuf");

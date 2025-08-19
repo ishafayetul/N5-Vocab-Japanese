@@ -378,3 +378,9 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 @media (min-width: 769px){
   .main-content{ padding-bottom: 360px; }
 }
+/* Extra helper for inline diff highlighting in Practice Grammar */
+.diff-wrong { color: var(--red); font-weight: 600; }
+
+/* Optional: nicer spacing inside Learn card */
+.learn-word { font-size: 1.2em; margin-bottom: 6px; }
+.learn-meaning { font-size: 0.95em; }

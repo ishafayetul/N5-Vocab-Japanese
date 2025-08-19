@@ -29,7 +29,6 @@
       <button onclick="showSection('overall-leaderboard-section')">🏆 Overall Leaderboard</button>
       <button onclick="showSection('todays-leaderboard-section')">📅 Today’s Leaderboard</button>
       <button onclick="showSection('mistakes-section')">❗ Mistakes</button>
-      <!-- NEW: Save Progress moved to navbar -->
       <button onclick="saveCurrentScore()">💾 Save Progress</button>
       <button onclick="resetSite()">🔁 Reset</button>
     </nav>
@@ -41,7 +40,6 @@
         <span id="todo-timer" class="todo-timer">00:00:00</span>
       </div>
       <ul id="todo-list" class="todo-list"></ul>
-      <!-- Only visible to admins (firebase.js toggles this row) -->
       <div id="admin-row" class="admin-row hidden">
         <input id="admin-task-input" placeholder="Add a task for everyone today…" />
         <button id="admin-task-add">Add</button>
@@ -74,21 +72,19 @@
           <button onclick="startPractice('en-jp')">English → Japanese</button>
         </section>
 
-        <!-- Learn (flashcard + prev/next + toggles) -->
+        <!-- Learn (flashcard + prev/next + romaji in middle) -->
         <section id="learn" class="hidden">
           <div class="flashcard" id="learn-box"></div>
           <div class="practice-actions">
             <button onclick="prevLearn()">⬅️ Previous</button>
-            <button onclick="nextLearn()">➡️ Next</button>
             <button onclick="showLearnRomaji()">👁 Show Romaji</button>
-            <button onclick="showLearnMeaning()">💡 Show Meaning</button>
+            <button onclick="nextLearn()">➡️ Next</button>
           </div>
           <div id="learn-extra" class="muted" style="margin-top:8px;"></div>
         </section>
 
         <!-- Practice (MCQ) -->
         <section id="practice" class="hidden">
-          <!-- Deck progress -->
           <div id="deck-progress" class="deck-progress">
             <div class="deck-progress-bar" id="deck-progress-bar"></div>
             <div class="deck-progress-text" id="deck-progress-text">0 / 0 (0%)</div>
@@ -130,6 +126,7 @@
               <input id="pg-input" class="pg-input" placeholder="Type your answer…" />
               <button id="pg-submit" onclick="pgSubmit()">Submit</button>
               <button id="pg-show-answer" onclick="pgShowAnswer()">Show Answer</button>
+              <button id="pg-next" onclick="pgNext()">Next ➡️</button>
             </div>
 
             <div id="pg-feedback" class="pg-feedback muted"></div>
@@ -139,7 +136,6 @@
         <!-- Progress -->
         <section id="progress-section" class="hidden">
           <h2>📈 Your Progress</h2>
-
           <div class="progress-grid">
             <div class="card">
               <h3>Last Attempt</h3>
@@ -191,7 +187,6 @@
     </div>
   </div>
 
-  <!-- IMPORTANT: Firebase before your app logic -->
   <script type="module" src="firebase.js"></script>
   <script src="script.js"></script>
 </body>
