@@ -432,7 +432,7 @@ function showLearnCard() {
     box.className = "flashcard";
     box.innerHTML = `
       <div class="learn-word">${word.front || "—"}</div>
-      <div class="learn-meaning muted">Meaning: ${word.back || "(no meaning)"}</div>
+      <div class="learn-meaning muted">Meaning: ${word.back || "(no meaning)"}</div
     `;
   }
 

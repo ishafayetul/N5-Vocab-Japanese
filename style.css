@@ -157,7 +157,7 @@ button:disabled { opacity: .6; cursor: not-allowed; }
   box-shadow: var(--shadow);
   min-height: 120px;
   padding: 18px 20px;
-  display:flex; align-items:center; justify-content:center;
+  display:flex; flex-direction: column; align-items:center; justify-content:center;
   font-size: 22px;
   text-align: center;
 }
@@ -382,5 +382,5 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 .diff-wrong { color: var(--red); font-weight: 600; }
 
 /* Optional: nicer spacing inside Learn card */
-.learn-word { font-size: 1.2em; margin-bottom: 6px; }
-.learn-meaning { font-size: 0.95em; }
+.learn-word { font-size: 2em; margin-bottom: 6px; }
+.learn-meaning { font-size: 0.95em; margin-top: 6px; }
