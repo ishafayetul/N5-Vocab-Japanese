@@ -384,3 +384,50 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 /* Optional: nicer spacing inside Learn card */
 .learn-word { font-size: 3.5em; margin-bottom: 6px; }
 .learn-meaning { font-size: 0.95em; margin-top: 6px; }
+
+/* Learn: word + speaker icon side-by-side */
+.learn-word-row{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Small circular icon button (speaker) */
+.icon-btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: 999px;
+  background: var(--sidebar-btn);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background .18s ease, transform .06s ease, box-shadow .18s ease;
+}
+.icon-btn:hover{ background: var(--sidebar-btn-hover); }
+.icon-btn:disabled{ opacity: .5; cursor: not-allowed; }
+
+/* Toast for non-blocking messages */
+.toast{
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%) translateY(20px);
+  background: #111;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+  z-index: 99999;
+}
+.toast.show{
+  opacity: .95;
+  transform: translateX(-50%) translateY(0);
+}

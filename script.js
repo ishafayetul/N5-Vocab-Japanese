@@ -13,6 +13,13 @@ let score = { correct: 0, wrong: 0, skipped: 0 };
 let mistakes = JSON.parse(localStorage.getItem("mistakes") || "[]");
 let masteryMap = JSON.parse(localStorage.getItem("masteryMap") || "{}");
 
+// ---- Audio (Learn Mode) ----
+const AUDIO_BASE = "audio";            // no leading slash (keeps it relative on GitHub Pages)
+let audioManifest = [];                // ["Vocab-Lesson-01", ..., "kanji"]
+let audioFolders = new Set();          // quick lookup
+let currentAudioFolder = null;         // resolved per selected deck
+let audioManifestLoaded = false;
+
 // Session buffer (temporary storage; committed on demand/auto via firebase.js)
 let sessionBuf = JSON.parse(localStorage.getItem("sessionBuf") || "null") || {
   deckName: "",
@@ -52,6 +59,21 @@ function statusLine(id, msg) {
 function persistSession() {
   localStorage.setItem("sessionBuf", JSON.stringify(sessionBuf));
 }
+
+async function loadAudioManifest() {
+  try {
+    const res = await fetch(`${AUDIO_BASE}/manifest.json`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    audioManifest = await res.json();
+    audioFolders = new Set(audioManifest);
+    audioManifestLoaded = true;
+    console.log("[audio] manifest loaded:", audioManifest);
+  } catch (e) {
+    audioManifestLoaded = false;
+    console.warn("[audio] manifest failed to load → audio disabled:", e?.message || e);
+  }
+}
+
 function percent(n, d) {
   if (!d) return 0;
   return Math.floor((n / d) * 100);
@@ -110,6 +132,7 @@ async function autoCommitIfNeeded(reason = "") {
 
 // ---------------- App lifecycle ----------------
 window.onload = () => {
+  loadAudioManifest();
   loadDeckManifest();
   loadGrammarManifest();      // PDF lessons list
   loadGrammarPracticeManifest(); // Practice grammar sets
@@ -275,6 +298,14 @@ function selectDeck(name) {
     alert(`Deck "${name}" is empty or failed to load.`);
     return;
   }
+
+  // Resolve audio folder from deck name
+  currentAudioFolder = resolveAudioFolder(name);
+  if (audioManifestLoaded && currentAudioFolder && !audioFolders.has(currentAudioFolder)) {
+    // Folder not present in manifest → disable audio for this deck
+    currentAudioFolder = null;
+  }
+
   sessionBuf = {
     deckName: name,
     mode: "jp-en",
@@ -285,6 +316,18 @@ function selectDeck(name) {
   persistSession();
   showSection("mode-select");
 }
+
+// Map "Lesson-01" → "Vocab-Lesson-01"; "kanji" → "kanji"; otherwise pass through.
+function resolveAudioFolder(deckName) {
+  // e.g., "Lesson-01"
+  const m = /^Lesson-(\d{2})$/i.exec(deckName);
+  if (m) return `Vocab-Lesson-${m[1]}`;
+  // special case
+  if (/^kanji$/i.test(deckName)) return "kanji";
+  // fallback: exact same name (in case future decks match manifest directly)
+  return deckName;
+}
+
 
 // ---------------- PRACTICE (Vocab MCQ) ----------------
 function startPractice(selectedMode) {
@@ -428,11 +471,19 @@ function showLearnCard() {
 
   const box = $("learn-box");
   if (box) {
+    const audioEnabled = !!(audioManifestLoaded && currentAudioFolder);
+    const disabledAttr = audioEnabled ? "" : "disabled title='Audio not available for this deck'";
+    const aria = `aria-label="Play pronunciation"`;
+    const kb = `onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); playLearnAudio();}"`;
+    
     // Show word + meaning inside the flashcard (meaning always shown by default)
     box.className = "flashcard";
     box.innerHTML = `
-      <div class="learn-word">${word.front || "—"}</div>
-      <div class="learn-meaning muted">Meaning: ${word.back || "(no meaning)"}</div
+      <div class="learn-word-row">
+        <div class="learn-word">${word.front || "—"}</div>
+        <button class="icon-btn" ${aria} ${kb} onclick="playLearnAudio()" ${disabledAttr}>🔊</button>
+      </div>
+      <div class="learn-meaning muted">Meaning: ${word.back || "(no meaning)"} </div>
     `;
   }
 
@@ -868,6 +919,60 @@ function showMeaning() {
   setText("extra-info", `Meaning: ${correct}`);
 }
 window.showMeaning = showMeaning;
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+
+function ensureAudioElement() {
+  let a = document.getElementById("__learn_audio");
+  if (!a) {
+    a = document.createElement("audio");
+    a.id = "__learn_audio";
+    a.preload = "auto";
+    document.body.appendChild(a);
+  }
+  return a;
+}
+
+function showToast(msg, ms = 2200) {
+  let t = document.getElementById("__toast");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "__toast";
+    t.className = "toast";
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => t.classList.remove("show"), ms);
+}
+
+window.playLearnAudio = function () {
+  const word = currentDeck[currentIndex];
+  if (!word) return;
+
+  if (!audioManifestLoaded || !currentAudioFolder) {
+    showToast("Audio not available for this word.");
+    return;
+  }
+
+  const nn = pad2(currentIndex + 1); // 1-based index in learn sequence
+  const fileName = `${nn}_${word.front}.mp3`;
+  const url = `${AUDIO_BASE}/${currentAudioFolder}/${fileName}`;
+
+  const audio = ensureAudioElement();
+  // Clean up any previous listeners
+  audio.oncanplay = null;
+  audio.onerror = null;
+
+  audio.src = url;
+  audio.oncanplay = () => { try { audio.play(); } catch {} };
+  audio.onerror = () => {
+    showToast("Audio not available for this word.");
+  };
+  // Kick it off
+  audio.load();
+};
 
 // ---------------- Navbar actions ----------------
 window.saveCurrentScore = async function () {
