@@ -192,10 +192,10 @@ async function loadDeckManifest() {
   try {
     statusLine("deck-status", "Loading decks…");
     // UPDATED PATH per new file structure
-    const res = await fetch("vocab_decks/deck_manifest.json");
-    if (!res.ok) throw new Error(`HTTP ${res.status} for vocab_decks/deck_manifest.json`);
+    const res = await fetch("load_vocab_decks/deck_manifest.json");
+    if (!res.ok) throw new Error(`HTTP ${res.status} for load_vocab_decks/deck_manifest.json`);
     const text = await res.text();
-    if (text.trim().startsWith("<")) throw new Error("Manifest is HTML (check path/case for vocab_decks/manifest.json)");
+    if (text.trim().startsWith("<")) throw new Error("Manifest is HTML (check path/case for load_vocab_decks/manifest.json)");
 
     /** @type {string[]} */
     const deckList = JSON.parse(text);
@@ -204,7 +204,7 @@ async function loadDeckManifest() {
     allDecks = {};
     for (const file of deckList) {
       const name = file.replace(".csv", "");
-      const url = `vocab_decks/${file}`;
+      const url = `load_vocab_decks/${file}`;
       statusLine("deck-status", `Loading ${file}…`);
       const deck = await fetchAndParseCSV(url);
       allDecks[name] = deck;
