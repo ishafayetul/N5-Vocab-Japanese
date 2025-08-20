@@ -1,46 +1,605 @@
-わたし,I,watashi
-わたしたち,we,watashitachi
-あんた,you,anta
-あのひと,"that person, he, she",anohito
-あのかた,"that person, he,she (more polite)",anokata
-みなさん,"ladies and gentlemen, all of you",minasan
-～さん,Mr. Ms. (title of respect addded to a name),～san
-～ちゃん,(suffix often added to a child's name),～chan
-～くん,(suffix often added to a boy's name),～kun
-～じん,"(suffix meaning ""a national of"")",～jin
-せんせい,"teacher, instructor (not used when referring to one's own job)",sensei
-きょうし,"teacher, instructor",kyoushi
-がくせい,student,gakusei
-かいしゃいん,company employee,kaishain
-しゃいん,employee of ~ company (used with a company name),shain
-ぎんこういん,bank employee,ginkouin
-いしゃ,medical doctor,isha
-けんきゅうしゃ,"researcher, scholar",kenkyuusha
-エンジニア,engineer,enjinia
-だいがく,university,daigaku
-びょういん,hospital,byouin
-でんき,"electricity, light",denki
-だれ,who,dare
-どなた,who (polite),donata
-～さい,~years old,～sai
-なんさい,how old,nansai
-おいくつ,how old (polite),oikutsu
-はい,yes,hai
-いいえ,no,iie
-しつれいですが,"Excuse me, but",shitsureidesuga
-おなまえは,May I have your name?,onamae-wa
-はじめまして,How do you do? (introducing oneself for the first time),hajimemashite
-どうぞよろしく（おねがいします）,Pleased to meet you,douzoyoroshiku（onegaishimasu）
-こちらは～さんです,This is Mr. (Ms.) ~,kochiraha～sandesu
-～からきました,I came (come) from ~,～karakimashita
-アメリカ,U.S.A.,amerika
-イギリス,U.K.,igirisu
-インド,India,indo
-インドネシア,Indonesia,indoneshia
-かんこく,South Korea,kankoku
-タイ,Thailand,tai
-ちゅうごく,China,chuugoku
-ドイツ,Germany,doitsu
-にほん,Japan,nihon
-フランス,France,furansu
-ブラジル,Brazil,burajiru
+わたし,I,"わたし (Watashi)
+
+Literal meaning: “I / me.”
+
+Usage: A first-person pronoun used to refer to oneself. Common in polite or neutral situations, regardless of gender, though men often switch to alternatives like ぼく or おれ in casual speech.
+
+Politeness: Polite and neutral. Safe to use in both formal and informal contexts, especially for women.
+
+Examples:
+1. わたし は がくせい です。→ I am a student.
+2. わたし の なまえ は さとう です。→ My name is Satō.
+
+👉 Think of it as: “I” (polite/neutral self-reference)."
+
+わたしたち,we,"わたしたち (Watashitachi)
+
+Literal meaning: “We / us.”
+
+Usage: Plural form of わたし. Used to refer to a group including the speaker. Neutral and polite.
+
+Politeness: Polite and gender-neutral, safe for formal contexts.
+
+Examples:
+1. わたしたち は かいしゃいん です。→ We are company employees.
+2. わたしたち の だいがく は おおきい です。→ Our university is big.
+
+👉 Think of it as: “We” (neutral/polite group self-reference)."
+
+あんた,you,"あんた (Anta)
+
+Literal meaning: “You.”
+
+Usage: Informal second-person pronoun. Often used among close friends, couples, or when addressing someone below you in status. Can sound blunt or affectionate depending on tone.
+
+Politeness: Casual, sometimes rude if used in the wrong context.
+
+Examples:
+1. あんた は どこ から きました か。→ Where are you from?
+2. あんた は がくせい？→ Are you a student?
+
+👉 Think of it as: “You” (casual, can be affectionate or rude)."
+
+あのひと,"that person, he, she","あのひと (Ano hito)
+
+Literal meaning: “That person.”
+
+Usage: Refers to a person away from both speaker and listener. Can mean “he” or “she” in context.
+
+Politeness: Neutral, casual. Not rude, but not highly polite either.
+
+Examples:
+1. あのひと は せんせい です。→ That person is a teacher.
+2. あのひと は にほんじん です。→ That person is Japanese.
+
+👉 Think of it as: “That person / he / she” (neutral reference)."
+
+あのかた,"that person (polite)","あのかた (Ano kata)
+
+Literal meaning: “That person” (respectful).
+
+Usage: Polite alternative to あのひと when referring to someone respectfully.
+
+Politeness: Polite and respectful. Suitable in business or formal settings.
+
+Examples:
+1. あのかた は いしゃ です。→ That person is a doctor.
+2. あのかた は どなた ですか。→ Who is that (respectful)?
+
+👉 Think of it as: “That person” (polite and respectful)."
+
+みなさん,"ladies and gentlemen, all of you","みなさん (Minasan)
+
+Literal meaning: “Everyone / all of you.”
+
+Usage: Used to address a group politely. Common in greetings, announcements, or when speaking to an audience.
+
+Politeness: Polite and inclusive.
+
+Examples:
+1. みなさん、こんにちは。→ Hello, everyone.
+2. みなさん は がくせい ですか。→ Are you all students?
+
+👉 Think of it as: “Everyone” (polite group address)."
+
+～さん,"Mr./Ms.","～さん (~san)
+
+Literal meaning: A respectful suffix added to names.
+
+Usage: Most common honorific. Used after someone’s family name or given name.
+
+Politeness: Neutral-polite. Safe for most situations.
+
+Examples:
+1. たなかさん は せんせい です。→ Mr. Tanaka is a teacher.
+2. さとうさん、こんにちは。→ Hello, Ms. Satō.
+
+👉 Think of it as: “Mr./Ms.” polite default suffix."
+
+～ちゃん,"suffix for children","～ちゃん (~chan)
+
+Literal meaning: Cute/familiar suffix.
+
+Usage: Added to children’s names, pets, or close friends to sound affectionate.
+
+Politeness: Casual, intimate, affectionate.
+
+Examples:
+1. さくらちゃん は がくせい です。→ Sakura (dear) is a student.
+2. ねこちゃん が います。→ There is a kitty.
+
+👉 Think of it as: “Cute / familiar name suffix.”"
+
+～くん,"suffix for boys","～くん (~kun)
+
+Literal meaning: Informal suffix, often for boys.
+
+Usage: Used for male friends, classmates, or subordinates. Sometimes also for females in casual settings.
+
+Politeness: Friendly, casual, less formal than ～さん.
+
+Examples:
+1. たなかくん は がくせい です。→ Tanaka-kun is a student.
+2. いとうくん、こちらです。→ Itō-kun, this way.
+
+👉 Think of it as: “-kun” (casual/familiar suffix)."
+
+～じん,"a national of","～じん (~jin)
+
+Literal meaning: “Person of (a country).”
+
+Usage: Added to a country name to show nationality.
+
+Politeness: Neutral.
+
+Examples:
+1. にほんじん → Japanese person.
+2. アメリカじん → American person.
+
+👉 Think of it as: “-ian/-ese” (nationality suffix)."
+
+せんせい,"teacher, instructor","せんせい (Sensei)
+
+Literal meaning: “One who came before in life/learning.”
+
+Usage: Used for teachers, doctors, masters of skills. Not used for one’s own job title.
+
+Politeness: Respectful and polite.
+
+Examples:
+1. たなかせんせい は だいがく の きょうし です。→ Professor Tanaka is a university teacher.
+2. いしゃの さとうせんせい です。→ This is Dr. Satō.
+
+👉 Think of it as: “Teacher / Master / Doctor” (respectful title)."
+
+きょうし,"teacher, instructor","きょうし (Kyōshi)
+
+Literal meaning: “Teacher, instructor.”
+
+Usage: Refers to one’s own job as a teacher (on forms, resumes, etc.).
+
+Politeness: Neutral, professional.
+
+Examples:
+1. わたし は きょうし です。→ I am a teacher.
+2. かれ は にほんご の きょうし です。→ He is a Japanese language instructor.
+
+👉 Think of it as: “Teacher” (as an occupation)."
+
+がくせい,student,"がくせい (Gakusei)
+
+Literal meaning: “Student.”
+
+Usage: Refers to a learner, usually at university or school.
+
+Politeness: Neutral.
+
+Examples:
+1. わたし は がくせい です。→ I am a student.
+2. かれ は だいがく の がくせい です。→ He is a university student.
+
+👉 Think of it as: “Student.”"
+
+かいしゃいん,company employee,"かいしゃいん (Kaishain)
+
+Literal meaning: “Company employee.”
+
+Usage: Refers to a person working for a company.
+
+Politeness: Neutral.
+
+Examples:
+1. かれ は かいしゃいん です。→ He is a company employee.
+2. わたし の おとうさん は かいしゃいん です。→ My father is a company worker.
+
+👉 Think of it as: “Office worker / company employee.”"
+
+しゃいん,employee of a company,"しゃいん (Shain)
+
+Literal meaning: “Staff / member.”
+
+Usage: Used with company name: e.g. トヨタのしゃいん → Toyota employee.
+
+Politeness: Neutral.
+
+Examples:
+1. わたし は ソニー の しゃいん です。→ I am a Sony employee.
+2. かれ は かいしゃ の しゃいん です。→ He is a company staff member.
+
+👉 Think of it as: “Employee (of a specific company).”"
+
+ぎんこういん,bank employee,"ぎんこういん (Ginkōin)
+
+Literal meaning: “Bank employee.”
+
+Usage: Refers to someone working in a bank.
+
+Politeness: Neutral.
+
+Examples:
+1. わたし は ぎんこういん です。→ I am a bank worker.
+2. かれ は みずほ の ぎんこういん です。→ He is a Mizuho Bank employee.
+
+👉 Think of it as: “Bank staff.”"
+
+いしゃ,medical doctor,"いしゃ (Isha)
+
+Literal meaning: “Doctor.”
+
+Usage: Used for medical doctors.
+
+Politeness: Neutral. (More respectful is せんせい.)
+
+Examples:
+1. さとうさん は いしゃ です。→ Satō is a doctor.
+2. いしゃ に いきます。→ I will go to the doctor.
+
+👉 Think of it as: “Doctor” (medical profession)."
+
+けんきゅうしゃ,researcher,"けんきゅうしゃ (Kenkyūsha)
+
+Literal meaning: “Researcher, scholar.”
+
+Usage: Refers to academics, scientists, or specialists.
+
+Politeness: Neutral.
+
+Examples:
+1. かれ は けんきゅうしゃ です。→ He is a researcher.
+2. わたし の しゅじん は けんきゅうしゃ です。→ My husband is a scholar.
+
+👉 Think of it as: “Researcher / scholar.”"
+
+エンジニア,engineer,"エンジニア (Enjinia)
+
+Literal meaning: “Engineer.”
+
+Usage: Loanword from English, refers to technical professionals.
+
+Politeness: Neutral.
+
+Examples:
+1. わたし は エンジニア です。→ I am an engineer.
+2. かれ は コンピュータ エンジニア です。→ He is a computer engineer.
+
+👉 Think of it as: “Engineer (loanword).”"
+
+だいがく,university,"だいがく (Daigaku)
+
+Literal meaning: “University.”
+
+Usage: Institution of higher education.
+
+Politeness: Neutral.
+
+Examples:
+1. わたし は だいがく に いきます。→ I go to university.
+2. にほん の だいがく は おおきい です。→ Japanese universities are large.
+
+👉 Think of it as: “University.”"
+
+びょういん,hospital,"びょういん (Byōin)
+
+Literal meaning: “Hospital.”
+
+Usage: A place for medical treatment.
+
+Politeness: Neutral.
+
+Examples:
+1. びょういん に いきます。→ I go to the hospital.
+2. かのじょ は びょういん で はたらきます。→ She works in a hospital.
+
+👉 Think of it as: “Hospital.”"
+
+でんき,electricity,"でんき (Denki)
+
+Literal meaning: “Electricity, light.”
+
+Usage: Can mean electricity, lighting, or electric power.
+
+Politeness: Neutral.
+
+Examples:
+1. でんき を つけます。→ I turn on the light.
+2. でんき が ありません。→ There is no electricity.
+
+👉 Think of it as: “Electricity / light.”"
+
+だれ,who,"だれ (Dare)
+
+Literal meaning: “Who.”
+
+Usage: Used to ask who someone is.
+
+Politeness: Casual/neutral.
+
+Examples:
+1. あのひと は だれ ですか。→ Who is that person?
+2. これは だれ の ほん ですか。→ Whose book is this?
+
+👉 Think of it as: “Who” (casual/neutral)."
+
+どなた,who (polite),"どなた (Donata)
+
+Literal meaning: “Who” (respectful).
+
+Usage: Polite form of だれ.
+
+Politeness: Polite, honorific.
+
+Examples:
+1. あのかた は どなた ですか。→ Who is that person (polite)?
+2. せんせい、どなた ですか。→ Teacher, who is it?
+
+👉 Think of it as: “Who (polite).”"
+
+～さい,~years old,"～さい (~sai)
+
+Literal meaning: “~ years old.”
+
+Usage: Used to express age.
+
+Politeness: Neutral.
+
+Examples:
+1. わたし は にじゅっさい です。→ I am 20 years old.
+2. かれ は はっさい です。→ He is 8 years old.
+
+👉 Think of it as: “-years old.”"
+
+なんさい,how old,"なんさい (Nansai)
+
+Literal meaning: “How old?”
+
+Usage: Used to ask age casually.
+
+Politeness: Neutral, casual.
+
+Examples:
+1. あのひと は なんさい ですか。→ How old is that person?
+2. あなた は なんさい？→ How old are you?
+
+👉 Think of it as: “How old?” (casual)."
+
+おいくつ,how old (polite),"おいくつ (Oikutsu)
+
+Literal meaning: “How many (years)?”
+
+Usage: Polite way to ask someone’s age.
+
+Politeness: Polite.
+
+Examples:
+1. せんせい は おいくつ ですか。→ How old are you (teacher)?
+2. おいくつ ですか。→ How old are you? (polite)
+
+👉 Think of it as: “How old?” (polite)."
+
+はい,yes,"はい (Hai)
+
+Literal meaning: “Yes.”
+
+Usage: Used to agree or acknowledge.
+
+Politeness: Polite/neutral.
+
+Examples:
+1. はい、そうです。→ Yes, that’s right.
+2. はい、わかりました。→ Yes, I understand.
+
+👉 Think of it as: “Yes / OK.”"
+
+いいえ,no,"いいえ (Iie)
+
+Literal meaning: “No.”
+
+Usage: Used to deny politely.
+
+Politeness: Neutral.
+
+Examples:
+1. いいえ、ちがいます。→ No, that’s not right.
+2. いいえ、けっこうです。→ No, thank you.
+
+👉 Think of it as: “No.”"
+
+しつれいですが,"excuse me, but","しつれいですが (Shitsurei desu ga)
+
+Literal meaning: “It is rude, but…”
+
+Usage: Polite preface to a question or request.
+
+Politeness: Polite.
+
+Examples:
+1. しつれいですが、おなまえは？→ Excuse me, may I have your name?
+2. しつれいですが、これは なんですか。→ Excuse me, what is this?
+
+👉 Think of it as: “Excuse me, but…”"
+
+おなまえは,"may I have your name?","おなまえは (Onamae wa?)
+
+Literal meaning: “Your honorable name is…?”
+
+Usage: Polite way to ask someone’s name.
+
+Politeness: Polite.
+
+Examples:
+1. おなまえは？→ May I have your name?
+2. しつれいですが、おなまえは？→ Excuse me, may I know your name?
+
+👉 Think of it as: “What’s your name?” (polite)."
+
+はじめまして,"How do you do?","はじめまして (Hajimemashite)
+
+Literal meaning: “For the first time.”
+
+Usage: Greeting when meeting someone for the first time.
+
+Politeness: Polite.
+
+Examples:
+1. はじめまして、さとうです。→ How do you do, I’m Satō.
+2. はじめまして、よろしくおねがいします。→ Nice to meet you.
+
+👉 Think of it as: “How do you do?”"
+
+どうぞよろしく（おねがいします）,Pleased to meet you,"どうぞよろしく (Dōzo yoroshiku)
+
+Literal meaning: “Please treat me well.”
+
+Usage: Used after introductions to express goodwill.
+
+Politeness: Polite.
+
+Examples:
+1. はじめまして。どうぞよろしく。→ How do you do? Nice to meet you.
+2. さとうです。どうぞよろしくおねがいします。→ I’m Satō, pleased to meet you.
+
+👉 Think of it as: “Nice to meet you / please take care of me.”"
+
+こちらは～さんです,"This is Mr./Ms.","こちらは～さんです (Kochira wa ~ san desu)
+
+Literal meaning: “This is ~.”
+
+Usage: Used to introduce someone.
+
+Politeness: Polite.
+
+Examples:
+1. こちらは たなかさん です。→ This is Mr. Tanaka.
+2. こちらは わたしの ともだち です。→ This is my friend.
+
+👉 Think of it as: “This is ~.”"
+
+～からきました,"I came from","～からきました (~ kara kimashita)
+
+Literal meaning: “I came from ~.”
+
+Usage: Used to say your place of origin.
+
+Politeness: Polite.
+
+Examples:
+1. にほんからきました。→ I came from Japan.
+2. アメリカからきました。→ I came from the U.S.
+
+👉 Think of it as: “I am from ~.”"
+
+アメリカ,U.S.A.,"アメリカ (Amerika)
+
+Literal meaning: “America.”
+
+Usage: Refers to the United States.
+
+Politeness: Neutral.
+
+Examples:
+1. アメリカからきました。→ I am from the U.S.
+2. アメリカじん です。→ I am American.
+
+👉 Think of it as: “U.S.A.”"
+
+イギリス,U.K.,"イギリス (Igirisu)
+
+Literal meaning: “United Kingdom.”
+
+Usage: Refers to Britain/England.
+
+Examples:
+1. イギリスからきました。→ I came from the U.K.
+2. イギリスじん です。→ I am British.
+
+👉 Think of it as: “Britain / U.K.”"
+
+インド,India,"インド (Indo)
+
+Literal meaning: “India.”
+
+Examples:
+1. インドからきました。→ I am from India.
+2. インドじん です。→ I am Indian.
+
+👉 Think of it as: “India.”"
+
+インドネシア,Indonesia,"インドネシア (Indoneshia)
+
+Literal meaning: “Indonesia.”
+
+Examples:
+1. インドネシアからきました。→ I am from Indonesia.
+2. インドネシアじん です。→ I am Indonesian.
+
+👉 Think of it as: “Indonesia.”"
+
+かんこく,South Korea,"かんこく (Kankoku)
+
+Literal meaning: “South Korea.”
+
+Examples:
+1. かんこくからきました。→ I am from Korea.
+2. かんこくじん です。→ I am Korean.
+
+👉 Think of it as: “Korea.”"
+
+タイ,Thailand,"タイ (Tai)
+
+Literal meaning: “Thailand.”
+
+Examples:
+1. タイからきました。→ I am from Thailand.
+2. タイじん です。→ I am Thai.
+
+👉 Think of it as: “Thailand.”"
+
+ちゅうごく,China,"ちゅうごく (Chūgoku)
+
+Literal meaning: “China.”
+
+Examples:
+1. ちゅうごくからきました。→ I am from China.
+2. ちゅうごくじん です。→ I am Chinese.
+
+👉 Think of it as: “China.”"
+
+ドイツ,Germany,"ドイツ (Doitsu)
+
+Literal meaning: “Germany.”
+
+Examples:
+1. ドイツからきました。→ I am from Germany.
+2. ドイツじん です。→ I am German.
+
+👉 Think of it as: “Germany.”"
+
+にほん,Japan,"にほん (Nihon)
+
+Literal meaning: “Japan.”
+
+Examples:
+1. にほんからきました。→ I am from Japan.
+2. にほんじん です。→ I am Japanese.
+
+👉 Think of it as: “Japan.”"
+
+フランス,France,"フランス (Furansu)
+
+Literal meaning: “France.”
+
+Examples:
+1. フランスからきました。→ I am from France.
+2. フランスじん です。→ I am French.
+
+👉 Think of it as: “France.”"
+
+ブラジル,Brazil,"ブラジル (Burajiru)
+
+Literal meaning: “Brazil.”
+
+Examples:
+1. ブラジルからきました。→ I am from Brazil.
+2. ブラジルじん です。→ I am Brazilian.
+
+👉 Think of it as: “Brazil.”"
