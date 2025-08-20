@@ -510,7 +510,14 @@ function showLearnRomaji() {
   const word = currentDeck[currentIndex];
   if (!word) return;
   const extra = $("learn-extra");
-  if (extra) extra.textContent = `Romaji: ${word.romaji || "(no romaji)"}`;
+  if (extra) {
+    let details = word.romaji || "(no details)";
+    // Convert \n\n to <p>, and single \n to <br>
+    details = details
+      .replace(/\n\n/g, "</p><p>")
+      .replace(/\n/g, "<br>");
+    extra.innerHTML = `<p>Details: ${details}</p>`;
+  }
 }
 window.showLearnRomaji = showLearnRomaji;
 
