@@ -618,7 +618,7 @@ async function pgStartSet(fileName) {
 
     pgState.setName = fileName;
     pgState.items = rows;
-    pgState.order = shuffleArray([...rows.keys()]);
+    pgState.order = [...rows.keys()];
     pgState.i = 0;
     pgState.correct = 0;
     pgState.wrong = 0;
