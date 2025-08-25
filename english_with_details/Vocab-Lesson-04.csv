@@ -1,60 +1,540 @@
-おきます,"get up, wake up",okimasu
-ねます,"sleep, go to bed",nemasu
-はたらきます,work,hatarakimasu
-やすみます,"take a rest, take a holiday",yasumimasu
-べんきょうします,study,benkyoushimasu
-おわります,finish,owarimasu
-デパート,department store,depāto
-ぎんこう,bank,ginkou
-ゆうびんきょく,post office,yuubinkyoku
-としょかん,library,toshokan
-びじゅつかん,art museum,bijutsukan
-いま,now,ima
-～じ,~o'clock,～ji
-～ふん,~ minute,～fun
-はん,half,han
-なんじ,what time,nanji
-なんぷん,what minute,nampun
-ごぜん,"a.m., morning",gozen
-ごご,"p.m., afternoon",gogo
-あさ,morning,asa
-ひる,"daytime, noon",hiru
-ばん,"night, evening",ban
-よる,"night, evening",yoru
-おととい,the day before yesterday,ototoi
-きのう,yesterday,kinou
-きょう,today,kyou
-あした,tomorrow,ashita
-あさって,the day after tomorrow,asatte
-けさ,this morning,kesa
-こんばん,"this evening, tonight",komban
-やすみ,"rest, a holiday, a day off",yasumi
-ひるやすみ,lunchtime,hiruyasumi
-まいあさ,every morning,maiasa
-まいばん,every evening,maiban
-まいにち,every day,mainichi
-げつようび,Monday,getsuyoubi
-かようび,Tuesday,kayoubi
-すいようび,Wednesday,suiyoubi
-もくようび,Thursday,mokuyoubi
-きんようび,Friday,kinyoubi
-どようび,Saturday,doyoubi
-にちようび,Sunday,nichiyoubi
-なんようび,what day of the week,nanyoubi
-ばんごう,number,bangou
-なんばん,what number,namban
-～から,from ~,～kara
-～まで,"up to ~, until ~",～made
-～と～,and (used to connect nouns),～to～
-そちら,your place,sochira
-たいへんですね,"That's tough, isn't it? (used when expressing sympathy)",taihendesune
-えーと,"well, let me see",ēto
-おねがいします,Please. (lit. ask for a favor),onegaishimasu
-かしこまりました,"Certainly (sir, madam)",kashikomarimashita
-おといあわせのばんごう,the number being inquired about,otoiawasenobangou
-どうもありがとうごさいした,Thank you very much,doumoarigatougosaishita
-ニューヨーク,New York,nyūyōku
-ペキン,Beijing,pekin
-ロンドン,London,rondon
-バンコク,Bangkok,bankoku
-ロサンゼルス,Los Angeles,rosanzerusu
+おきます,"Details: おきます (okimasu)
+Meaning: “to get up / to wake up”
+Use Context: Verb for waking up from sleep or getting out of bed.
+Placement in sentence: Verb; often with particle に (time) or at the end of a sentence.
+Examples:
+1. まいあさしちじにおきます。(Maiasa shichiji ni okimasu.) → I wake up at 7 every morning.
+2. はやくおきます。(Hayaku okimasu.) → I get up early.
+3. あしたはろくじにおきます。(Ashita wa rokuji ni okimasu.) → Tomorrow I will wake up at 6.
+Politeness: Polite (ます-form). Casual: おきる."
+ねます,"Details: ねます (nemasu)
+Meaning: “to sleep / to go to bed”
+Use Context: Verb for lying down and sleeping.
+Placement in sentence: Verb; often with に (time).
+Examples:
+1. じゅういちじにねます。(Juuichi-ji ni nemasu.) → I go to bed at 11.
+2. けさはおそくねました。(Kesa wa osoku nemashita.) → I slept late this morning.
+3. あしたはやくねます。(Ashita hayaku nemasu.) → I will sleep early tomorrow.
+Politeness: Polite (ます-form). Casual: ねる."
+はたらきます,"Details: はたらきます (hatarakimasu)
+Meaning: “to work”
+Use Context: Verb for performing a job, working at a company.
+Placement in sentence: Verb; often with で (place of work).
+Examples:
+1. かいしゃではたらきます。(Kaisha de hatarakimasu.) → I work at a company.
+2. にほんではたらきたいです。(Nihon de hatarakitai desu.) → I want to work in Japan.
+3. わたしのちちはぎんこうではたらきます。(Watashi no chichi wa ginkou de hatarakimasu.) → My father works at a bank.
+Politeness: Polite (ます-form). Casual: はたらく."
+やすみます,"Details: やすみます (yasumimasu)
+Meaning: “to rest / to take a break / to take time off”
+Use Context: Used for resting, holidays, skipping work/school.
+Placement in sentence: Verb; often with を (object) or particle から.
+Examples:
+1. きょうはやすみます。(Kyou wa yasumimasu.) → I will rest today.
+2. がっこうをやすみます。(Gakkou o yasumimasu.) → I take a day off school.
+3. しごとをやすみたいです。(Shigoto o yasumitai desu.) → I want to take a break from work.
+Politeness: Polite (ます-form). Casual: やすむ."
+べんきょうします,"Details: べんきょうします (benkyou shimasu)
+Meaning: “to study”
+Use Context: Verb for studying/learning.
+Placement in sentence: Verb; often with を for subject.
+Examples:
+1. にほんごをべんきょうします。(Nihongo o benkyou shimasu.) → I study Japanese.
+2. まいにちべんきょうします。(Mainichi benkyou shimasu.) → I study every day.
+3. としょかんでべんきょうします。(Toshokan de benkyou shimasu.) → I study in the library.
+Politeness: Polite (します-form). Casual: べんきょうする."
+おわります,"Details: おわります (owarimasu)
+Meaning: “to finish / to end”
+Use Context: Verb for something being completed.
+Placement in sentence: Verb; often with を or が.
+Examples:
+1. じゅぎょうはごじにおわります。(Jugyou wa goji ni owarimasu.) → Class ends at 5 o’clock.
+2. しごとがおわりました。(Shigoto ga owarimashita.) → The work has finished.
+3. テストをおわります。(Tesuto o owarimasu.) → I finish the test.
+Politeness: Polite (ます-form). Casual: おわる."
+デパート,"Details: デパート (depaato)
+Meaning: “department store”
+Use Context: Refers to large retail department stores.
+Placement in sentence: Noun; with は, で, に.
+Examples:
+1. デパートでかいものをします。(Depaato de kaimono o shimasu.) → I shop at the department store.
+2. デパートはにぎやかです。(Depaato wa nigiyaka desu.) → The department store is lively.
+3. あのデパートはおおきいです。(Ano depaato wa ookii desu.) → That department store is big.
+Politeness: Neutral."
+ぎんこう,"Details: ぎんこう (ginkou)
+Meaning: “bank”
+Use Context: Refers to financial institutions.
+Placement in sentence: Noun; with は, で, に.
+Examples:
+1. ぎんこうではたらきます。(Ginkou de hatarakimasu.) → I work at a bank.
+2. ぎんこうはあそこです。(Ginkou wa asoko desu.) → The bank is over there.
+3. ぎんこうでおかねをおろします。(Ginkou de okane o oroshimasu.) → I withdraw money at the bank.
+Politeness: Neutral."
+ゆうびんきょく,"Details: ゆうびんきょく (yuubinkyoku)
+Meaning: “post office”
+Use Context: Refers to Japanese postal service buildings.
+Placement in sentence: Noun; with は, に, で.
+Examples:
+1. ゆうびんきょくでてがみをだします。(Yuubinkyoku de tegami o dashimasu.) → I send a letter at the post office.
+2. ゆうびんきょくはどこですか。(Yuubinkyoku wa doko desu ka.) → Where is the post office?
+3. ゆうびんきょくにいきます。(Yuubinkyoku ni ikimasu.) → I go to the post office.
+Politeness: Neutral."
+としょかん,"Details: としょかん (toshokan)
+Meaning: “library”
+Use Context: Place where books are kept for reading/borrowing.
+Placement in sentence: Noun; with は, で, に.
+Examples:
+1. としょかんでほんをよみます。(Toshokan de hon o yomimasu.) → I read books in the library.
+2. としょかんはしずかです。(Toshokan wa shizuka desu.) → The library is quiet.
+3. としょかんにいきます。(Toshokan ni ikimasu.) → I go to the library.
+Politeness: Neutral."
+びじゅつかん,"Details: びじゅつかん (bijutsukan)
+Meaning: “art museum”
+Use Context: Refers to museums specializing in fine arts.
+Placement in sentence: Noun; with は, で, に.
+Examples:
+1. びじゅつかんでえをみます。(Bijutsukan de e o mimasu.) → I see pictures at the art museum.
+2. びじゅつかんはゆうめいです。(Bijutsukan wa yuumei desu.) → The art museum is famous.
+3. びじゅつかんにいきたいです。(Bijutsukan ni ikitai desu.) → I want to go to the art museum.
+Politeness: Neutral."
+いま,"Details: いま (ima)
+Meaning: “now”
+Use Context: Refers to the current time.
+Placement in sentence: Adverb/noun; with は, が, に.
+Examples:
+1. いまはなんじですか。(Ima wa nanji desu ka.) → What time is it now?
+2. いまべんきょうします。(Ima benkyou shimasu.) → I am studying now.
+3. いまはじゅぎょうです。(Ima wa jugyou desu.) → Now it is class.
+Politeness: Neutral."
+～じ,"Details: ～じ (~ji)
+Meaning: “~ o’clock”
+Use Context: Suffix for telling time.
+Placement in sentence: Attaches to numbers (いちじ, にじ, さんじ…).
+Examples:
+1. いまはさんじです。(Ima wa san-ji desu.) → It’s 3 o’clock now.
+2. わたしはろくじにおきます。(Watashi wa roku-ji ni okimasu.) → I wake up at 6 o’clock.
+3. しちはんにねます。(Shichi-ji han ni nemasu.) → I sleep at 7:30.
+Politeness: Neutral."
+～ふん,"Details: ～ふん (~fun)
+Meaning: “~ minutes”
+Use Context: Suffix for minutes when telling time.
+Placement in sentence: Attaches to numbers (いっぷん, にふん, さんぷん…).
+Examples:
+1. ごふんまちます。(Go-fun machimasu.) → I wait for 5 minutes.
+2. いまはじゅっぷんです。(Ima wa juppun desu.) → It is 10 minutes.
+3. さんじじゅうごふんです。(San-ji juu-go-fun desu.) → It’s 3:15.
+Politeness: Neutral."
+はん,"Details: はん (han)
+Meaning: “half past (30 minutes)”
+Use Context: Used with hours to indicate half past.
+Placement in sentence: Follows time nouns (～じ).
+Examples:
+1. しちはんにおきます。(Shichi-han ni okimasu.) → I wake up at 7:30.
+2. ごじはんにおわります。(Go-ji han ni owarimasu.) → It ends at 5:30.
+3. いまはにじはんです。(Ima wa ni-ji han desu.) → It’s 2:30 now.
+Politeness: Neutral."
+なんじ,"Details: なんじ (nan-ji)
+Meaning: “what time?”
+Use Context: Interrogative for asking the hour.
+Placement in sentence: Question word; usually with particle に.
+Examples:
+1. いまはなんじですか。(Ima wa nan-ji desu ka.) → What time is it now?
+2. あしたなんじにおきますか。(Ashita nan-ji ni okimasu ka.) → What time do you get up tomorrow?
+3. テストはなんじにはじまりますか。(Tesuto wa nan-ji ni hajimarimasu ka.) → What time does the test begin?
+Politeness: Neutral."
+なんぷん,"Details: なんぷん (nan-pun)
+Meaning: “what minute?”
+Use Context: Interrogative for asking exact minutes.
+Placement in sentence: Used with に or ですか.
+Examples:
+1. いまなんぷんですか。(Ima nan-pun desu ka.) → What minute is it now?
+2. バスはなんぷんにきますか。(Basu wa nan-pun ni kimasu ka.) → At what minute does the bus come?
+3. なんぷんまちますか。(Nan-pun machimasu ka.) → How many minutes do (we) wait?
+Politeness: Neutral."
+ごぜん,"Details: ごぜん (gozen)
+Meaning: “AM / morning (before noon)”
+Use Context: Used with times before noon.
+Placement in sentence: Used before numbers (ごぜんしちじ).
+Examples:
+1. ごぜんしちじにおきます。(Gozen shichi-ji ni okimasu.) → I wake up at 7 AM.
+2. ごぜんくじにいきます。(Gozen ku-ji ni ikimasu.) → I go at 9 AM.
+3. かいぎはごぜんじゅうじです。(Kaigi wa gozen juu-ji desu.) → The meeting is at 10 AM.
+Politeness: Neutral."
+ごご,"Details: ごご (gogo)
+Meaning: “PM / afternoon/evening (after noon)”
+Use Context: Used with times after noon.
+Placement in sentence: Used before numbers (ごごいちじ).
+Examples:
+1. ごごにじにしごとをします。(Gogo ni-ji ni shigoto o shimasu.) → I work at 2 PM.
+2. しけんはごごさんじです。(Shiken wa gogo san-ji desu.) → The exam is at 3 PM.
+3. ごごろくじにかえります。(Gogo roku-ji ni kaerimasu.) → I return at 6 PM.
+Politeness: Neutral."
+あさ,"Details: あさ (asa)
+Meaning: “morning”
+Use Context: Refers to early hours of the day.
+Placement in sentence: Noun/adverb of time; with は, に.
+Examples:
+1. あさべんきょうします。(Asa benkyou shimasu.) → I study in the morning.
+2. あさごはんをたべます。(Asa-gohan o tabemasu.) → I eat breakfast.
+3. あさはさむいです。(Asa wa samui desu.) → The morning is cold.
+Politeness: Neutral."
+ひる,"Details: ひる (hiru)
+Meaning: “noon / midday / daytime”
+Use Context: Refers to midday and afternoon.
+Placement in sentence: Noun; with は, に.
+Examples:
+1. ひるやすみをします。(Hiru-yasumi o shimasu.) → I take a lunch break.
+2. ひるにあいます。(Hiru ni aimasu.) → I meet at noon.
+3. ひるごはんをたべます。(Hiru-gohan o tabemasu.) → I eat lunch.
+Politeness: Neutral."
+ばん,"Details: ばん (ban)
+Meaning: “evening / night”
+Use Context: Refers to the evening hours.
+Placement in sentence: Noun; with は, に.
+Examples:
+1. こんばんばんごはんをたべます。(Konban bangohan o tabemasu.) → I eat dinner tonight.
+2. ばんはしずかです。(Ban wa shizuka desu.) → Evenings are quiet.
+3. まいばんほんをよみます。(Maiban hon o yomimasu.) → I read books every evening.
+Politeness: Neutral."
+よる,"Details: よる (yoru)
+Meaning: “night”
+Use Context: Refers to nighttime.
+Placement in sentence: Noun; with は, に.
+Examples:
+1. よるべんきょうします。(Yoru benkyou shimasu.) → I study at night.
+2. よるおそくねます。(Yoru osoku nemasu.) → I go to bed late at night.
+3. よるはしずかです。(Yoru wa shizuka desu.) → Night is quiet.
+Politeness: Neutral."
+おととい,"Details: おととい (ototoi)
+Meaning: “the day before yesterday”
+Use Context: Time expression for two days ago.
+Placement in sentence: Adverb; with は, に.
+Examples:
+1. おとといえいがをみました。(Ototoi eiga o mimashita.) → I watched a movie the day before yesterday.
+2. おとといはやすみでした。(Ototoi wa yasumi deshita.) → The day before yesterday was a holiday.
+3. おとといともだちにあいました。(Ototoi tomodachi ni aimashita.) → I met a friend the day before yesterday.
+Politeness: Neutral."
+きのう,"Details: きのう (kinou)
+Meaning: “yesterday”
+Use Context: Refers to the previous day.
+Placement in sentence: Adverb; with は, に.
+Examples:
+1. きのうほんをよみました。(Kinou hon o yomimashita.) → I read a book yesterday.
+2. きのうはにちようびでした。(Kinou wa nichiyoubi deshita.) → Yesterday was Sunday.
+3. きのうともだちとあそびました。(Kinou tomodachi to asobimashita.) → I hung out with a friend yesterday.
+Politeness: Neutral."
+きょう,"Details: きょう (kyou)
+Meaning: “today”
+Use Context: Refers to the current day.
+Placement in sentence: Adverb; with は, に.
+Examples:
+1. きょうはあついです。(Kyou wa atsui desu.) → Today is hot.
+2. きょうべんきょうします。(Kyou benkyou shimasu.) → I study today.
+3. きょうしけんがあります。(Kyou shiken ga arimasu.) → There is an exam today.
+Politeness: Neutral."
+あした,"Details: あした (ashita)
+Meaning: “tomorrow”
+Use Context: Refers to the next day.
+Placement in sentence: Adverb; with は, に.
+Examples:
+1. あしたはやすみます。(Ashita wa yasumimasu.) → I will rest tomorrow.
+2. あしたにほんへいきます。(Ashita Nihon e ikimasu.) → I will go to Japan tomorrow.
+3. あしたのテストはむずかしいです。(Ashita no tesuto wa muzukashii desu.) → Tomorrow’s test is difficult.
+Politeness: Neutral."
+あさって,"Details: あさって (asatte)
+Meaning: “the day after tomorrow”
+Use Context: Refers to two days ahead.
+Placement in sentence: Adverb; with は, に.
+Examples:
+1. あさってテストがあります。(Asatte tesuto ga arimasu.) → There is a test the day after tomorrow.
+2. あさってはにちようびです。(Asatte wa nichiyoubi desu.) → The day after tomorrow is Sunday.
+3. あさってともだちにあいます。(Asatte tomodachi ni aimasu.) → I will meet my friend the day after tomorrow.
+Politeness: Neutral."
+けさ,"Details: けさ (kesa)
+Meaning: “this morning”
+Use Context: Refers to the morning of the current day.
+Placement in sentence: Adverb; with は, に.
+Examples:
+1. けさしちじにおきました。(Kesa shichi-ji ni okimashita.) → I woke up at 7 this morning.
+2. けさはさむかったです。(Kesa wa samukatta desu.) → It was cold this morning.
+3. けさべんきょうしました。(Kesa benkyou shimashita.) → I studied this morning.
+Politeness: Neutral."
+こんばん,"Details: こんばん (konban)
+Meaning: “this evening / tonight”
+Use Context: Refers to the evening/night of the current day.
+Placement in sentence: Adverb; with は, に.
+Examples:
+1. こんばんえいがをみます。(Konban eiga o mimasu.) → I will watch a movie tonight.
+2. こんばんばんごはんをたべます。(Konban bangohan o tabemasu.) → I will eat dinner tonight.
+3. こんばんあめがふります。(Konban ame ga furimasu.) → It will rain tonight.
+Politeness: Neutral."
+やすみ,"Details: やすみ (yasumi)
+Meaning: “rest / holiday / absence”
+Use Context: Refers to a day off, rest, or holiday.
+Placement in sentence: Noun; with は, に, の.
+Examples:
+1. きのうはやすみでした。(Kinou wa yasumi deshita.) → Yesterday was a holiday.
+2. あしたやすみがあります。(Ashita yasumi ga arimasu.) → There is a holiday tomorrow.
+3. しゅうまつにやすみます。(Shuumatsu ni yasumimasu.) → I rest on weekends.
+Politeness: Neutral."
+ひるやすみ,"Details: ひるやすみ (hiru-yasumi)
+Meaning: “lunch break”
+Use Context: Refers to a midday break.
+Placement in sentence: Noun; with は, に.
+Examples:
+1. ひるやすみにともだちとあいます。(Hiru-yasumi ni tomodachi to aimasu.) → I meet my friend at lunch break.
+2. ひるやすみはじゅうにじです。(Hiru-yasumi wa juu-ni-ji desu.) → Lunch break is at 12.
+3. ひるやすみにべんきょうします。(Hiru-yasumi ni benkyou shimasu.) → I study at lunch break.
+Politeness: Neutral."
+まいあさ,"Details: まいあさ (maiasa)
+Meaning: “every morning”
+Use Context: Expression of frequency.
+Placement in sentence: Adverb; often at start of sentence.
+Examples:
+1. まいあさろくじにおきます。(Maiasa roku-ji ni okimasu.) → I get up at 6 every morning.
+2. まいあさべんきょうします。(Maiasa benkyou shimasu.) → I study every morning.
+3. まいあさコーヒーをのみます。(Maiasa koohii o nomimasu.) → I drink coffee every morning.
+Politeness: Neutral."
+まいばん,"Details: まいばん (maiban)
+Meaning: “every evening / every night”
+Use Context: Expression of frequency.
+Placement in sentence: Adverb.
+Examples:
+1. まいばんほんをよみます。(Maiban hon o yomimasu.) → I read books every night.
+2. まいばんテレビをみます。(Maiban terebi o mimasu.) → I watch TV every night.
+3. まいばんおそくねます。(Maiban osoku nemasu.) → I go to bed late every night.
+Politeness: Neutral."
+まいにち,"Details: まいにち (mainichi)
+Meaning: “every day”
+Use Context: Expression of daily frequency.
+Placement in sentence: Adverb.
+Examples:
+1. まいにちべんきょうします。(Mainichi benkyou shimasu.) → I study every day.
+2. まいにちしごとをします。(Mainichi shigoto o shimasu.) → I work every day.
+3. まいにちテレビをみます。(Mainichi terebi o mimasu.) → I watch TV every day.
+Politeness: Neutral."
+げつようび,"Details: げつようび (getsuyoubi)
+Meaning: “Monday”
+Use Context: Refers to days of the week.
+Placement in sentence: Noun; with は, に.
+Examples:
+1. げつようびにがっこうにいきます。(Getsuyoubi ni gakkou ni ikimasu.) → I go to school on Monday.
+2. げつようびはやすみです。(Getsuyoubi wa yasumi desu.) → Monday is a holiday.
+3. げつようびにテストがあります。(Getsuyoubi ni tesuto ga arimasu.) → There is a test on Monday.
+Politeness: Neutral."
+かようび,"Details: かようび (kayoubi)
+Meaning: “Tuesday”
+Use Context: Refers to days of the week.
+Placement in sentence: Noun; with は, に.
+Examples:
+1. かようびにしごとをします。(Kayoubi ni shigoto o shimasu.) → I work on Tuesday.
+2. かようびはにほんごのじゅぎょうです。(Kayoubi wa Nihongo no jugyou desu.) → Tuesday is Japanese class.
+3. かようびにテストがあります。(Kayoubi ni tesuto ga arimasu.) → There is a test on Tuesday.
+Politeness: Neutral."
+すいようび,"Details: すいようび (suiyoubi)
+Meaning: “Wednesday”
+Use Context: Refers to days of the week.
+Placement in sentence: Noun; with は, に.
+Examples:
+1. すいようびにともだちにあいます。(Suiyoubi ni tomodachi ni aimasu.) → I meet my friend on Wednesday.
+2. すいようびはやすみです。(Suiyoubi wa yasumi desu.) → Wednesday is a holiday.
+3. すいようびにテストがあります。(Suiyoubi ni tesuto ga arimasu.) → There is a test on Wednesday.
+Politeness: Neutral."
+もくようび,"Details: もくようび (mokuyoubi)
+Meaning: “Thursday”
+Use Context: Refers to days of the week.
+Placement in sentence: Noun; with は, に.
+Examples:
+1. もくようびにかいぎがあります。(Mokuyoubi ni kaigi ga arimasu.) → There is a meeting on Thursday.
+2. もくようびはやすみです。(Mokuyoubi wa yasumi desu.) → Thursday is a holiday.
+3. もくようびにしごとをします。(Mokuyoubi ni shigoto o shimasu.) → I work on Thursday.
+Politeness: Neutral."
+きんようび,"Details: きんようび (kin'youbi)
+Meaning: “Friday”
+Use Context: Refers to days of the week.
+Placement in sentence: Noun; with は, に.
+Examples:
+1. きんようびにえいがをみます。(Kin'youbi ni eiga o mimasu.) → I watch a movie on Friday.
+2. きんようびはしごとです。(Kin'youbi wa shigoto desu.) → Friday is a workday.
+3. きんようびにテストがあります。(Kin'youbi ni tesuto ga arimasu.) → There is a test on Friday.
+Politeness: Neutral."
+どようび,"Details: どようび (doyoubi)
+Meaning: “Saturday”
+Use Context: Refers to days of the week.
+Placement in sentence: Noun; with は, に.
+Examples:
+1. どようびにパーティーがあります。(Doyoubi ni paatii ga arimasu.) → There is a party on Saturday.
+2. どようびはやすみです。(Doyoubi wa yasumi desu.) → Saturday is a holiday.
+3. どようびにしごとをしません。(Doyoubi ni shigoto o shimasen.) → I don’t work on Saturday.
+Politeness: Neutral."
+にちようび,"Details: にちようび (nichiyoubi)
+Meaning: “Sunday”
+Use Context: Refers to days of the week.
+Placement in sentence: Noun; with は, に.
+Examples:
+1. にちようびにかぞくとあそびます。(Nichiyoubi ni kazoku to asobimasu.) → I spend time with family on Sunday.
+2. にちようびはやすみです。(Nichiyoubi wa yasumi desu.) → Sunday is a holiday.
+3. にちようびにえいがをみます。(Nichiyoubi ni eiga o mimasu.) → I watch a movie on Sunday.
+Politeness: Neutral."
+なんようび,"Details: なんようび (nan-youbi)
+Meaning: “what day of the week?”
+Use Context: Interrogative word asking which weekday.
+Placement in sentence: Question noun; with は, に.
+Examples:
+1. きょうはなんようびですか。(Kyou wa nan-youbi desu ka.) → What day is it today?
+2. テストはなんようびですか。(Tesuto wa nan-youbi desu ka.) → What day is the test?
+3. かいぎはなんようびですか。(Kaigi wa nan-youbi desu ka.) → On what day is the meeting?
+Politeness: Neutral."
+ばんごう,"Details: ばんごう (bangou)
+Meaning: “number”
+Use Context: Refers to numbers like phone, room, ID.
+Placement in sentence: Noun; usually with の or を.
+Examples:
+1. でんわばんごうはなんですか。(Denwa bangou wa nan desu ka.) → What is the phone number?
+2. このばんごうをつかってください。(Kono bangou o tsukatte kudasai.) → Please use this number.
+3. ルームばんごうはいくつですか。(Ruumu bangou wa ikutsu desu ka.) → What is the room number?
+Politeness: Neutral."
+なんばん,"Details: なんばん (nan-ban)
+Meaning: “what number?”
+Use Context: Interrogative for asking about numbers (e.g., phone, bus, room).
+Placement in sentence: Question noun; often with particle は.
+Examples:
+1. でんわばんごうはなんばんですか。(Denwa bangou wa nan-ban desu ka.) → What is the phone number?
+2. このバスはなんばんですか。(Kono basu wa nan-ban desu ka.) → What number bus is this?
+3. あなたのへやはなんばんですか。(Anata no heya wa nan-ban desu ka.) → What is your room number?
+Politeness: Neutral."
+～から,"Details: ～から (~kara)
+Meaning: “from ~”
+Use Context: Indicates a starting point in time or place.
+Placement in sentence: Suffix; follows nouns or times.
+Examples:
+1. くじからはたらきます。(Ku-ji kara hatarakimasu.) → I work from 9 o’clock.
+2. ここからいきます。(Koko kara ikimasu.) → I go from here.
+3. いちがつからべんきょうします。(Ichigatsu kara benkyou shimasu.) → I study from January.
+Politeness: Neutral."
+～まで,"Details: ～まで (~made)
+Meaning: “until ~ / to ~”
+Use Context: Indicates an end point in time or place.
+Placement in sentence: Suffix; follows nouns or times.
+Examples:
+1. ごじまでべんきょうします。(Go-ji made benkyou shimasu.) → I study until 5 o’clock.
+2. あそこまであるきます。(Asoko made arukimasu.) → I walk until there.
+3. きょうまでやすみです。(Kyou made yasumi desu.) → The holiday is until today.
+Politeness: Neutral."
+～と～,"Details: ～と～ (~to~)
+Meaning: “and (noun connector)”
+Use Context: Used to connect nouns.
+Placement in sentence: Between two nouns.
+Examples:
+1. パンとミルクをたべます。(Pan to miruku o tabemasu.) → I eat bread and drink milk.
+2. にほんとバングラデシュ。(Nihon to Banguradeshu.) → Japan and Bangladesh.
+3. わたしとあなたはともだちです。(Watashi to anata wa tomodachi desu.) → You and I are friends.
+Politeness: Neutral."
+そちら,"Details: そちら (sochira)
+Meaning: “that way / there / you (polite)”
+Use Context: Polite alternative for そこ; also used to address the listener.
+Placement in sentence: Functions as noun; with は, に, へ.
+Examples:
+1. そちらはどうですか。(Sochira wa dou desu ka.) → How are things there?
+2. そちらにいきます。(Sochira ni ikimasu.) → I’ll go there.
+3. そちらはにほんですか。(Sochira wa Nihon desu ka.) → Is that Japan?
+Politeness: Polite/formal."
+たいへんですね,"Details: たいへんですね (taihen desu ne)
+Meaning: “That’s tough, isn’t it?”
+Use Context: Used to show sympathy or understanding.
+Placement in sentence: Fixed expression.
+Examples:
+1. しごとはたいへんですね。(Shigoto wa taihen desu ne.) → Work is hard, isn’t it?
+2. びょうきはたいへんですね。(Byouki wa taihen desu ne.) → Being sick is tough, isn’t it?
+3. あつくてたいへんですね。(Atsukute taihen desu ne.) → It’s hot and tough, isn’t it?
+Politeness: Polite (ね makes it softer)."
+えーと,"Details: えーと (ee to)
+Meaning: “um… / let me see…”
+Use Context: Used to pause in conversation, thinking filler.
+Placement in sentence: Interjection; usually at sentence start.
+Examples:
+1. えーと、なにをいいますか。(Ee to, nani o iimasu ka.) → Um, what should I say?
+2. えーと、じゅうじです。(Ee to, juu-ji desu.) → Um, it’s 10 o’clock.
+3. えーと、つぎはどこですか。(Ee to, tsugi wa doko desu ka.) → Um, where is next?
+Politeness: Neutral/casual."
+おねがいします,"Details: おねがいします (onegai shimasu)
+Meaning: “please / I request”
+Use Context: Used when asking politely.
+Placement in sentence: Expression; often at end of request.
+Examples:
+1. よろしくおねがいします。(Yoroshiku onegai shimasu.) → Nice to meet you / please take care of it.
+2. メニューをおねがいします。(Menyuu o onegai shimasu.) → The menu, please.
+3. コーヒーをおねがいします。(Koohii o onegai shimasu.) → Coffee, please.
+Politeness: Polite."
+かしこまりました,"Details: かしこまりました (kashikomarimashita)
+Meaning: “Certainly / Understood” (very polite)
+Use Context: Used by staff when accepting requests.
+Placement in sentence: Fixed phrase.
+Examples:
+1. コーヒーですね。かしこまりました。(Koohii desu ne. Kashikomarimashita.) → Coffee? Certainly.
+2. ごちゅうもんをかしこまりました。(Gochuumon o kashikomarimashita.) → I have received your order.
+3. しょうしょうおまちください。かしこまりました。(Shoushou omachi kudasai. Kashikomarimashita.) → Please wait a moment. Certainly.
+Politeness: Very polite/honorific."
+おといあわせのばんごう,"Details: おといあわせのばんごう (otoiawase no bangou)
+Meaning: “inquiry number / reference number”
+Use Context: Used in formal contexts for inquiries or customer service.
+Placement in sentence: Noun phrase; with は, です.
+Examples:
+1. おといあわせのばんごうは123です。(Otoiawase no bangou wa 123 desu.) → The inquiry number is 123.
+2. おといあわせのばんごうをおしえてください。(Otoiawase no bangou o oshiete kudasai.) → Please tell me the inquiry number.
+3. おといあわせのばんごうはこちらです。(Otoiawase no bangou wa kochira desu.) → Here is the inquiry number.
+Politeness: Polite/formal."
+どうもありがとうございました,"Details: どうもありがとうございました (doumo arigatou gozaimashita)
+Meaning: “Thank you very much (for what you did).”
+Use Context: Polite gratitude, often for completed actions.
+Placement in sentence: Set phrase.
+Examples:
+1. きのうはどうもありがとうございました。(Kinou wa doumo arigatou gozaimashita.) → Thank you very much for yesterday.
+2. プレゼントをどうもありがとうございました。(Purezento o doumo arigatou gozaimashita.) → Thank you very much for the present.
+3. ごしゅっせきどうもありがとうございました。(Go shusseki doumo arigatou gozaimashita.) → Thank you very much for attending.
+Politeness: Very polite."
+ニューヨーク,"Details: ニューヨーク (Nyuu Yooku)
+Meaning: “New York”
+Use Context: City name.
+Placement in sentence: Proper noun; with は, に, から.
+Examples:
+1. ニューヨークからきました。(Nyuu Yooku kara kimashita.) → I came from New York.
+2. ニューヨークにすんでいます。(Nyuu Yooku ni sunde imasu.) → I live in New York.
+3. ニューヨークはおおきいです。(Nyuu Yooku wa ookii desu.) → New York is big.
+Politeness: Neutral."
+ペキン,"Details: ペキン (Pekin)
+Meaning: “Beijing”
+Use Context: Capital of China.
+Placement in sentence: Proper noun.
+Examples:
+1. ペキンからきました。(Pekin kara kimashita.) → I came from Beijing.
+2. ペキンはちゅうごくのしゅとです。(Pekin wa Chuugoku no shuto desu.) → Beijing is the capital of China.
+3. ペキンにいきたいです。(Pekin ni ikitai desu.) → I want to go to Beijing.
+Politeness: Neutral."
+ロンドン,"Details: ロンドン (Rondon)
+Meaning: “London”
+Use Context: City name.
+Placement in sentence: Proper noun.
+Examples:
+1. ロンドンはイギリスのしゅとです。(Rondon wa Igirisu no shuto desu.) → London is the capital of the UK.
+2. ロンドンにいきます。(Rondon ni ikimasu.) → I am going to London.
+3. ロンドンからかえりました。(Rondon kara kaerimashita.) → I returned from London.
+Politeness: Neutral."
+バンコク,"Details: バンコク (Bankoku)
+Meaning: “Bangkok”
+Use Context: Capital of Thailand.
+Placement in sentence: Proper noun.
+Examples:
+1. バンコクはタイのしゅとです。(Bankoku wa Tai no shuto desu.) → Bangkok is the capital of Thailand.
+2. バンコクにいきました。(Bankoku ni ikimashita.) → I went to Bangkok.
+3. バンコクからきました。(Bankoku kara kimashita.) → I came from Bangkok.
+Politeness: Neutral."
+ロサンゼルス,"Details: ロサンゼルス (Rosanzerusu)
+Meaning: “Los Angeles”
+Use Context: City in the USA.
+Placement in sentence: Proper noun.
+Examples:
+1. ロサンゼルスにすんでいます。(Rosanzerusu ni sunde imasu.) → I live in Los Angeles.
+2. ロサンゼルスからきました。(Rosanzerusu kara kimashita.) → I came from Los Angeles.
+3. ロサンゼルスはおおきなまちです。(Rosanzerusu wa ookina machi desu.) → Los Angeles is a big city.
+Politeness: Neutral."
