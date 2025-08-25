@@ -1,58 +1,521 @@
-たべます,eat,tabemasu
-のみます,drink,nomimasu
-すいます,smoke,suimasu
-たばこをすいます,smoke a cigarette,tabakoosuimasu
-みます,"see, look at, watch",mimasu
-ききます,"hear, listen",kikimasu
-よみます,read,yomimasu
-かきます,"write, draw, paint",kakimasu
-かいます,buy,kaimasu
-とります,take (a photograph),torimasu
-しゃしんをとります,take a picture,shashinotorimasu
-します,do,shimasu
-あいます,meet,aimasu
-ともだちをあいます,meet a friend,tomodachioaimasu
-ごはん,"a meal, cooked rice",gohan
-あさごはん,breakfast,asagohan
-ひるごはん,lunch,hirugohan
-ばんごはん,supper,bangohan
-パン,bread,pan
-たまご,egg,tamago
-にく,meat,niku
-さかな,fish,sakana
-やさい,vegetable,yasai
-くだもの,fruit,kudamono
-みず,water,mizu
-おちゃ,"tea, green tea",ocha
-こうちゃ,black tea,koucha
-ぎゅうにゅう,milk,gyuunyuu
-ミリク,milk,miriku
-ジュース,juice,jūsu
-ビール,beer,bīru
-さけ,"alcohol, Japanese rice wine",sake
-ビデオ,video,bideo
-えいが,movie,eiga
-てがみ,letter,tegami
-レポート,report,repōto
-しゃしん,photograph,shashin
-みせ,"store, shop",mise
-レストラン,restaurant,resutoran
-にわ,garden,niwa
-しゅくだい,homework,shukudai
-しゅくだいをします,do homework,shukudaioshimasu
-テニス,tennis,tenisu
-サッカー,"soccer, football",sakkā
-サッカーをします,play soccer,sakkāoshimasu
-はなみ,cherry-blossom viewing,hanami
-はなみをします,go cherry-blossom viewing,hanamioshimasu
-なに,what,nani
-いっしょに,together,isshoni
-ちょっと,"a little while, a little bit",chotto
-いつも,"always, usually",itsumo
-ときどき,sometimes,tokidoki
-それから,"after that, and then",sorekara
-ええ,yes,ee
-いいですね,That's good.,iidesune
-わかりました,I see,wakarimashita
-なんですか,Yes?,nandesuka
-じゃ、またあした,See you tomorrow,ja、mataashita
+たべます,"Details: たべます (tabemasu)
+Meaning: “to eat”
+Use Context: Verb for eating meals/food.
+Placement in sentence: Verb; often with object + を.
+Examples:
+1. ごはんをたべます。(Gohan o tabemasu.) → I eat rice/a meal.
+2. パンをたべます。(Pan o tabemasu.) → I eat bread.
+3. やさいをたべます。(Yasai o tabemasu.) → I eat vegetables.
+Politeness: Polite (ます-form). Casual: たべる."
+のみます,"Details: のみます (nomimasu)
+Meaning: “to drink”
+Use Context: Verb for drinking liquids.
+Placement in sentence: Verb; with object + を.
+Examples:
+1. みずをのみます。(Mizu o nomimasu.) → I drink water.
+2. ビールをのみます。(Biiru o nomimasu.) → I drink beer.
+3. おちゃをのみます。(Ocha o nomimasu.) → I drink tea.
+Politeness: Polite. Casual: のむ."
+すいます,"Details: すいます (suimasu)
+Meaning: “to smoke / to inhale”
+Use Context: Verb for smoking cigarettes or inhaling.
+Placement in sentence: Verb; with object + を.
+Examples:
+1. たばこをすいます。(Tabako o suimasu.) → I smoke cigarettes.
+2. くうきをすいます。(Kuuki o suimasu.) → I breathe air.
+3. すしをすいますか。(Sushi o suimasu ka.) → Do you eat sushi? (casual mistake usage in learners, but understood).
+Politeness: Polite. Casual: すう."
+たばこをすいます,"Details: たばこをすいます (tabako o suimasu)
+Meaning: “to smoke cigarettes”
+Use Context: Polite fixed phrase.
+Placement in sentence: Verb phrase; with を.
+Examples:
+1. わたしはたばこをすいます。(Watashi wa tabako o suimasu.) → I smoke.
+2. かれはたばこをすいません。(Kare wa tabako o suimasen.) → He doesn’t smoke.
+3. たばこをすいたいです。(Tabako o suitai desu.) → I want to smoke.
+Politeness: Polite."
+みます,"Details: みます (mimasu)
+Meaning: “to see / to watch / to look at”
+Use Context: Verb for seeing, watching.
+Placement in sentence: Verb; with object + を.
+Examples:
+1. えいがをみます。(Eiga o mimasu.) → I watch a movie.
+2. テレビをみます。(Terebi o mimasu.) → I watch TV.
+3. はなをみます。(Hana o mimasu.) → I look at flowers.
+Politeness: Polite. Casual: みる."
+ききます,"Details: ききます (kikimasu)
+Meaning: “to listen / to ask”
+Use Context: Verb with two meanings: listen (to music, etc.), ask (questions).
+Placement in sentence: Verb; with object + を, or に when asking.
+Examples:
+1. おんがくをききます。(Ongaku o kikimasu.) → I listen to music.
+2. せんせいにききます。(Sensei ni kikimasu.) → I ask the teacher.
+3. しんぶんをききます。(Shinbun o kikimasu.) → I listen to the news (radio).
+Politeness: Polite. Casual: きく."
+よみます,"Details: よみます (yomimasu)
+Meaning: “to read”
+Use Context: Verb for reading books, newspapers, etc.
+Placement in sentence: Verb; with object + を.
+Examples:
+1. ほんをよみます。(Hon o yomimasu.) → I read a book.
+2. しんぶんをよみます。(Shinbun o yomimasu.) → I read a newspaper.
+3. レポートをよみます。(Repooto o yomimasu.) → I read a report.
+Politeness: Polite. Casual: よむ."
+かきます,"Details: かきます (kakimasu)
+Meaning: “to write”
+Use Context: Verb for writing letters, reports, etc.
+Placement in sentence: Verb; with object + を.
+Examples:
+1. てがみをかきます。(Tegami o kakimasu.) → I write a letter.
+2. レポートをかきます。(Repooto o kakimasu.) → I write a report.
+3. なまえをかきます。(Namae o kakimasu.) → I write my name.
+Politeness: Polite. Casual: かく."
+かいます,"Details: かいます (kaimasu)
+Meaning: “to buy”
+Use Context: Verb for purchasing.
+Placement in sentence: Verb; with object + を.
+Examples:
+1. パンをかいます。(Pan o kaimasu.) → I buy bread.
+2. ほんをかいます。(Hon o kaimasu.) → I buy a book.
+3. やさいをかいます。(Yasai o kaimasu.) → I buy vegetables.
+Politeness: Polite. Casual: かう."
+とります,"Details: とります (torimasu)
+Meaning: “to take / to take a photo”
+Use Context: Verb; taking physical things or pictures.
+Placement in sentence: Verb; with object + を.
+Examples:
+1. しゃしんをとります。(Shashin o torimasu.) → I take a picture.
+2. しけんをとります。(Shiken o torimasu.) → I take an exam.
+3. かぎをとります。(Kagi o torimasu.) → I take the key.
+Politeness: Polite. Casual: とる."
+しゃしんをとります,"Details: しゃしんをとります (shashin o torimasu)
+Meaning: “to take a photo”
+Use Context: Common collocation.
+Placement in sentence: Verb phrase; with を.
+Examples:
+1. しゃしんをとります。(Shashin o torimasu.) → I take a picture.
+2. こうえんでしゃしんをとります。(Kouen de shashin o torimasu.) → I take pictures in the park.
+3. ともだちのしゃしんをとります。(Tomodachi no shashin o torimasu.) → I take my friend’s photo.
+Politeness: Polite."
+します,"Details: します (shimasu)
+Meaning: “to do”
+Use Context: General-purpose verb, attaches to nouns (スポーツをします).
+Placement in sentence: Verb; with object + を.
+Examples:
+1. テニスをします。(Tenisu o shimasu.) → I play tennis.
+2. サッカーをします。(Sakkaa o shimasu.) → I play soccer.
+3. しゅくだいをします。(Shukudai o shimasu.) → I do homework.
+Politeness: Polite. Casual: する."
+あいます,"Details: あいます (aimasu)
+Meaning: “to meet”
+Use Context: Verb for meeting someone.
+Placement in sentence: Verb; with に (person).
+Examples:
+1. ともだちにあいます。(Tomodachi ni aimasu.) → I meet a friend.
+2. せんせいにあいます。(Sensei ni aimasu.) → I meet the teacher.
+3. かぞくにあいます。(Kazoku ni aimasu.) → I meet my family.
+Politeness: Polite. Casual: あう."
+ともだちをあいます,"Details: ともだちをあいます (tomodachi o aimasu)
+Meaning: (incorrect learner form) “meet a friend”
+Use Context: Some beginners mistakenly use を instead of に.
+Placement in sentence: Should be ともだちにあいます. 
+Examples:
+1. (Correct) ともだちにあいます。(Tomodachi ni aimasu.) → I meet a friend.
+2. ✕ ともだちをあいます is ungrammatical.
+Politeness: N/A. Correct usage is with に."
+ごはん,"Details: ごはん (gohan)
+Meaning: “rice / meal”
+Use Context: Can mean cooked rice or a meal in general.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. ごはんをたべます。(Gohan o tabemasu.) → I eat rice.
+2. ごはんはおいしいです。(Gohan wa oishii desu.) → The rice is delicious.
+3. ごはんをください。(Gohan o kudasai.) → Please give me rice.
+Politeness: Neutral."
+あさごはん,"Details: あさごはん (asagohan)
+Meaning: “breakfast”
+Use Context: Morning meal.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. あさごはんをたべます。(Asagohan o tabemasu.) → I eat breakfast.
+2. あさごはんはなにをたべますか。(Asagohan wa nani o tabemasu ka.) → What do you eat for breakfast?
+3. あさごはんをぬきます。(Asagohan o nukimasu.) → I skip breakfast.
+Politeness: Neutral."
+ひるごはん,"Details: ひるごはん (hirugohan)
+Meaning: “lunch”
+Use Context: Midday meal.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. ひるごはんをたべます。(Hirugohan o tabemasu.) → I eat lunch.
+2. ひるごはんはなんじですか。(Hirugohan wa nan-ji desu ka.) → When is lunch?
+3. ともだちとひるごはんをたべます。(Tomodachi to hirugohan o tabemasu.) → I eat lunch with a friend.
+Politeness: Neutral."
+ばんごはん,"Details: ばんごはん (bangohan)
+Meaning: “dinner”
+Use Context: Evening meal.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. ばんごはんをたべます。(Bangohan o tabemasu.) → I eat dinner.
+2. ばんごはんはなにをたべますか。(Bangohan wa nani o tabemasu ka.) → What do you eat for dinner?
+3. ばんごはんはおいしかったです。(Bangohan wa oishikatta desu.) → Dinner was delicious.
+Politeness: Neutral."
+パン,"Details: パン (pan)
+Meaning: “bread”
+Use Context: Food item; loanword from Portuguese.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. パンをたべます。(Pan o tabemasu.) → I eat bread.
+2. パンとたまごをたべます。(Pan to tamago o tabemasu.) → I eat bread and eggs.
+3. パンはやすいです。(Pan wa yasui desu.) → Bread is cheap.
+Politeness: Neutral."
+たまご,"Details: たまご (tamago)
+Meaning: “egg”
+Use Context: Refers to chicken egg, food.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. たまごをたべます。(Tamago o tabemasu.) → I eat eggs.
+2. たまごはたかいです。(Tamago wa takai desu.) → Eggs are expensive.
+3. たまごのサンドイッチです。(Tamago no sandoicchi desu.) → It’s an egg sandwich.
+Politeness: Neutral."
+にく,"Details: にく (niku)
+Meaning: “meat”
+Use Context: General term for meat.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. にくをたべます。(Niku o tabemasu.) → I eat meat.
+2. にくはやすくないです。(Niku wa yasukunai desu.) → Meat is not cheap.
+3. にくとやさいをたべます。(Niku to yasai o tabemasu.) → I eat meat and vegetables.
+Politeness: Neutral."
+さかな,"Details: さかな (sakana)
+Meaning: “fish”
+Use Context: Food and animal.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. さかなをたべます。(Sakana o tabemasu.) → I eat fish.
+2. さかなはすきです。(Sakana wa suki desu.) → I like fish.
+3. さかなのカレーです。(Sakana no karee desu.) → It’s fish curry.
+Politeness: Neutral."
+やさい,"Details: やさい (yasai)
+Meaning: “vegetables”
+Use Context: General term for vegetables.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. やさいをたべます。(Yasai o tabemasu.) → I eat vegetables.
+2. やさいはからだにいいです。(Yasai wa karada ni ii desu.) → Vegetables are good for health.
+3. やさいとくだものをかいます。(Yasai to kudamono o kaimasu.) → I buy vegetables and fruit.
+Politeness: Neutral."
+くだもの,"Details: くだもの (kudamono)
+Meaning: “fruit”
+Use Context: General word for fruit.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. くだものをたべます。(Kudamono o tabemasu.) → I eat fruit.
+2. くだものはあまいです。(Kudamono wa amai desu.) → Fruit is sweet.
+3. くだものをかいます。(Kudamono o kaimasu.) → I buy fruit.
+Politeness: Neutral."
+みず,"Details: みず (mizu)
+Meaning: “water”
+Use Context: Drinking water or water in general.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. みずをのみます。(Mizu o nomimasu.) → I drink water.
+2. みずはつめたいです。(Mizu wa tsumetai desu.) → The water is cold.
+3. みずをください。(Mizu o kudasai.) → Water, please.
+Politeness: Neutral."
+おちゃ,"Details: おちゃ (ocha)
+Meaning: “tea (usually green tea)”
+Use Context: Polite prefix + tea.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. おちゃをのみます。(Ocha o nomimasu.) → I drink tea.
+2. おちゃはにほんののみものです。(Ocha wa Nihon no nomimono desu.) → Tea is a Japanese drink.
+3. おちゃをください。(Ocha o kudasai.) → Tea, please.
+Politeness: Polite (with お). Plain: ちゃ."
+こうちゃ,"Details: こうちゃ (koucha)
+Meaning: “black tea”
+Use Context: Refers to Western-style tea.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. こうちゃをのみます。(Koucha o nomimasu.) → I drink black tea.
+2. こうちゃはあまいです。(Koucha wa amai desu.) → Black tea is sweet.
+3. こうちゃをください。(Koucha o kudasai.) → Black tea, please.
+Politeness: Neutral."
+ぎゅうにゅう,"Details: ぎゅうにゅう (gyuunyuu)
+Meaning: “milk”
+Use Context: Cow’s milk.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. ぎゅうにゅうをのみます。(Gyuunyuu o nomimasu.) → I drink milk.
+2. ぎゅうにゅうはしろいです。(Gyuunyuu wa shiroi desu.) → Milk is white.
+3. ぎゅうにゅうをください。(Gyuunyuu o kudasai.) → Milk, please.
+Politeness: Neutral."
+ミリク,"Details: ミリク (miriku)
+Meaning: “milk” (loanword ミルク is standard; ミリク is likely a typo/variant)
+Use Context: Loanword form of milk (used in coffee shops).
+Placement in sentence: Noun.
+Examples:
+1. ミルクをのみます。(Miruku o nomimasu.) → I drink milk.
+2. コーヒーにミルクをいれます。(Koohii ni miruku o iremasu.) → I put milk in coffee.
+3. ミルクはしろいです。(Miruku wa shiroi desu.) → Milk is white.
+Politeness: Neutral."
+ジュース,"Details: ジュース (juusu)
+Meaning: “juice”
+Use Context: Any kind of fruit/soft drink (not carbonated soda).
+Placement in sentence: Noun; with は, を.
+Examples:
+1. ジュースをのみます。(Juusu o nomimasu.) → I drink juice.
+2. ジュースはあまいです。(Juusu wa amai desu.) → Juice is sweet.
+3. ジュースをください。(Juusu o kudasai.) → Juice, please.
+Politeness: Neutral."
+ビール,"Details: ビール (biiru)
+Meaning: “beer”
+Use Context: Alcoholic drink.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. ビールをのみます。(Biiru o nomimasu.) → I drink beer.
+2. ビールはつめたいです。(Biiru wa tsumetai desu.) → Beer is cold.
+3. ビールをください。(Biiru o kudasai.) → Beer, please.
+Politeness: Neutral."
+さけ,"Details: さけ (sake)
+Meaning: “alcohol / Japanese rice wine”
+Use Context: General word for alcoholic drinks.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. さけをのみます。(Sake o nomimasu.) → I drink alcohol.
+2. にほんのさけはおいしいです。(Nihon no sake wa oishii desu.) → Japanese sake is delicious.
+3. さけをください。(Sake o kudasai.) → Sake, please.
+Politeness: Neutral."
+ビデオ,"Details: ビデオ (bideo)
+Meaning: “video”
+Use Context: Refers to videos, recordings, or VCR.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. ビデオをみます。(Bideo o mimasu.) → I watch a video.
+2. ビデオをかります。(Bideo o karimasu.) → I borrow a video.
+3. ビデオをとります。(Bideo o torimasu.) → I record a video.
+Politeness: Neutral."
+えいが,"Details: えいが (eiga)
+Meaning: “movie / film”
+Use Context: Refers to movies in general.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. えいがをみます。(Eiga o mimasu.) → I watch a movie.
+2. えいがはおもしろいです。(Eiga wa omoshiroi desu.) → The movie is interesting.
+3. えいがをみませんか。(Eiga o mimasen ka.) → Shall we watch a movie?
+Politeness: Neutral."
+てがみ,"Details: てがみ (tegami)
+Meaning: “letter”
+Use Context: Refers to handwritten letters.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. てがみをかきます。(Tegami o kakimasu.) → I write a letter.
+2. てがみをよみます。(Tegami o yomimasu.) → I read a letter.
+3. てがみをもらいました。(Tegami o moraimashita.) → I received a letter.
+Politeness: Neutral."
+レポート,"Details: レポート (repooto)
+Meaning: “report / paper”
+Use Context: Refers to written assignments or business reports.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. レポートをかきます。(Repooto o kakimasu.) → I write a report.
+2. レポートをよみます。(Repooto o yomimasu.) → I read a report.
+3. レポートをだします。(Repooto o dashimasu.) → I submit a report.
+Politeness: Neutral."
+しゃしん,"Details: しゃしん (shashin)
+Meaning: “photo / picture”
+Use Context: Noun for photos.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. しゃしんをとります。(Shashin o torimasu.) → I take a picture.
+2. しゃしんをみます。(Shashin o mimasu.) → I look at a photo.
+3. しゃしんをおくります。(Shashin o okurimasu.) → I send a picture.
+Politeness: Neutral."
+みせ,"Details: みせ (mise)
+Meaning: “shop / store”
+Use Context: Refers to shops in general.
+Placement in sentence: Noun; with は, に, で.
+Examples:
+1. みせでパンをかいます。(Mise de pan o kaimasu.) → I buy bread at the shop.
+2. あの みせはやすいです。(Ano mise wa yasui desu.) → That shop is cheap.
+3. みせにいきます。(Mise ni ikimasu.) → I go to the shop.
+Politeness: Neutral."
+レストラン,"Details: レストラン (resutoran)
+Meaning: “restaurant”
+Use Context: Eating establishments.
+Placement in sentence: Noun; with は, に, で.
+Examples:
+1. レストランでばんごはんをたべます。(Resutoran de bangohan o tabemasu.) → I eat dinner at a restaurant.
+2. レストランにいきます。(Resutoran ni ikimasu.) → I go to a restaurant.
+3. このレストランはゆうめいです。(Kono resutoran wa yuumei desu.) → This restaurant is famous.
+Politeness: Neutral."
+にわ,"Details: にわ (niwa)
+Meaning: “garden / yard”
+Use Context: Refers to outdoor yards or gardens.
+Placement in sentence: Noun; with は, に.
+Examples:
+1. にわにいぬがいます。(Niwa ni inu ga imasu.) → There is a dog in the yard.
+2. にわであそびます。(Niwa de asobimasu.) → I play in the garden.
+3. にわはひろいです。(Niwa wa hiroi desu.) → The garden is spacious.
+Politeness: Neutral."
+しゅくだい,"Details: しゅくだい (shukudai)
+Meaning: “homework”
+Use Context: School homework.
+Placement in sentence: Noun; with は, を.
+Examples:
+1. しゅくだいをします。(Shukudai o shimasu.) → I do homework.
+2. しゅくだいはむずかしいです。(Shukudai wa muzukashii desu.) → Homework is difficult.
+3. しゅくだいをください。(Shukudai o kudasai.) → Please give homework. (rare use)
+Politeness: Neutral."
+しゅくだいをします,"Details: しゅくだいをします (shukudai o shimasu)
+Meaning: “to do homework”
+Use Context: Fixed expression with する.
+Placement in sentence: Verb phrase; with を.
+Examples:
+1. まいにちしゅくだいをします。(Mainichi shukudai o shimasu.) → I do homework every day.
+2. あしたしゅくだいをします。(Ashita shukudai o shimasu.) → I will do homework tomorrow.
+3. こんばんしゅくだいをします。(Konban shukudai o shimasu.) → I will do homework tonight.
+Politeness: Polite."
+テニス,"Details: テニス (tenisu)
+Meaning: “tennis”
+Use Context: Sport name.
+Placement in sentence: Noun; often with をします.
+Examples:
+1. テニスをします。(Tenisu o shimasu.) → I play tennis.
+2. ともだちとテニスをします。(Tomodachi to tenisu o shimasu.) → I play tennis with a friend.
+3. テニスはたのしいです。(Tenisu wa tanoshii desu.) → Tennis is fun.
+Politeness: Neutral."
+サッカー,"Details: サッカー (sakkaa)
+Meaning: “soccer / football”
+Use Context: Sport name.
+Placement in sentence: Noun; often with をします.
+Examples:
+1. サッカーをします。(Sakkaa o shimasu.) → I play soccer.
+2. サッカーはにんきがあります。(Sakkaa wa ninki ga arimasu.) → Soccer is popular.
+3. サッカーをみます。(Sakkaa o mimasu.) → I watch soccer.
+Politeness: Neutral."
+サッカーをします,"Details: サッカーをします (sakkaa o shimasu)
+Meaning: “to play soccer”
+Use Context: Fixed expression.
+Placement in sentence: Verb phrase; with を.
+Examples:
+1. まいにちサッカーをします。(Mainichi sakkaa o shimasu.) → I play soccer every day.
+2. ともだちとサッカーをします。(Tomodachi to sakkaa o shimasu.) → I play soccer with friends.
+3. らいしゅうサッカーをします。(Raishuu sakkaa o shimasu.) → I will play soccer next week.
+Politeness: Polite."
+はなみ,"Details: はなみ (hanami)
+Meaning: “flower viewing (usually cherry blossoms)”
+Use Context: Traditional Japanese custom.
+Placement in sentence: Noun; often with をします.
+Examples:
+1. はなみをします。(Hanami o shimasu.) → I go flower viewing.
+2. はなみはにほんのしゅうかんです。(Hanami wa Nihon no shuukan desu.) → Hanami is a Japanese custom.
+3. はなみにいきます。(Hanami ni ikimasu.) → I go to see cherry blossoms.
+Politeness: Neutral."
+はなみをします,"Details: はなみをします (hanami o shimasu)
+Meaning: “to go flower viewing”
+Use Context: Verb phrase.
+Placement in sentence: Verb; with を.
+Examples:
+1. あしたはなみをします。(Ashita hanami o shimasu.) → I will go flower viewing tomorrow.
+2. ともだちとはなみをします。(Tomodachi to hanami o shimasu.) → I go flower viewing with friends.
+3. らいしゅうはなみをします。(Raishuu hanami o shimasu.) → I will do hanami next week.
+Politeness: Polite."
+なに,"Details: なに (nani)
+Meaning: “what”
+Use Context: Interrogative word.
+Placement in sentence: Question noun; with particle を or が.
+Examples:
+1. なにをたべますか。(Nani o tabemasu ka.) → What do you eat?
+2. なにをしますか。(Nani o shimasu ka.) → What do you do?
+3. なにがありますか。(Nani ga arimasu ka.) → What is there?
+Politeness: Neutral."
+いっしょに,"Details: いっしょに (issho ni)
+Meaning: “together (with someone)”
+Use Context: Used when doing something jointly.
+Placement in sentence: Adverb; before verbs.
+Examples:
+1. ともだちといっしょにべんきょうします。(Tomodachi to issho ni benkyou shimasu.) → I study with a friend.
+2. いっしょにえいがをみましょう。(Issho ni eiga o mimashou.) → Let’s watch a movie together.
+3. かぞくといっしょにたべます。(Kazoku to issho ni tabemasu.) → I eat with my family.
+Politeness: Neutral."
+ちょっと,"Details: ちょっと (chotto)
+Meaning: “a little / a bit”
+Use Context: Used for small amounts or soft refusals.
+Placement in sentence: Adverb; before verbs/adjectives.
+Examples:
+1. ちょっとまってください。(Chotto matte kudasai.) → Please wait a moment.
+2. ちょっとたべます。(Chotto tabemasu.) → I eat a little.
+3. それはちょっと…。 (Sore wa chotto…) → That’s a bit… (soft refusal).
+Politeness: Neutral/casual."
+いつも,"Details: いつも (itsumo)
+Meaning: “always / usually”
+Use Context: Frequency adverb.
+Placement in sentence: Adverb; before verb.
+Examples:
+1. いつもしゅくだいをします。(Itsumo shukudai o shimasu.) → I always do homework.
+2. いつもはやくおきます。(Itsumo hayaku okimasu.) → I always wake up early.
+3. いつもありがとう。(Itsumo arigatou.) → Thank you always.
+Politeness: Neutral."
+ときどき,"Details: ときどき (tokidoki)
+Meaning: “sometimes”
+Use Context: Frequency adverb.
+Placement in sentence: Adverb; before verb.
+Examples:
+1. ときどきえいがをみます。(Tokidoki eiga o mimasu.) → I sometimes watch movies.
+2. ときどきにほんへいきます。(Tokidoki Nihon e ikimasu.) → I sometimes go to Japan.
+3. ときどきともだちにあいます。(Tokidoki tomodachi ni aimasu.) → I sometimes meet friends.
+Politeness: Neutral."
+それから,"Details: それから (sorekara)
+Meaning: “and then / after that”
+Use Context: Conjunction for sequence.
+Placement in sentence: Sentence-initial or between clauses.
+Examples:
+1. あさごはんをたべます。それから、がっこうにいきます。(Asagohan o tabemasu. Sorekara, gakkou ni ikimasu.) → I eat breakfast. After that, I go to school.
+2. しゅくだいをしました。それから、テレビをみました。(Shukudai o shimashita. Sorekara, terebi o mimashita.) → I did homework. Then I watched TV.
+3. スーパーにいきました。それから、レストランにいきました。(Suupaa ni ikimashita. Sorekara, resutoran ni ikimashita.) → I went to the supermarket, and then to a restaurant.
+Politeness: Neutral."
+ええ,"Details: ええ (ee)
+Meaning: “yes” (polite/casual)
+Use Context: Used in everyday speech for agreement.
+Placement in sentence: Interjection.
+Examples:
+1. ええ、そうです。(Ee, sou desu.) → Yes, that’s right.
+2. ええ、いきます。(Ee, ikimasu.) → Yes, I’ll go.
+3. ええ、わかりました。(Ee, wakarimashita.) → Yes, I understood.
+Politeness: Neutral/polite. Less formal than はい."
+いいですね,"Details: いいですね (ii desu ne)
+Meaning: “That’s nice / Sounds good”
+Use Context: Used to show approval or agreement.
+Placement in sentence: Fixed phrase.
+Examples:
+1. パーティーですか。いいですね。(Paatii desu ka. Ii desu ne.) → A party? That sounds nice.
+2. にほんへいきます。いいですね。(Nihon e ikimasu. Ii desu ne.) → You’re going to Japan? That’s nice.
+3. あしたやすみです。いいですね。(Ashita yasumi desu. Ii desu ne.) → Tomorrow is a holiday. That’s good.
+Politeness: Polite/neutral."
+わかりました,"Details: わかりました (wakarimashita)
+Meaning: “I understand / Got it”
+Use Context: Used to confirm understanding.
+Placement in sentence: Verb (past polite form).
+Examples:
+1. はい、わかりました。(Hai, wakarimashita.) → Yes, I understood.
+2. わかりました、いきます。(Wakarimashita, ikimasu.) → Understood, I’ll go.
+3. わかりました、ありがとうございます。(Wakarimashita, arigatou gozaimasu.) → Got it, thank you.
+Politeness: Polite."
+なんですか,"Details: なんですか (nan desu ka)
+Meaning: “What is it?”
+Use Context: Used when asking politely what something is.
+Placement in sentence: Question phrase.
+Examples:
+1. それはなんですか。(Sore wa nan desu ka.) → What is that?
+2. このみせはなんですか。(Kono mise wa nan desu ka.) → What is this shop?
+3. なんですか？ (Nan desu ka?) → What is it?
+Politeness: Polite."
+じゃ、またあした,"Details: じゃ、またあした (ja, mata ashita)
+Meaning: “Well then, see you tomorrow”
+Use Context: Casual farewell.
+Placement in sentence: Closing phrase.
+Examples:
+1. じゃ、またあした。(Ja, mata ashita.) → Well, see you tomorrow.
+2. じゃ、またあしたあいましょう。(Ja, mata ashita aimashou.) → Well then, let’s meet tomorrow.
+3. じゃ、またあしたね。(Ja, mata ashita ne.) → Okay, see you tomorrow.
+Politeness: Casual. Polite alternative: では、またあした."
