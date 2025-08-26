@@ -1,50 +1,30 @@
-"I am a teacher","わたしはせんせいです。"
-"That person is a student","あのひとはがくせいです。"
-"You are a doctor","あなたはしゃです。"
-"We are employees","わたしたちはかいしゃいんです。"
-"That person is a researcher","あのひとはけんきゅうしゃです。"
-"You are an engineer","あなたはエンジニアです。"
-"I am Rahim's wife","わたしはロヒムさんのつまです。"
-"That person is a bank employee","あのひとはぎんこういんです。"
-"Is that person a teacher?","あのひとはせんせいですか?"
-"Are you a student?","あなたはがくせいですか?"
-"Are you a doctor?","あなたはしゃですか?"
-"Is that person an employee?","あのひとはかいしゃいんですか?"
-"Is that person a researcher?","あのひとはけんきゅうشاですか?"
-"Are you an engineer?","あなたはエンジニアですか?"
-"I am a teacher; I am not a student","わたしはせんせいです、がくせいじゃありません。"
-"That person is a doctor; they are not a teacher","あのひとはいしゃです、せんせいじゃありません。"
-"I am Rina; I am a student","わたしはリナです、がくせいです。"
-"That person is Rahim; they are a bank employee","あのひとはロヒムさんです、ぎんこういんです。"
-"Are you Mina?","あなたはミナさんですか?"
-"Is that person Rahim?","あのひとはロヒムさんですか?"
-"Yes, I am.","はい、そうです。"
-"No, I am not.","いいえ、そうじゃありません。"
-"No, I am not a student.","いいえ、わたしはがくせいじゃありません。"
-"Excuse me, are you Rahim?","しつれいですが、あなたはロヒムさんですか?"
-"What is your name?","おなまえは?"
-"I am a teacher and a doctor","わたしはせんせいです、そしていしゃです。"
-"That person is a student and an engineer","あのひとはがくせいです、そしてエンジニアです。"
-"I am not Mina. I am Rina.","わたしはミナじゃありません。わたしはリナです。"
-"Is that person Japanese?","あのひとはにほんじんじんか?"
-"Are you American?","あなたはアメリカじんじんか?"
-"Is that person Chinese?","あのひとはちゅうごくじんじんか?"
-"I am Korean","わたしはかんこくじんです。"
-"That person is Thai","あのひとはタイじんです。"
-"Are we German?","わたしたちはドイツじんですか?"
-"I came from India","わたしはインドからきました。"
-"That person came from Japan","あのひとはにほんからきました。"
-"I am a teacher; you are a student","わたしはせんせいです、あなたはがくせいです。"
-"That person is a doctor; we are engineers","あのひとはいしゃです、わたしたちはエンジニアです。"
-"I am a teacher; you are a student; and he is an employee","わたしはせんせいです、あなたはがくせいです、そしてかれはかいしゃいんです。"
-"Is this person a teacher or a doctor?","このひとはせんせいですか、いしゃですか?"
-"Is that person Chinese or Japanese?","あのひとはちゅうごくじんですか、にほんじんですか?"
-"I am a student; I am not an employee","わたしはがくせいです、かいしゃいんじゃありません。"
-"Is that person an employee or a teacher?","あのひとはかいしゃいんですか、せんせいですか?"
-"Am I a doctor?","わたしはいしゃですか?"
-"Is that person an engineer or a researcher?","あのひとはエンジニアですか、けんきゅうしゃですか?"
-"I came from America; I am not Indian","わたしはアメリカからきました、インドじんじゃありません。"
-"Is that person a bank employee or a company employee?","あのひとはぎんこういんですか、かいしゃいんですか?"
-"Is this person a teacher?","このひとはせんせいですか?"
-"I am a student and I am American","わたしはがくせいです、そしてアメリカじんです。"
-"That person is a doctor and is Korean","あのひとはいしゃです、そしてかんこくじんです。"
+আমি ছাত্র।,わたし は がくせい です。
+আমি ডাক্তার।,わたし は いしゃ です。
+সে ইঞ্জিনিয়ার।,あのひと は エンジニア です。
+আপনি শিক্ষক।,あなた は せんせい です。
+মিনা-সান ছাত্র।,みなさん は がくせい です。
+কোম্পানির কর্মচারী।,しゃいん は かいしゃいん です。
+ওই ভদ্রলোক শিক্ষক।,あのかた は きょうし です。
+করিম ব্যাংকার।,コリムさん は ぎんこういん です。
+আমরা গবেষক।,わたしたち は けんきゅうしゃ です。
+তুমি ছাত্র।,あんた は がくせい です。
+আমি ছাত্র নই।,わたし は がくせい じゃありません。
+সে ডাক্তার নয়।,あのひと は いしゃ じゃありません。
+আপনি শিক্ষক নন।,あなた は せんせい じゃありません。
+মিনা-সান ইঞ্জিনিয়ার নয়।,みなさん は エンジニア じゃありません。
+ওই ভদ্রলোক কর্মচারী নন।,あのかた は しゃいん じゃありません。
+আপনি কি ছাত্র?,あなた は がくせい ですか。
+আপনি কি ডাক্তার?,あなた は いしゃ ですか。
+সে কি শিক্ষক?,あのひと は せんせい ですか。
+আপনার নাম কী?,あなた の おなまえは なん ですか。
+আপনার বয়স কত?,あなた は なんさい ですか。
+"আমি ছাত্র, সেও ছাত্র।",わたし は がくせい です、あのひと も がくせい です。
+"আমি ডাক্তার, মিনাও ডাক্তার।",わたし は いしゃ です、みなさん も いしゃ です。
+"সে কর্মচারী, সেও কর্মচারী।",あのひと は しゃいん です、あのかた も しゃいん です。
+"করিম ব্যাংকার, সেও ব্যাংকার।",コリムさん は ぎんこういん です、みなさん も ぎんこういん です。
+"আমি গবেষক, তুমিও গবেষক।",わたし は けんきゅうしゃ です、あんた も けんきゅうしゃ です。
+এটা আমার বই।,わたし の ほん です。
+এটা আমার বিশ্ববিদ্যালয়।,わたし の だいがく です。
+এটা আপনার হাসপাতাল।,あなた の びょういん です。
+এটা আপনার বিদ্যুৎ কোম্পানি।,あなた の でんき です。
+এটা করিম-সানের নাম।,コリムさん の おなまえ です。
