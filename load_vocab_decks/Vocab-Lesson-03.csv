@@ -1,4 +1,4 @@
-ここ,"Details: ここ (koko)
+ここ,here (near the speaker),"Details: ここ (koko)
 Meaning: “here (near the speaker)”
 Use Context: Refers to something close to the speaker.
 Placement in sentence: Works as a noun with particles (は, が, に, で).
@@ -7,7 +7,7 @@ Examples:
 2. ここでまってください。(Koko de matte kudasai.) → Please wait here.
 3. ここがだいじなポイントです。(Koko ga daiji na pointo desu.) → This is the important point.
 Politeness: Neutral. Formal alternative is こちら."
-そこ,"Details: そこ (soko)
+そこ,there (near the listener),"Details: そこ (soko)
 Meaning: “there (near the listener)”
 Use Context: Refers to a location near the person you’re speaking to.
 Placement in sentence: Treated as a noun; takes は, が, に, で.
@@ -16,7 +16,7 @@ Examples:
 2. そこにすわってください。(Soko ni suwatte kudasai.) → Please sit there.
 3. そこがきょうしつです。(Soko ga kyoushitsu desu.) → That is the classroom.
 Politeness: Neutral. Formal alternative is そちら."
-あそこ,"Details: あそこ (asoko)
+あそこ,over there (away from both speaker and listener),"Details: あそこ (asoko)
 Meaning: “over there (away from both speaker and listener)”
 Use Context: Refers to something distant from both speaker and listener.
 Placement in sentence: Works like a noun; often paired with は, が, に, で.
@@ -25,7 +25,7 @@ Examples:
 2. あそこであいましょう。(Asoko de aimashou.) → Let’s meet over there.
 3. あそこにレストランがあります。(Asoko ni resutoran ga arimasu.) → There is a restaurant over there.
 Politeness: Neutral. Formal alternative is あちら."
-どこ,"Details: どこ (doko)
+どこ,where,"Details: どこ (doko)
 Meaning: “where”
 Use Context: Used to ask about the location of something/someone.
 Placement in sentence: Functions as an interrogative noun; appears with particles like は, が, に.
@@ -34,7 +34,7 @@ Examples:
 2. あなたのうちはどこですか。(Anata no uchi wa doko desu ka.) → Where is your home?
 3. えきはどこにありますか。(Eki wa doko ni arimasu ka.) → Where is the station?
 Politeness: Neutral. Polite/formal alternative is どちら."
-こちら,"Details: こちら (kochira)
+こちら,"this way / this place / this person (formal for ここ, わたし, etc.)","Details: こちら (kochira)
 Meaning: “this way / this place / this person (formal for ここ, わたし, etc.)”
 Use Context: Used politely to indicate a direction, place, or even oneself.
 Placement in sentence: Noun-like; can take は, が, に, へ.
@@ -43,7 +43,7 @@ Examples:
 2. こちらがわたしのかいしゃです。(Kochira ga watashi no kaisha desu.) → This is my company.
 3. こちらはスミスさんです。(Kochira wa Sumisu-san desu.) → This is Mr. Smith.
 Politeness: Polite/formal. Neutral equivalent: ここ."
-そちら,"Details: そちら (sochira)
+そちら,that way / that place / that person (formal for そこ),"Details: そちら (sochira)
 Meaning: “that way / that place / that person (formal for そこ)”
 Use Context: Polite way of referring to the listener’s place/direction/person.
 Placement in sentence: Functions as noun; used with は, が, に, へ.
@@ -52,7 +52,7 @@ Examples:
 2. そちらへいきます。(Sochira e ikimasu.) → I’ll go that way.
 3. そちらはにほんですか。(Sochira wa Nihon desu ka.) → Is that Japan?
 Politeness: Polite/formal. Neutral equivalent: そこ."
-あちら,"Details: あちら (achira)
+あちら,over that way / over there / that person (formal for あそこ),"Details: あちら (achira)
 Meaning: “over that way / over there / that person (formal for あそこ)”
 Use Context: Polite way of referring to a distant location or person.
 Placement in sentence: Works like a noun with は, が, に, へ.
@@ -61,7 +61,7 @@ Examples:
 2. あちらにあります。(Achira ni arimasu.) → It is over there.
 3. あちらへいってください。(Achira e itte kudasai.) → Please go over there.
 Politeness: Polite/formal. Neutral equivalent: あそこ."
-どちら,"Details: どちら (dochira)
+どちら,which way / where / which person (formal for どこ),"Details: どちら (dochira)
 Meaning: “which way / where / which person (formal for どこ)”
 Use Context: Polite form of asking ‘where’ or ‘which’.
 Placement in sentence: Used with particles は, が, に, へ.
@@ -70,7 +70,7 @@ Examples:
 2. どちらがおいしいですか。(Dochira ga oishii desu ka.) → Which one is delicious?
 3. せんせいはどちらですか。(Sensei wa dochira desu ka.) → Where is the teacher?
 Politeness: Polite/formal. Neutral equivalent: どこ."
-きょうしつ,"Details: きょうしつ (kyoushitsu)
+きょうしつ,classroom,"Details: きょうしつ (kyoushitsu)
 Meaning: “classroom”
 Use Context: Refers to a school/university classroom.
 Placement in sentence: Noun, usually marked by は, が, に.
@@ -79,7 +79,7 @@ Examples:
 2. きょうしつにいきます。(Kyoushitsu ni ikimasu.) → I am going to the classroom.
 3. このきょうしつはおおきいです。(Kono kyoushitsu wa ookii desu.) → This classroom is big.
 Politeness: Neutral."
-しょくどう,"Details: しょくどう (shokudou)
+しょくどう,cafeteria / dining hall,"Details: しょくどう (shokudou)
 Meaning: “cafeteria / dining hall”
 Use Context: Refers to a place where meals are served.
 Placement in sentence: Noun; used with は, で, に.
@@ -88,7 +88,7 @@ Examples:
 2. しょくどうはあそこです。(Shokudou wa asoko desu.) → The cafeteria is over there.
 3. しょくどうにいきましょう。(Shokudou ni ikimashou.) → Let’s go to the cafeteria.
 Politeness: Neutral."
-じむしょ,"Details: じむしょ (jimusho)
+じむしょ,office,"Details: じむしょ (jimusho)
 Meaning: “office”
 Use Context: Refers to a workplace office (administrative).
 Placement in sentence: Noun; used with は, に, で.
@@ -97,7 +97,7 @@ Examples:
 2. じむしょでしごとをします。(Jimusho de shigoto o shimasu.) → I work in the office.
 3. じむしょにかえります。(Jimusho ni kaerimasu.) → I return to the office.
 Politeness: Neutral."
-かいぎしつ,"Details: かいぎしつ (kaigishitsu)
+かいぎしつ,meeting room / conference room,"Details: かいぎしつ (kaigishitsu)
 Meaning: “meeting room / conference room”
 Use Context: Refers to a room used for meetings.
 Placement in sentence: Noun; usually marked with は, に, で.
@@ -106,7 +106,7 @@ Examples:
 2. かいぎしつでかいぎがあります。(Kaigishitsu de kaigi ga arimasu.) → There is a meeting in the meeting room.
 3. あのかいぎしつはちいさいです。(Ano kaigishitsu wa chiisai desu.) → That meeting room is small.
 Politeness: Neutral."
-うけつけ,"Details: うけつけ (uketsuke)
+うけつけ,reception / reception desk,"Details: うけつけ (uketsuke)
 Meaning: “reception / reception desk”
 Use Context: Refers to the place where visitors check in.
 Placement in sentence: Noun; often with は, に.
@@ -115,7 +115,7 @@ Examples:
 2. うけつけでしつもんしてください。(Uketsuke de shitsumon shite kudasai.) → Please ask at the reception.
 3. うけつけにひとがいます。(Uketsuke ni hito ga imasu.) → There is a person at reception.
 Politeness: Neutral."
-ロビー,"Details: ロビー (robii)
+ロビー,lobby,"Details: ロビー (robii)
 Meaning: “lobby”
 Use Context: Refers to the entrance hall of a building.
 Placement in sentence: Noun; used with は, に, で.
@@ -124,7 +124,7 @@ Examples:
 2. ロビーはひろいです。(Robii wa hiroi desu.) → The lobby is spacious.
 3. ロビーにソファーがあります。(Robii ni sofaa ga arimasu.) → There is a sofa in the lobby.
 Politeness: Neutral."
-へや,"Details: へや (heya)
+へや,room,"Details: へや (heya)
 Meaning: “room”
 Use Context: General term for a room in a building.
 Placement in sentence: Noun; used with は, に, で.
@@ -133,7 +133,7 @@ Examples:
 2. わたしのへやはおおきいです。(Watashi no heya wa ookii desu.) → My room is big.
 3. へやにだれもいません。(Heya ni dare mo imasen.) → There is nobody in the room.
 Politeness: Neutral."
-トイレ,"Details: トイレ (toire)
+トイレ,toilet / restroom,"Details: トイレ (toire)
 Meaning: “toilet / restroom”
 Use Context: Refers to bathroom facilities.
 Placement in sentence: Noun; usually with は, に.
@@ -142,7 +142,7 @@ Examples:
 2. トイレにいきます。(Toire ni ikimasu.) → I am going to the toilet.
 3. トイレはあちらです。(Toire wa achira desu.) → The restroom is that way.
 Politeness: Neutral. Polite alternative: おてあらい."
-おてあらい,"Details: おてあらい (otearai)
+おてあらい,restroom / washroom” (polite),"Details: おてあらい (otearai)
 Meaning: “restroom / washroom” (polite)
 Use Context: More polite way to say ‘toilet’.
 Placement in sentence: Noun; with は, に, で.
@@ -151,7 +151,7 @@ Examples:
 2. おてあらいをつかいます。(Otearai o tsukaimasu.) → I use the restroom.
 3. おてあらいにいきたいです。(Otearai ni ikitai desu.) → I want to go to the restroom.
 Politeness: Polite. Neutral equivalent: トイレ."
-かいだん,"Details: かいだん (kaidan)
+かいだん,stairs,"Details: かいだん (kaidan)
 Meaning: “stairs”
 Use Context: Refers to a staircase.
 Placement in sentence: Noun; with は, を, で.
@@ -160,7 +160,7 @@ Examples:
 2. かいだんでまちましょう。(Kaidan de machimashou.) → Let’s wait at the stairs.
 3. かいだんはどこですか。(Kaidan wa doko desu ka.) → Where are the stairs?
 Politeness: Neutral."
-エレベーター,"Details: エレベーター (erebeetaa)
+エレベーター,elevator / lift,"Details: エレベーター (erebeetaa)
 Meaning: “elevator / lift”
 Use Context: Refers to a lift in a building.
 Placement in sentence: Noun; with は, に, で.
@@ -169,7 +169,7 @@ Examples:
 2. エレベーターはあそこです。(Erebeetaa wa asoko desu.) → The elevator is over there.
 3. エレベーターでいきます。(Erebeetaa de ikimasu.) → I go by elevator.
 Politeness: Neutral."
-エスカレーター,"Details: エスカレーター (esukareetaa)
+エスカレーター,escalator,"Details: エスカレーター (esukareetaa)
 Meaning: “escalator”
 Use Context: Refers to moving stairs.
 Placement in sentence: Noun; with は, に, で.
@@ -178,7 +178,7 @@ Examples:
 2. エスカレーターはどこですか。(Esukareetaa wa doko desu ka.) → Where is the escalator?
 3. エスカレーターでいきましょう。(Esukareetaa de ikimashou.) → Let’s go by escalator.
 Politeness: Neutral."
-くに,"Details: くに (kuni)
+くに,country,"Details: くに (kuni)
 Meaning: “country”
 Use Context: Refers to a nation or one’s home country.
 Placement in sentence: Noun; with は, の, から.
@@ -187,7 +187,7 @@ Examples:
 2. わたしのくにはバングラデシュです。(Watashi no kuni wa Banguradeshu desu.) → My country is Bangladesh.
 3. くにからきました。(Kuni kara kimashita.) → I came from my country.
 Politeness: Neutral."
-かいしゃ,"Details: かいしゃ (kaisha)
+かいしゃ,company / workplace,"Details: かいしゃ (kaisha)
 Meaning: “company / workplace”
 Use Context: Refers to an organization or place of employment.
 Placement in sentence: Noun; with は, の, で.
@@ -196,7 +196,7 @@ Examples:
 2. かいしゃでしごとをします。(Kaisha de shigoto o shimasu.) → I work at the company.
 3. かいしゃはどこにありますか。(Kaisha wa doko ni arimasu ka.) → Where is the company?
 Politeness: Neutral."
-うち,"Details: うち (uchi)
+うち,home / house / one’s own place,"Details: うち (uchi)
 Meaning: “home / house / one’s own place”
 Use Context: Refers to one’s home, family, or sometimes one’s organization.
 Placement in sentence: Noun; used with は, に, の.
@@ -205,7 +205,7 @@ Examples:
 2. うちにかえります。(Uchi ni kaerimasu.) → I go home.
 3. うちのかぞくはよにんです。(Uchi no kazoku wa yonin desu.) → My family has four people.
 Politeness: Neutral/casual. Polite alternative: じたく."
-でんわ,"Details: でんわ (denwa)
+でんわ,telephone,"Details: でんわ (denwa)
 Meaning: “telephone”
 Use Context: Refers to a phone or making calls.
 Placement in sentence: Noun; often used with します for ‘to call’.
@@ -214,7 +214,7 @@ Examples:
 2. でんわはどこですか。(Denwa wa doko desu ka.) → Where is the telephone?
 3. でんわばんごうはなんですか。(Denwa bangou wa nan desu ka.) → What is the phone number?
 Politeness: Neutral."
-くつ,"Details: くつ (kutsu)
+くつ,shoes,"Details: くつ (kutsu)
 Meaning: “shoes”
 Use Context: Refers to footwear in general.
 Placement in sentence: Noun; with は, を, の.
@@ -223,7 +223,7 @@ Examples:
 2. そのくつはたかいです。(Sono kutsu wa takai desu.) → Those shoes are expensive.
 3. くつはどこですか。(Kutsu wa doko desu ka.) → Where are the shoes?
 Politeness: Neutral."
-ネクタイ,"Details: ネクタイ (nekutai)
+ネクタイ,necktie,"Details: ネクタイ (nekutai)
 Meaning: “necktie”
 Use Context: Refers to a tie worn with formal clothing.
 Placement in sentence: Noun; with は, を, の.
@@ -232,7 +232,7 @@ Examples:
 2. このネクタイはあかいです。(Kono nekutai wa akai desu.) → This tie is red.
 3. ネクタイをください。(Nekutai o kudasai.) → Please give me a tie.
 Politeness: Neutral."
-ワイン,"Details: ワイン (wain)
+ワイン,wine,"Details: ワイン (wain)
 Meaning: “wine”
 Use Context: Refers to alcoholic beverage wine.
 Placement in sentence: Noun; with は, を.
@@ -241,7 +241,7 @@ Examples:
 2. ワインはフランスのです。(Wain wa Furansu no desu.) → The wine is from France.
 3. ワインをください。(Wain o kudasai.) → Please give me wine.
 Politeness: Neutral."
-たばこ,"Details: たばこ (tabako)
+たばこ,tobacco / cigarette,"Details: たばこ (tabako)
 Meaning: “tobacco / cigarette”
 Use Context: Refers to smoking products.
 Placement in sentence: Noun; with は, を, をすう (to smoke).
@@ -250,7 +250,7 @@ Examples:
 2. たばこはどこでかえますか。(Tabako wa doko de kaemasu ka.) → Where can I buy cigarettes?
 3. たばこをやめたいです。(Tabako o yametai desu.) → I want to quit smoking.
 Politeness: Neutral."
-うりば,"Details: うりば (uriba)
+うりば,sales counter / department in a store,"Details: うりば (uriba)
 Meaning: “sales counter / department in a store”
 Use Context: Refers to a counter or section in a store.
 Placement in sentence: Noun; with は, に.
@@ -259,7 +259,7 @@ Examples:
 2. ワインのうりばはこちらです。(Wain no uriba wa kochira desu.) → The wine counter is this way.
 3. うりばにいきます。(Uriba ni ikimasu.) → I go to the sales counter.
 Politeness: Neutral."
-ちか,"Details: ちか (chika)
+ちか,basement / underground,"Details: ちか (chika)
 Meaning: “basement / underground”
 Use Context: Refers to an underground floor in buildings.
 Placement in sentence: Noun; with は, に.
@@ -268,7 +268,7 @@ Examples:
 2. ちかのうりばにいきます。(Chika no uriba ni ikimasu.) → I go to the basement sales floor.
 3. ちかはひろいです。(Chika wa hiroi desu.) → The basement is spacious.
 Politeness: Neutral."
-～かい,"Details: ～かい (~kai)
+～かい,~th floor,"Details: ～かい (~kai)
 Meaning: “~th floor”
 Use Context: Used to indicate floor levels in a building.
 Placement in sentence: Suffix, attaches to numbers (いっかい, にかい, さんがい…).
@@ -277,7 +277,7 @@ Examples:
 2. にかいにきょうしつがあります。(Nikai ni kyoushitsu ga arimasu.) → There is a classroom on the second floor.
 3. さんがいにいきます。(Sangai ni ikimasu.) → I go to the third floor.
 Politeness: Neutral."
-なんがい,"Details: なんがい (nan-gai)
+なんがい,what floor?,"Details: なんがい (nan-gai)
 Meaning: “what floor?”
 Use Context: Used to ask which floor something is on.
 Placement in sentence: Interrogative; used with particle に.
@@ -286,7 +286,7 @@ Examples:
 2. トイレはなんがいですか。(Toire wa nan-gai desu ka.) → Which floor is the toilet on?
 3. じむしょはなんがいですか。(Jimusho wa nan-gai desu ka.) → Which floor is the office?
 Politeness: Neutral."
-～えん,"Details: ～えん (~en)
+～えん,~yen (currency),"Details: ～えん (~en)
 Meaning: “~yen (currency)”
 Use Context: Suffix used to denote Japanese currency amount.
 Placement in sentence: Attaches to numbers.
@@ -295,7 +295,7 @@ Examples:
 2. そのくつはせんえんです。(Sono kutsu wa sen-en desu.) → Those shoes are 1000 yen.
 3. ワインはごひゃくえんです。(Wain wa gohyaku-en desu.) → The wine is 500 yen.
 Politeness: Neutral."
-いくら,"Details: いくら (ikura)
+いくら,how much?,"Details: いくら (ikura)
 Meaning: “how much?”
 Use Context: Used to ask about price or cost.
 Placement in sentence: Interrogative; usually with particle ですか.
@@ -304,7 +304,7 @@ Examples:
 2. ワインはいくらですか。(Wain wa ikura desu ka.) → How much is the wine?
 3. あのネクタイはいくらですか。(Ano nekutai wa ikura desu ka.) → How much is that necktie?
 Politeness: Neutral/polite."
-ひゃく,"Details: ひゃく (hyaku)
+ひゃく,hundred (100),"Details: ひゃく (hyaku)
 Meaning: “hundred (100)”
 Use Context: Used for numbers/counting.
 Placement in sentence: Noun-like numeral.
@@ -313,7 +313,7 @@ Examples:
 2. ひゃくにんがいます。(Hyaku nin ga imasu.) → There are 100 people.
 3. ひゃくえんをはらいます。(Hyaku-en o haraimasu.) → I pay 100 yen.
 Politeness: Neutral."
-せん,"Details: せん (sen)
+せん,thousand (1000),"Details: せん (sen)
 Meaning: “thousand (1000)”
 Use Context: Used for numbers/counting.
 Placement in sentence: Noun-like numeral.
@@ -322,7 +322,7 @@ Examples:
 2. せんにんのがくせいがいます。(Sen nin no gakusei ga imasu.) → There are 1000 students.
 3. せんえんをください。(Sen-en o kudasai.) → Please give me 1000 yen.
 Politeness: Neutral."
-まん,"Details: まん (man)
+まん,"ten thousand (10,000)","Details: まん (man)
 Meaning: “ten thousand (10,000)”
 Use Context: Used for numbers/counting.
 Placement in sentence: Noun-like numeral.
@@ -331,7 +331,7 @@ Examples:
 2. まんにんのひとがあつまりました。(Man nin no hito ga atsumarimashita.) → Ten thousand people gathered.
 3. いちまんえんのネクタイです。(Ichiman-en no nekutai desu.) → It’s a 10,000-yen necktie.
 Politeness: Neutral."
-すみません,"Details: すみません (sumimasen)
+すみません,excuse me / sorry / thank you (polite),"Details: すみません (sumimasen)
 Meaning: “excuse me / sorry / thank you (polite)”
 Use Context: Used to get attention, apologize, or thank.
 Placement in sentence: Set phrase.
@@ -340,7 +340,7 @@ Examples:
 2. すみません、おくれました。(Sumimasen, okuremashita.) → Sorry, I’m late.
 3. すみません、ありがとう。(Sumimasen, arigatou.) → Thank you.
 Politeness: Polite."
-～でございます,"Details: ～でございます (~de gozaimasu)
+～でございます,it is (very polite),"Details: ～でございます (~de gozaimasu)
 Meaning: “it is (very polite)”
 Use Context: Honorific polite form of です.
 Placement in sentence: Suffix after nouns/adjectives.
@@ -349,7 +349,7 @@ Examples:
 2. わたしはスミスでございます。(Watashi wa Sumisu de gozaimasu.) → I am Smith (very polite).
 3. ほんはここでございます。(Hon wa koko de gozaimasu.) → The book is here.
 Politeness: Very polite/formal."
-～をみせてください,"Details: ～をみせてください (~o misete kudasai)
+～をみせてください,please show me ~,"Details: ～をみせてください (~o misete kudasai)
 Meaning: “please show me ~”
 Use Context: Polite request to see an item.
 Placement in sentence: After noun + をみせてください.
@@ -358,7 +358,7 @@ Examples:
 2. ネクタイをみせてください。(Nekutai o misete kudasai.) → Please show me the tie.
 3. ワインをみせてください。(Wain o misete kudasai.) → Please show me the wine.
 Politeness: Polite."
-じゃ,"Details: じゃ (ja)
+じゃ,well then / so / in that case,"Details: じゃ (ja)
 Meaning: “well then / so / in that case”
 Use Context: Used in conversation to transition or conclude casually.
 Placement in sentence: Appears at start of sentences or before conclusions.
@@ -367,7 +367,7 @@ Examples:
 2. じゃ、またあした。(Ja, mata ashita.) → Well then, see you tomorrow.
 3. じゃ、どうしますか。(Ja, dou shimasu ka.) → So, what shall we do?
 Politeness: Casual. Polite alternative: では."
-～をください,"Details: ～をください (~o kudasai)
+～をください,please give me ~,"Details: ～をください (~o kudasai)
 Meaning: “please give me ~”
 Use Context: Used to request items politely.
 Placement in sentence: After noun + をください.

@@ -1,4 +1,4 @@
-いきます,"Details: いきます (ikimasu)
+いきます,to go,"Details: いきます (ikimasu)
 Meaning: “to go”
 Use Context: Verb used when going to a place.
 Placement in sentence: Verb; often with particle に/へ (destination).
@@ -7,7 +7,7 @@ Examples:
 2. スーパーへいきます。(Suupaa e ikimasu.) → I go to the supermarket.
 3. にほんへいきます。(Nihon e ikimasu.) → I go to Japan.
 Politeness: Polite (ます-form). Casual: いく."
-きます,"Details: きます (kimasu)
+きます,to come,"Details: きます (kimasu)
 Meaning: “to come”
 Use Context: Verb used when someone comes toward the speaker.
 Placement in sentence: Verb; often with に/へ (destination).
@@ -16,7 +16,7 @@ Examples:
 2. あしたがっこうにきます。(Ashita gakkou ni kimasu.) → I will come to school tomorrow.
 3. かれはにほんからきます。(Kare wa Nihon kara kimasu.) → He comes from Japan.
 Politeness: Polite (ます-form). Casual: くる."
-かえります,"Details: かえります (kaerimasu)
+かえります,to return / to go home,"Details: かえります (kaerimasu)
 Meaning: “to return / to go home”
 Use Context: Verb for returning to a place, often home.
 Placement in sentence: Verb; with に/へ (destination).
@@ -25,7 +25,7 @@ Examples:
 2. くじにがっこうからかえります。(Ku-ji ni gakkou kara kaerimasu.) → I return from school at 9.
 3. にほんにかえります。(Nihon ni kaerimasu.) → I return to Japan.
 Politeness: Polite (ます-form). Casual: かえる."
-がっこう,"Details: がっこう (gakkou)
+がっこう,school,"Details: がっこう (gakkou)
 Meaning: “school”
 Use Context: Refers to educational institutions.
 Placement in sentence: Noun; with は, に, で.
@@ -34,7 +34,7 @@ Examples:
 2. がっこうはあそこです。(Gakkou wa asoko desu.) → The school is over there.
 3. がっこうでべんきょうします。(Gakkou de benkyou shimasu.) → I study at school.
 Politeness: Neutral."
-スーパー,"Details: スーパー (suupaa)
+スーパー,supermarket,"Details: スーパー (suupaa)
 Meaning: “supermarket”
 Use Context: Refers to grocery stores.
 Placement in sentence: Noun; with は, に, で.
@@ -43,7 +43,7 @@ Examples:
 2. スーパーにいきます。(Suupaa ni ikimasu.) → I go to the supermarket.
 3. スーパーはちかにあります。(Suupaa wa chika ni arimasu.) → The supermarket is in the basement.
 Politeness: Neutral."
-えき,"Details: えき (eki)
+えき,station,"Details: えき (eki)
 Meaning: “station”
 Use Context: Refers to train/subway stations.
 Placement in sentence: Noun; with は, に, で.
@@ -52,7 +52,7 @@ Examples:
 2. えきはどこですか。(Eki wa doko desu ka.) → Where is the station?
 3. えきからタクシーにのります。(Eki kara takushii ni norimasu.) → I take a taxi from the station.
 Politeness: Neutral."
-ひこうき,"Details: ひこうき (hikouki)
+ひこうき,airplane,"Details: ひこうき (hikouki)
 Meaning: “airplane”
 Use Context: Refers to airplanes.
 Placement in sentence: Noun; with は, に, で.
@@ -61,7 +61,7 @@ Examples:
 2. ひこうきははやいです。(Hikouki wa hayai desu.) → Airplanes are fast.
 3. ひこうきにのります。(Hikouki ni norimasu.) → I ride an airplane.
 Politeness: Neutral."
-ふね,"Details: ふね (fune)
+ふね,ship / boat,"Details: ふね (fune)
 Meaning: “ship / boat”
 Use Context: Refers to boats or ships.
 Placement in sentence: Noun; with は, に, で.
@@ -70,7 +70,7 @@ Examples:
 2. ふねはおおきいです。(Fune wa ookii desu.) → The ship is big.
 3. ふねにのります。(Fune ni norimasu.) → I ride a ship.
 Politeness: Neutral."
-でんしゃ,"Details: でんしゃ (densha)
+でんしゃ,train,"Details: でんしゃ (densha)
 Meaning: “train”
 Use Context: Refers to regular commuter trains.
 Placement in sentence: Noun; with は, に, で.
@@ -79,7 +79,7 @@ Examples:
 2. でんしゃにのります。(Densha ni norimasu.) → I ride a train.
 3. でんしゃはこんでいます。(Densha wa konde imasu.) → The train is crowded.
 Politeness: Neutral."
-ちかてつ,"Details: ちかてつ (chikatetsu)
+ちかてつ,subway / metro,"Details: ちかてつ (chikatetsu)
 Meaning: “subway / metro”
 Use Context: Refers to underground trains.
 Placement in sentence: Noun; with は, に, で.
@@ -88,7 +88,7 @@ Examples:
 2. ちかてつにのります。(Chikatetsu ni norimasu.) → I ride the subway.
 3. ちかてつはべんりです。(Chikatetsu wa benri desu.) → The subway is convenient.
 Politeness: Neutral."
-しんかんせん,"Details: しんかんせん (shinkansen)
+しんかんせん,bullet train,"Details: しんかんせん (shinkansen)
 Meaning: “bullet train”
 Use Context: Refers to high-speed trains in Japan.
 Placement in sentence: Noun; with は, に, で.
@@ -97,7 +97,7 @@ Examples:
 2. しんかんせんはとてもはやいです。(Shinkansen wa totemo hayai desu.) → The bullet train is very fast.
 3. しんかんせんにのります。(Shinkansen ni norimasu.) → I ride the bullet train.
 Politeness: Neutral."
-バス,"Details: バス (basu)
+バス,bus,"Details: バス (basu)
 Meaning: “bus”
 Use Context: Refers to buses.
 Placement in sentence: Noun; with は, に, で.
@@ -106,7 +106,7 @@ Examples:
 2. バスにのります。(Basu ni norimasu.) → I ride a bus.
 3. バスはやすいです。(Basu wa yasui desu.) → Buses are cheap.
 Politeness: Neutral."
-タクシー,"Details: タクシー (takushii)
+タクシー,taxi,"Details: タクシー (takushii)
 Meaning: “taxi”
 Use Context: Refers to taxis.
 Placement in sentence: Noun; with は, に, で.
@@ -115,7 +115,7 @@ Examples:
 2. タクシーにのります。(Takushii ni norimasu.) → I ride a taxi.
 3. タクシーはべんりです。(Takushii wa benri desu.) → Taxis are convenient.
 Politeness: Neutral."
-じてんしゃ,"Details: じてんしゃ (jitensha)
+じてんしゃ,bicycle,"Details: じてんしゃ (jitensha)
 Meaning: “bicycle”
 Use Context: Refers to bicycles.
 Placement in sentence: Noun; with は, に, で.
@@ -124,7 +124,7 @@ Examples:
 2. じてんしゃにのります。(Jitensha ni norimasu.) → I ride a bicycle.
 3. じてんしゃはやすいです。(Jitensha wa yasui desu.) → Bicycles are cheap.
 Politeness: Neutral."
-あるいて,"Details: あるいて (aruite)
+あるいて,on foot / walking,"Details: あるいて (aruite)
 Meaning: “on foot / walking”
 Use Context: Refers to traveling by walking.
 Placement in sentence: Adverbial form of あるく.
@@ -133,7 +133,7 @@ Examples:
 2. えきまであるいていきます。(Eki made aruite ikimasu.) → I walk to the station.
 3. まいにちあるいてさんぽします。(Mainichi aruite sanpo shimasu.) → I take a walk every day on foot.
 Politeness: Neutral."
-ひと,"Details: ひと (hito)
+ひと,person,"Details: ひと (hito)
 Meaning: “person”
 Use Context: General word for a human being.
 Placement in sentence: Noun; with は, が, の.
@@ -142,7 +142,7 @@ Examples:
 2. そのひとはせんせいです。(Sono hito wa sensei desu.) → That person is a teacher.
 3. やさしいひとです。(Yasashii hito desu.) → (He/She) is a kind person.
 Politeness: Neutral. Polite alternative: かた."
-ともだち,"Details: ともだち (tomodachi)
+ともだち,friend,"Details: ともだち (tomodachi)
 Meaning: “friend”
 Use Context: Refers to friends.
 Placement in sentence: Noun; with は, と, に.
@@ -151,7 +151,7 @@ Examples:
 2. ともだちはにほんにいます。(Tomodachi wa Nihon ni imasu.) → My friend is in Japan.
 3. ともだちがきます。(Tomodachi ga kimasu.) → A friend is coming.
 Politeness: Neutral."
-かれ,"Details: かれ (kare)
+かれ,he / boyfriend,"Details: かれ (kare)
 Meaning: “he / boyfriend”
 Use Context: Refers to a male person; also used as boyfriend.
 Placement in sentence: Pronoun; with は, が.
@@ -160,7 +160,7 @@ Examples:
 2. かれはにほんにいます。(Kare wa Nihon ni imasu.) → He is in Japan.
 3. かれはわたしのともだちです。(Kare wa watashi no tomodachi desu.) → He is my friend.
 Politeness: Neutral."
-かのじょ,"Details: かのじょ (kanojo)
+かのじょ,she / girlfriend,"Details: かのじょ (kanojo)
 Meaning: “she / girlfriend”
 Use Context: Refers to a female person; also used as girlfriend.
 Placement in sentence: Pronoun; with は, が.
@@ -169,7 +169,7 @@ Examples:
 2. かのじょはにほんにいます。(Kanojo wa Nihon ni imasu.) → She is in Japan.
 3. かのじょはわたしのともだちです。(Kanojo wa watashi no tomodachi desu.) → She is my friend.
 Politeness: Neutral."
-かぞく,"Details: かぞく (kazoku)
+かぞく,family,"Details: かぞく (kazoku)
 Meaning: “family”
 Use Context: Refers to one’s family members.
 Placement in sentence: Noun; with は, の, と.
@@ -178,7 +178,7 @@ Examples:
 2. かぞくといっしょにすみます。(Kazoku to issho ni sumimasu.) → I live with my family.
 3. かぞくはよにんです。(Kazoku wa yonin desu.) → There are four people in my family.
 Politeness: Neutral."
-ひとりで,"Details: ひとりで (hitori de)
+ひとりで,alone / by oneself,"Details: ひとりで (hitori de)
 Meaning: “alone / by oneself”
 Use Context: Describes doing something without company.
 Placement in sentence: Adverbial phrase; usually before verb.
@@ -187,7 +187,7 @@ Examples:
 2. ひとりでにほんへいきます。(Hitori de Nihon e ikimasu.) → I go to Japan alone.
 3. ひとりでたべます。(Hitori de tabemasu.) → I eat alone.
 Politeness: Neutral."
-せんしゅう,"Details: せんしゅう (senshuu)
+せんしゅう,last week,"Details: せんしゅう (senshuu)
 Meaning: “last week”
 Use Context: Refers to the previous week.
 Placement in sentence: Time noun; with は, に.
@@ -196,7 +196,7 @@ Examples:
 2. せんしゅうはたいへんでした。(Senshuu wa taihen deshita.) → Last week was tough.
 3. せんしゅうテストがありました。(Senshuu tesuto ga arimashita.) → There was a test last week.
 Politeness: Neutral."
-こんしゅう,"Details: こんしゅう (konshuu)
+こんしゅう,this week,"Details: こんしゅう (konshuu)
 Meaning: “this week”
 Use Context: Refers to the current week.
 Placement in sentence: Time noun; with は, に.
@@ -205,7 +205,7 @@ Examples:
 2. こんしゅうテストがあります。(Konshuu tesuto ga arimasu.) → There is a test this week.
 3. こんしゅうにかいぎがあります。(Konshuu ni kaigi ga arimasu.) → There is a meeting this week.
 Politeness: Neutral."
-らいしゅう,"Details: らいしゅう (raishuu)
+らいしゅう,next week,"Details: らいしゅう (raishuu)
 Meaning: “next week”
 Use Context: Refers to the following week.
 Placement in sentence: Time noun; with は, に.
@@ -214,7 +214,7 @@ Examples:
 2. らいしゅうはやすみです。(Raishuu wa yasumi desu.) → Next week is a holiday.
 3. らいしゅうテストがあります。(Raishuu tesuto ga arimasu.) → There is a test next week.
 Politeness: Neutral."
-せんげつ,"Details: せんげつ (sengetsu)
+せんげつ,last month,"Details: せんげつ (sengetsu)
 Meaning: “last month”
 Use Context: Refers to the previous month.
 Placement in sentence: Time noun; with は, に.
@@ -223,7 +223,7 @@ Examples:
 2. せんげつはたいへんでした。(Sengetsu wa taihen deshita.) → Last month was tough.
 3. せんげつともだちにあいました。(Sengetsu tomodachi ni aimashita.) → I met a friend last month.
 Politeness: Neutral."
-こんげつ,"Details: こんげつ (kongetsu)
+こんげつ,this month,"Details: こんげつ (kongetsu)
 Meaning: “this month”
 Use Context: Refers to the current month.
 Placement in sentence: Time noun; with は, に.
@@ -232,7 +232,7 @@ Examples:
 2. こんげつにテストがあります。(Kongetsu ni tesuto ga arimasu.) → There is a test this month.
 3. こんげつはじゅうがつです。(Kongetsu wa Juugatsu desu.) → This month is October.
 Politeness: Neutral."
-らいげつ,"Details: らいげつ (raigetsu)
+らいげつ,next month,"Details: らいげつ (raigetsu)
 Meaning: “next month”
 Use Context: Refers to the upcoming month.
 Placement in sentence: Time noun; with は, に.
@@ -241,7 +241,7 @@ Examples:
 2. らいげつテストがあります。(Raigetsu tesuto ga arimasu.) → There is a test next month.
 3. らいげつはたいへんです。(Raigetsu wa taihen desu.) → Next month will be tough.
 Politeness: Neutral."
-きょねん,"Details: きょねん (kyonen)
+きょねん,last year,"Details: きょねん (kyonen)
 Meaning: “last year”
 Use Context: Refers to the previous year.
 Placement in sentence: Time noun; with は, に.
@@ -250,7 +250,7 @@ Examples:
 2. きょねんはたいへんでした。(Kyonen wa taihen deshita.) → Last year was tough.
 3. きょねんともだちにあいました。(Kyonen tomodachi ni aimashita.) → I met a friend last year.
 Politeness: Neutral."
-ことし,"Details: ことし (kotoshi)
+ことし,this year,"Details: ことし (kotoshi)
 Meaning: “this year”
 Use Context: Refers to the current year.
 Placement in sentence: Time noun; with は, に.
@@ -259,7 +259,7 @@ Examples:
 2. ことしはたいへんです。(Kotoshi wa taihen desu.) → This year is hard.
 3. ことしにテストがあります。(Kotoshi ni tesuto ga arimasu.) → There is a test this year.
 Politeness: Neutral."
-らいねん,"Details: らいねん (rainen)
+らいねん,next year,"Details: らいねん (rainen)
 Meaning: “next year”
 Use Context: Refers to the following year.
 Placement in sentence: Time noun; with は, に.
@@ -268,7 +268,7 @@ Examples:
 2. らいねんテストがあります。(Rainen tesuto ga arimasu.) → There is a test next year.
 3. らいねんはたいへんです。(Rainen wa taihen desu.) → Next year will be hard.
 Politeness: Neutral."
-～がつ,"Details: ～がつ (~gatsu)
+～がつ,~ month,"Details: ～がつ (~gatsu)
 Meaning: “~ month”
 Use Context: Suffix used with numbers to indicate months (いちがつ, にがつ, etc.).
 Placement in sentence: Attaches to numbers.
@@ -277,7 +277,7 @@ Examples:
 2. にがつにテストがあります。(Nigatsu ni tesuto ga arimasu.) → There is a test in February.
 3. じゅうがつににほんへいきます。(Juugatsu ni Nihon e ikimasu.) → I will go to Japan in October.
 Politeness: Neutral."
-なんがつ,"Details: なんがつ (nan-gatsu)
+なんがつ,what month?,"Details: なんがつ (nan-gatsu)
 Meaning: “what month?”
 Use Context: Interrogative for asking about the month.
 Placement in sentence: Question noun.
@@ -286,7 +286,7 @@ Examples:
 2. テストはなんがつですか。(Tesuto wa nan-gatsu desu ka.) → In what month is the test?
 3. あなたのたんじょうびはなんがつですか。(Anata no tanjoubi wa nan-gatsu desu ka.) → What month is your birthday?
 Politeness: Neutral."
-つぎの,"Details: つぎの (tsugi no)
+つぎの,next / following,"Details: つぎの (tsugi no)
 Meaning: “next / following”
 Use Context: Refers to the following thing in order.
 Placement in sentence: Pre-noun modifier.
@@ -295,7 +295,7 @@ Examples:
 2. つぎのかいぎはいつですか。(Tsugi no kaigi wa itsu desu ka.) → When is the next meeting?
 3. つぎのテストはむずかしいです。(Tsugi no tesuto wa muzukashii desu.) → The next test is difficult.
 Politeness: Neutral."
-どういたしまして,"Details: どういたしまして (dou itashimashite)
+どういたしまして,you’re welcome,"Details: どういたしまして (dou itashimashite)
 Meaning: “you’re welcome”
 Use Context: Response to “thank you.”
 Placement in sentence: Fixed expression.
@@ -304,7 +304,7 @@ Examples:
 2. どうもありがとうございます。どういたしまして。(Doumo arigatou gozaimasu. Dou itashimashite.) → Thank you very much. You’re welcome.
 3. どういたしまして、またどうぞ。(Dou itashimashite, mata douzo.) → You’re welcome, please again.
 Politeness: Polite."
-～ばんせん,"Details: ～ばんせん (~bansen)
+～ばんせん,platform number ~,"Details: ～ばんせん (~bansen)
 Meaning: “platform number ~”
 Use Context: Refers to train/subway platform numbers.
 Placement in sentence: Number + ばんせん.
