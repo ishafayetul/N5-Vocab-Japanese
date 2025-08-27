@@ -881,13 +881,35 @@ function pgUpdateProgress() {
 }
 
 function normalizeAnswer(s) {
-  return (s || "")
-    .toLowerCase()
-    .normalize("NFKC")
-    .replace(/\s+/g, " ")
-    .replace(/[。、，,。!！?？;；:：]/g, "")
-    .trim();
+  if (!s) return "";
+  // Unicode normalize to fold width variants etc.
+  s = s.normalize('NFKC').trim();
+
+  // 1) Unify "tilde/wave dash" variants (treat all as the same)
+  //   U+007E ~  ASCII tilde
+  //   U+223C ∼  Tilde operator
+  //   U+FF5E ～ Fullwidth tilde
+  //   U+301C 〜 Wave dash
+  s = s.replace(/[~\u223C\uFF5E\u301C]/g, '～');
+
+  // 2) Unify long vowel mark and middle dot variants (optional but handy)
+  //   Long vowel: halfwidth ｰ -> ー
+  s = s.replace(/[\uFF70]/g, 'ー');
+  //   Middle dot variants -> ・
+  s = s.replace(/[\u30FB]/g, '・');
+
+  // 3) Strip benign punctuation & whitespace commonly ignored in answers
+  //    (commas, periods, Japanese punctuation, spaces)
+  s = s.replace(/[。、．，,\.\s]/g, '');
+
+  // 4) OPTIONAL: if your deck uses leading "～" to indicate suffixes,
+  //    allow user to omit it by stripping leading "～" for comparison.
+  s = s.replace(/^～+/, '');
+
+  // Case-fold for any Latin pieces (romaji cases)
+  return s.toLowerCase();
 }
+
 
 function highlightDiff(userRaw, correctRaw) {
   // Work at Unicode codepoint level
