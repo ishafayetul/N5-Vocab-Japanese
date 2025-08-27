@@ -55,6 +55,7 @@ const writeState = {
   answered: false
 };
 
+
 // ---------------- DOM helpers ----------------
 const $ = (id) => document.getElementById(id);
 const setText = (id, txt) => { const el = $(id); if (el) el.innerText = txt; };
@@ -173,14 +174,18 @@ function showSection(id) {
   }
   if (currentSectionId === "practice-grammar" && id !== "practice-grammar") {
     autoCommitIfNeeded("leaving grammar practice");
-    // ensure set list is visible when leaving
     const filesBox = $("pg-file-buttons");
     if (filesBox) filesBox.classList.remove('hidden');
     const area = $("pg-area");
     if (area) area.classList.add('hidden');
   }
+  // NEW: leaving Write Words => autosave + unbind keys
   if (currentSectionId === "write" && id !== "write") {
     autoCommitIfNeeded("leaving write words");
+    if (writeKeyHandler) {
+      document.removeEventListener('keydown', writeKeyHandler);
+      writeKeyHandler = null;
+    }
   }
 
   document.querySelectorAll('.main-content main > section').forEach(sec => {
@@ -194,8 +199,38 @@ function showSection(id) {
 
   if (id === "practice") updateDeckProgress();
   if (id === "practice-grammar") pgUpdateProgress();
-  if (id === "write") writeUpdateProgress();
+  if (id === "write") {
+    writeUpdateProgress();
+    // NEW: (re)bind keyboard shortcuts when entering write
+    if (!writeKeyHandler) {
+      writeKeyHandler = (e) => {
+        if (currentSectionId !== 'write') return;
+        const input = $("write-input");
+        const disabled = !input || input.disabled;
+        // Ctrl+Enter => Next
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          writeNext();
+          return;
+        }
+        // Esc => Skip
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          writeSkip();
+          return;
+        }
+        // Enter => Submit (only if input enabled)
+        if (e.key === 'Enter' && !disabled) {
+          e.preventDefault();
+          writeSubmit();
+          return;
+        }
+      };
+      document.addEventListener('keydown', writeKeyHandler);
+    }
+  }
 }
+
 window.showSection = showSection;
 
 // ---------------- DECKS (Vocab) ----------------
@@ -989,11 +1024,92 @@ function pgNext() {
 window.pgNext = pgNext;
 
 // ---------------- PROGRESS (reads via firebase.js) ----------------
+// async function renderProgress() {
+//   if (!window.__fb_fetchAttempts) return;
+
+//   try {
+//     const attempts = await window.__fb_fetchAttempts(50);
+//     const tbody = $("progress-table")?.querySelector("tbody");
+//     if (tbody) {
+//       tbody.innerHTML = "";
+//       attempts.slice(0, 20).forEach(a => {
+//         const tr = document.createElement("tr");
+//         const when = a.createdAt ? new Date(a.createdAt).toLocaleString() : "—";
+//         tr.innerHTML = `
+//           <td>${when}</td>
+//           <td>${a.deckName || "—"}</td>
+//           <td>${a.mode || "—"}</td>
+//           <td>${a.correct ?? 0}</td>
+//           <td>${a.wrong ?? 0}</td>
+//           <td>${a.skipped ?? 0}</td>
+//           <td>${a.total ?? ((a.correct||0)+(a.wrong||0)+(a.skipped||0))}</td>
+//         `;
+//         tbody.appendChild(tr);
+//       });
+//     }
+
+//     const last = attempts[0];
+//     let prev = null;
+//     if (last) {
+//       prev = attempts.find(a =>
+//         a.deckName === last.deckName && a.createdAt < last.createdAt
+//       ) || null;
+//     }
+
+//     const lastBox = $("progress-last");
+//     const prevBox = $("progress-prev");
+//     const deltaBox = $("progress-delta");
+
+//     if (lastBox) {
+//       if (last) {
+//         lastBox.innerHTML = `
+//           <div><b>${last.deckName}</b> (${last.mode})</div>
+//           <div>✅ ${last.correct || 0} | ❌ ${last.wrong || 0} | ➖ ${last.skipped || 0}</div>
+//           <div class="muted">${new Date(last.createdAt).toLocaleString()}</div>
+//         `;
+//       } else {
+//         lastBox.textContent = "No attempts yet.";
+//       }
+//     }
+
+//     if (prevBox) {
+//       if (prev) {
+//         prevBox.innerHTML = `
+//           <div><b>${prev.deckName}</b> (${prev.mode})</div>
+//           <div>✅ ${prev.correct || 0} | ❌ ${prev.wrong || 0} | ➖ ${prev.skipped || 0}</div>
+//           <div class="muted">${new Date(prev.createdAt).toLocaleString()}</div>
+//         `;
+//       } else {
+//         prevBox.textContent = "—";
+//       }
+//     }
+
+//     if (deltaBox) {
+//       if (last && prev) {
+//         const d = (last.correct || 0) - (prev.correct || 0);
+//         const cls = d >= 0 ? "delta-up" : "delta-down";
+//         const sign = d > 0 ? "+" : (d < 0 ? "" : "±");
+//         deltaBox.innerHTML = `<span class="${cls}">${sign}${d} correct vs previous (same deck)</span>`;
+//       } else if (last && !prev) {
+//         deltaBox.textContent = "No previous attempt for this deck.";
+//       } else {
+//         deltaBox.textContent = "—";
+//       }
+//     }
+//   } catch (e) {
+//     console.warn("renderProgress failed:", e);
+//   }
+// }
+
 async function renderProgress() {
   if (!window.__fb_fetchAttempts) return;
 
+  // Hoist so it's visible to the write-words table block below
+  let attempts = [];
+
   try {
-    const attempts = await window.__fb_fetchAttempts(50);
+    attempts = await window.__fb_fetchAttempts(50);
+
     const tbody = $("progress-table")?.querySelector("tbody");
     if (tbody) {
       tbody.innerHTML = "";
@@ -1062,9 +1178,82 @@ async function renderProgress() {
       }
     }
   } catch (e) {
-    console.warn("renderProgress failed:", e);
+    console.warn("renderProgress failed (attempts table):", e);
+  }
+
+  // --- NEW: Write Words per-deck completion (best single session) ---
+  try {
+    const tbodyW = $("write-progress-table")?.querySelector("tbody");
+    if (tbodyW) {
+      tbodyW.innerHTML = "";
+
+      // Bail fast if no attempts yet
+      if (!Array.isArray(attempts) || attempts.length === 0) return;
+
+      // group write attempts by deckName
+      const byDeck = new Map();
+      attempts
+        .filter(a => a && a.mode === 'write') // only Write Words sessions
+        .forEach(a => {
+          const key = a.deckName || '(Unknown Deck)';
+          if (!byDeck.has(key)) byDeck.set(key, []);
+          byDeck.get(key).push(a);
+        });
+
+      const rows = [];
+      byDeck.forEach((arr, deckName) => {
+        let best = null;
+        for (const a of arr) {
+          if (!best || (a.total || 0) > (best.total || 0)) best = a;
+        }
+        if (!best) return;
+
+        // deck size from loaded decks (if available)
+        const deckKey = deckName.replace(/^Grammar:\s*/i, "").trim();
+        const size =
+          (allDecks && allDecks[deckKey] && allDecks[deckKey].length) ||
+          (allDecks && allDecks[deckName] && allDecks[deckName].length) ||
+          null;
+
+        const bestAttempted = best.total ?? ((best.correct || 0) + (best.wrong || 0) + (best.skipped || 0));
+        const pct = (size && size > 0) ? Math.min(100, Math.floor((bestAttempted / size) * 100)) : null;
+        const when = best.createdAt ? new Date(best.createdAt).toLocaleString() : "—";
+
+        rows.push({
+          deckName,
+          bestAttempted,
+          size,
+          pctText: (pct === null) ? "—" : `${pct}%`,
+          when
+        });
+      });
+
+      // Sort rows by deck name natural order
+      rows.sort((a, b) => a.deckName.localeCompare(b.deckName, undefined, { numeric: true }));
+
+      // Render rows
+      rows.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${r.deckName}</td>
+          <td>${r.bestAttempted}</td>
+          <td>${r.size ?? "—"}</td>
+          <td>${r.pctText}</td>
+          <td>${r.when}</td>
+        `;
+        tbodyW.appendChild(tr);
+      });
+
+      // If sizes aren't ready yet, retry once decks likely loaded
+      if (rows.length && rows.some(r => r.size === null)) {
+        setTimeout(() => { try { renderProgress(); } catch {} }, 800);
+      }
+    }
+  } catch (e) {
+    console.warn("write-progress-table render failed:", e);
   }
 }
+
 window.renderProgress = renderProgress;
 
 // ---------------- Utilities ----------------
