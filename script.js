@@ -54,6 +54,7 @@ const writeState = {
   i: 0,        // pointer
   answered: false
 };
+let writeKeyHandler = null;
 
 
 // ---------------- DOM helpers ----------------
