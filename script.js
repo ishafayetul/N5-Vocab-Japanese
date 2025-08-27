@@ -48,6 +48,13 @@ const pgState = {
   answered: false     // prevent resubmission until Next
 };
 
+// ---- Write Words (EN -> JP typing) ----
+const writeState = {
+  order: [],   // indices into currentDeck
+  i: 0,        // pointer
+  answered: false
+};
+
 // ---------------- DOM helpers ----------------
 const $ = (id) => document.getElementById(id);
 const setText = (id, txt) => { const el = $(id); if (el) el.innerText = txt; };
@@ -172,6 +179,9 @@ function showSection(id) {
     const area = $("pg-area");
     if (area) area.classList.add('hidden');
   }
+  if (currentSectionId === "write" && id !== "write") {
+    autoCommitIfNeeded("leaving write words");
+  }
 
   document.querySelectorAll('.main-content main > section').forEach(sec => {
     sec.classList.add('hidden');
@@ -184,6 +194,7 @@ function showSection(id) {
 
   if (id === "practice") updateDeckProgress();
   if (id === "practice-grammar") pgUpdateProgress();
+  if (id === "write") writeUpdateProgress();
 }
 window.showSection = showSection;
 
@@ -217,6 +228,160 @@ async function loadDeckManifest() {
     statusLine("deck-status", `Failed to load decks: ${err.message}`);
   }
 }
+
+window.startWriteWords = function () {
+  if (!currentDeck.length) return alert("Pick a deck first!");
+
+  // Reset top counters for this session
+  mode = "write";
+  sessionBuf.mode = "write";    // keep mode label, but count towards enJpCorrect
+  currentIndex = 0;
+  score = { correct: 0, wrong: 0, skipped: 0 };
+
+  // Build an order and shuffle for randomness
+  writeState.order = [...currentDeck.keys()];
+  shuffleArray(writeState.order);
+  writeState.i = 0;
+  writeState.answered = false;
+
+  showSection("write");
+  writeRender();
+  writeUpdateProgress();
+  updateScore();
+};
+
+function writeRender() {
+  const idx = writeState.order[writeState.i];
+  const item = currentDeck[idx];
+
+  const card = $("write-card");
+  if (card) {
+    card.className = "flashcard";
+    card.textContent = item ? (item.back || "(no meaning)") : "(finished)";
+  }
+
+  const input = $("write-input");
+  if (input) {
+    input.value = "";
+    input.disabled = false;
+    input.focus();
+  }
+
+  const submitBtn = $("write-submit");
+  if (submitBtn) submitBtn.disabled = false;
+
+  const fb = $("write-feedback");
+  if (fb) fb.innerHTML = "";
+
+  writeState.answered = false;
+}
+
+function writeUpdateProgress() {
+  const total = currentDeck.length || 0;
+  const done = Math.min(writeState.i, total);
+  const p = percent(done, total);
+  const bar = $("write-progress-bar");
+  const txt = $("write-progress-text");
+  if (bar) bar.style.width = `${p}%`;
+  if (txt) txt.textContent = `${done} / ${total} (${p}%)`;
+}
+
+window.writeSubmit = function () {
+  const idx = writeState.order[writeState.i];
+  const item = currentDeck[idx];
+  if (!item || writeState.answered) return;
+
+  const input = $("write-input");
+  const fb = $("write-feedback");
+  const userAnsRaw = input ? input.value : "";
+
+  const ok = normalizeAnswer(userAnsRaw) === normalizeAnswer(item.front);
+
+  // Feedback with diff on wrong
+  if (fb) {
+    const userDiffHtml = highlightDiff(userAnsRaw, item.front);
+    fb.innerHTML = ok
+      ? `✅ Correct!<br><b>Answer:</b> ${escapeHtml(item.front)}<br><b>Your answer:</b> ${escapeHtml(userAnsRaw)}`
+      : `❌ Wrong.<br><b>Answer:</b> ${escapeHtml(item.front)}<br><b>Your answer:</b> ${userDiffHtml}`;
+  }
+
+  // Update score + session buffer
+  const key = item.front + "|" + item.back;
+  if (ok) {
+    score.correct++;
+    sessionBuf.correct++;
+    sessionBuf.total++;
+    // Count towards EN -> JP category
+    sessionBuf.enJpCorrect++;
+    masteryMap[key] = (masteryMap[key] || 0) + 1;
+    if (masteryMap[key] >= 5) {
+      mistakes = mistakes.filter(m => m.front !== item.front || m.back !== item.back);
+    }
+  } else {
+    score.wrong++;
+    sessionBuf.wrong++;
+    sessionBuf.total++;
+    masteryMap[key] = 0;
+    mistakes.push(item);
+  }
+
+  localStorage.setItem("mistakes", JSON.stringify(mistakes));
+  localStorage.setItem("masteryMap", JSON.stringify(masteryMap));
+  persistSession();
+  updateScore();
+
+  // lock until Next
+  if (input) input.disabled = true;
+  const submitBtn = $("write-submit");
+  if (submitBtn) submitBtn.disabled = true;
+  writeState.answered = true;
+};
+
+window.writeSkip = function () {
+  const idx = writeState.order[writeState.i];
+  const item = currentDeck[idx];
+  if (!item) return;
+
+  const key = item.front + "|" + item.back;
+
+  score.skipped++;
+  sessionBuf.skipped++;
+  sessionBuf.total++;
+  masteryMap[key] = 0;
+  mistakes.push(item);
+
+  localStorage.setItem("mistakes", JSON.stringify(mistakes));
+  localStorage.setItem("masteryMap", JSON.stringify(masteryMap));
+  persistSession();
+  updateScore();
+
+  writeNext();
+};
+
+window.writeShowDetails = function () {
+  const idx = writeState.order[writeState.i];
+  const item = currentDeck[idx];
+  const fb = $("write-feedback");
+  if (fb && item) {
+    let details = item.romaji || "(no details)";
+    details = details.replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>");
+    fb.innerHTML = `👁 <b>Details:</b> <p>${details}</p>`;
+  }
+};
+
+window.writeNext = function () {
+  writeState.i++;
+  writeUpdateProgress();
+
+  if (writeState.i >= writeState.order.length) {
+    alert(`Finished! ✅ ${score.correct} ❌ ${score.wrong} ➖ ${score.skipped}\nSaving your progress…`);
+    autoCommitIfNeeded("finish write words");
+    // Return to deck select like other flows
+    showSection("deck-select");
+  } else {
+    writeRender();
+  }
+};
 
 function parseCSV(text){
   const rows = [];

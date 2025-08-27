@@ -70,6 +70,7 @@
           <button onclick="startLearnMode()">🧠 Learn</button>
           <button onclick="startPractice('jp-en')">Japanese → English</button>
           <button onclick="startPractice('en-jp')">English → Japanese</button>
+          <button onclick="startWriteWords()">✍️ Write Words</button>
         </section>
 
         <!-- Learn (flashcard + prev/next + romaji in middle) -->
@@ -131,6 +132,25 @@
 
             <div id="pg-feedback" class="pg-feedback muted"></div>
           </div>
+        </section>
+        <!-- ✍️ Write Words (EN → JP typing) -->
+        <section id="write" class="hidden">
+          <div class="deck-progress">
+            <div class="deck-progress-bar" id="write-progress-bar"></div>
+            <div class="deck-progress-text" id="write-progress-text">0 / 0 (0%)</div>
+          </div>
+
+          <div class="flashcard" id="write-card"></div>
+
+          <div class="pg-input-row"> <!-- reuse existing styles -->
+            <input id="write-input" class="pg-input" placeholder="Type the Japanese word…" />
+            <button id="write-submit" onclick="writeSubmit()">Submit</button>
+            <button id="write-skip" onclick="writeSkip()">Skip</button>
+            <button id="write-details" onclick="writeShowDetails()">👁 Show Details</button>
+            <button id="write-next" onclick="writeNext()">Next ➡️</button>
+          </div>
+
+          <div id="write-feedback" class="pg-feedback muted"></div>
         </section>
 
         <!-- Progress -->
