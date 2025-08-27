@@ -365,6 +365,7 @@ function writeRender() {
   const markBtn = $("write-mark-btn");
   if (markBtn) {
     const key = item ? item.front + "|" + item.back : "";
+    markBtn.disabled = false;
     markBtn.classList.toggle("hidden", key && !!markedMap[key]);
   }
 
@@ -641,10 +642,11 @@ function showQuestion() {
 
   // script.js (inside showQuestion, after setting question and options)
   const markBtn = $("practice-mark-btn");
-  if (markBtn) {
-    const qKey = q.front + "|" + q.back;
-    markBtn.classList.toggle("hidden", !!markedMap[qKey]);
-  }
+    if (markBtn) {
+      const qKey = q.front + "|" + q.back;
+      markBtn.disabled = false;
+      markBtn.classList.toggle("hidden", !!markedMap[qKey]);
+    }
 
   updateDeckProgress();
 
@@ -775,6 +777,7 @@ function showLearnCard() {
   const markBtn = $("learn-mark-btn");
   if (markBtn) {
     const key = word.front + "|" + word.back;
+    markBtn.disabled = false;
     markBtn.classList.toggle("hidden", !!markedMap[key]);
   }
 }
@@ -1629,49 +1632,54 @@ function renderMarkedList() {
 }
 
 // script.js (Mark current word logic)
-window.markCurrentWord = async function() {
-  // Determine the word object the user is viewing in the current mode
+window.markCurrentWord = async function () {
+  // figure out current word by mode
   let word;
   if (mode === "write") {
-    // In Write mode, current index is managed in writeState
     const idx = writeState.order[writeState.i];
     word = currentDeck[idx];
   } else {
-    // In Learn or MCQ practice modes
     word = currentDeck[currentIndex];
   }
   if (!word) return;
-  
+
   const key = word.front + "|" + word.back;
-  if (markedMap[key]) {
-    // Already marked, no need to mark again
-    return;
-  }
-  
-  // Optimistically disable the Mark button to prevent double-clicks
-  const markBtnIds = ["learn-mark-btn", "practice-mark-btn", "write-mark-btn"];
-  markBtnIds.forEach(id => $(id)?.setAttribute("disabled", "true"));
-  
-  // Save the word to Firebase
+  if (markedMap[key]) return; // already marked
+
+  // pick the active Mark button by current section
+  let activeBtn = null;
+  if (currentSectionId === "learn") activeBtn = $("learn-mark-btn");
+  else if (currentSectionId === "practice") activeBtn = $("practice-mark-btn");
+  else if (currentSectionId === "write") activeBtn = $("write-mark-btn");
+
+  if (activeBtn) activeBtn.disabled = true; // disable only the visible one
+
   const res = window.__fb_markWord ? await window.__fb_markWord(word) : { ok: false };
+
   if (res.ok) {
-    // Update local state
+    // update local cache
     markedWordsList.push({ front: word.front, back: word.back, romaji: word.romaji || "" });
     markedMap[key] = true;
-    // Show confirmation toast
+
+    // toast confirm
     const toast = $("toast");
     if (toast) {
       toast.textContent = "Marked!";
       toast.classList.add("show");
       setTimeout(() => toast.classList.remove("show"), 2000);
     }
-    // Hide/disable the Mark button now that it's marked
-    markBtnIds.forEach(id => $(id)?.classList.add("hidden"));
-    // Update the Marked Words list UI (in case user views it next)
-    renderMarkedList();
+
+    // hide this button for the just-marked word
+    if (activeBtn) {
+      activeBtn.classList.add("hidden");
+      activeBtn.disabled = false; // safety: clear disabled state
+    }
+
+    renderMarkedList(); // refresh the Marked page
   } else {
-    // Marking failed (e.g., network issue) – re-enable button and show error
-    markBtnIds.forEach(id => $(id)?.removeAttribute("disabled"));
+    // failure → re-enable so user can retry
+    if (activeBtn) activeBtn.disabled = false;
+
     const toast = $("toast");
     if (toast) {
       toast.textContent = "Failed to mark. Please try again.";
@@ -1681,6 +1689,7 @@ window.markCurrentWord = async function() {
     console.error("Mark Word error:", res.error);
   }
 };
+
 
 // script.js (Unmark a word)
 window.unmarkWord = async function(wordKey) {
