@@ -56,6 +56,10 @@ const writeState = {
 };
 let writeKeyHandler = null;
 
+// --- Learn Notes state ---
+let notesCache = {};         // { [deckName]: { [wordKey]: note } }
+let learnNoteTimer = null;   // debounce timer for autosave
+let learnNoteLastKey = null; // currently-bound key for textarea
 
 // ---------------- DOM helpers ----------------
 const $ = (id) => document.getElementById(id);
@@ -694,16 +698,23 @@ function showLearnCard() {
 }
 
 function nextLearn() {
+  if (learnNoteTimer){ clearTimeout(learnNoteTimer); learnNoteTimer = null; learnNoteSaveNow(); }
+
   if (!currentDeck.length) return;
   currentIndex = Math.min(currentIndex + 1, currentDeck.length - 1);
   showLearnCard();
+  learnNoteBindForCurrent();
+
 }
 window.nextLearn = nextLearn;
 
 function prevLearn() {
+  if (learnNoteTimer){ clearTimeout(learnNoteTimer); learnNoteTimer = null; learnNoteSaveNow(); }
   if (!currentDeck.length) return;
   currentIndex = Math.max(currentIndex - 1, 0);
   showLearnCard();
+  learnNoteBindForCurrent();
+
 }
 window.prevLearn = prevLearn;
 
@@ -721,6 +732,94 @@ function showLearnRomaji() {
   }
 }
 window.showLearnRomaji = showLearnRomaji;
+
+async function ensureDeckNotesLoaded(deckName){
+  if (notesCache[deckName]) return; // already loaded
+  // try cloud
+  let cloud = {};
+  if (window.__fb_fetchNotes){
+    try { cloud = await window.__fb_fetchNotes(deckName); } catch {}
+  }
+  // merge with local (local wins if both present)
+  const local = loadLocalNotes(deckName);
+  notesCache[deckName] = { ...(cloud || {}), ...(local || {}) };
+}
+
+window.startLearnMode = async function(){
+  if (!currentDeck.length) return alert("Pick a deck first!");
+  mode = "learn";
+  sessionBuf.mode = "learn"; // not scored, but keep mode label
+  currentIndex = 0;
+  score = { correct: 0, wrong: 0, skipped: 0 }; // Learn doesn’t change these
+
+  await ensureDeckNotesLoaded(currentDeckName);
+  showSection("learn");
+  showLearnCard(); // your existing function that shows word + meaning
+  learnNoteBindForCurrent(); // NEW: bind note for current word
+};
+
+function learnNoteBindForCurrent(){
+  const idx = currentIndex; // or however you reference current in Learn
+  const item = currentDeck[idx];
+  if (!item) return;
+
+  const key = wordKeyOf(item);
+  learnNoteLastKey = key;
+
+  const ta = $("learn-note-text");
+  const st = $("learn-note-status");
+
+  // load note from cache
+  const deckNotes = notesCache[currentDeckName] || {};
+  const note = deckNotes[key] || "";
+  if (ta) ta.value = note;
+
+  // light status
+  if (st) st.textContent = note ? "Loaded" : "—";
+
+  // set up input handler (debounced autosave)
+  if (ta){
+    ta.oninput = function(){
+      if (st) st.textContent = "Saving…";
+      if (learnNoteTimer) clearTimeout(learnNoteTimer);
+      learnNoteTimer = setTimeout(() => {
+        learnNoteSaveNow(); // will read current textarea value and save
+      }, 800);
+    };
+  }
+}
+window.learnNoteSaveNow = async function(){
+  const ta = $("learn-note-text");
+  const st = $("learn-note-status");
+  if (!ta) return;
+
+  const idx = currentIndex;
+  const item = currentDeck[idx];
+  if (!item) return;
+
+  const key = wordKeyOf(item);
+  const val = (ta.value || "").trim();
+
+  // update cache immediately
+  if (!notesCache[currentDeckName]) notesCache[currentDeckName] = {};
+  if (val) notesCache[currentDeckName][key] = val;
+  else delete notesCache[currentDeckName][key];
+
+  // persist locally always (for offline safety)
+  saveLocalNotes(currentDeckName, notesCache[currentDeckName]);
+
+  // try cloud
+  let cloudOk = false;
+  if (window.__fb_saveNote){
+    const res = await window.__fb_saveNote({ deckName: currentDeckName, wordKey: key, note: val });
+    cloudOk = !!(res && res.ok);
+  }
+
+  if (st){
+    if (cloudOk) st.textContent = "Saved";
+    else st.textContent = "Offline (saved locally)";
+  }
+};
 
 // ---------------- MISTAKES ----------------
 function startMistakePractice() {
@@ -1392,3 +1491,23 @@ window.resetSite = async function () {
     if (btn) btn.disabled = false;
   }
 };
+
+function wordKeyOf(item){
+  // stable unique key per vocab row
+  return (item?.front || "") + "|" + (item?.back || "");
+}
+function lsNotesKey(deckName){
+  const uid = (window.__fb_getUid && window.__fb_getUid()) || "local";
+  return `notes:${uid}:${deckName}`;
+}
+function loadLocalNotes(deckName){
+  try{
+    const raw = localStorage.getItem(lsNotesKey(deckName));
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function saveLocalNotes(deckName, obj){
+  try{
+    localStorage.setItem(lsNotesKey(deckName), JSON.stringify(obj || {}));
+  }catch(e){}
+}

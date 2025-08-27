@@ -76,6 +76,37 @@ function startCountdown() {
   tick();
   setInterval(tick, 1000);
 }
+// --- Notes helpers ---
+// Map path: users/{uid}/notes/{deckName}  (fields: wordKey -> note string)
+
+window.__fb_fetchNotes = async function(deckName){
+  try {
+    if (!auth.currentUser) return {}; // not signed in -> let frontend fall back to localStorage
+    const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js");
+    const ref = doc(db, "users", auth.currentUser.uid, "notes", deckName);
+    const snap = await getDoc(ref);
+    return snap.exists() ? (snap.data() || {}) : {};
+  } catch (e) {
+    console.warn("[notes] fetchNotes failed:", e?.message || e);
+    return {};
+  }
+};
+
+window.__fb_saveNote = async function({ deckName, wordKey, note }){
+  try {
+    if (!auth.currentUser) throw new Error("not-signed-in");
+    const { doc, setDoc, deleteField } = await import("https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js");
+    const ref = doc(db, "users", auth.currentUser.uid, "notes", deckName);
+    // empty note -> remove field, else set field
+    const payload = {};
+    payload[wordKey] = (note && note.trim().length) ? note : deleteField();
+    await setDoc(ref, payload, { merge: true });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e?.message || String(e) };
+  }
+};
+
 
 /* ------------------------------------------------------------------
    Full Reset (wipe this user's data but keep sign-in)

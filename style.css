@@ -434,3 +434,28 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 /* Optional: make Next lighter by default; it’s secondary to Submit */
 #write-next { background: #6b7280; }
 #write-next:hover { background: #4b5563; }
+.learn-note-card { margin-top: 12px; }
+.learn-note-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
+}
+.learn-note-label{ font-weight:600; }
+.learn-note-status{ font-size: 12px; }
+.learn-note-input{
+  width: 100%;
+  min-height: 72px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+  resize: vertical;
+  background: #fff;
+  transition: box-shadow .18s ease, border-color .18s ease;
+}
+.learn-note-input:focus{
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 4px rgba(59,130,246,.15);
+}
