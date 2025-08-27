@@ -601,5 +601,59 @@ window.__fb_fetchAttempts = async function (limitN = 20) {
   return list;
 };
 
+/* ------------------------------------------------------------------
+   Marked Words (Favorites) Helpers
+------------------------------------------------------------------- */
+window.__fb_fetchMarkedWords = async function () {
+  try {
+    const user = auth.currentUser;
+    if (!user) return [];
+    const colRef = collection(db, 'users', user.uid, 'markedWords');
+    const snapshot = await getDocs(colRef);
+    const result = [];
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      if (data && data.front) {
+        result.push({ front: data.front, back: data.back, romaji: data.romaji || "" });
+      }
+    });
+    return result;
+  } catch (e) {
+    console.warn("[markedWords] fetch error:", e);
+    return [];
+  }
+};
+
+window.__fb_markWord = async function(wordObj) {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Not signed in');
+    const docRef = doc(db, 'users', user.uid, 'markedWords', wordObj.front + '|' + wordObj.back);
+    await setDoc(docRef, {
+      front: wordObj.front,
+      back: wordObj.back,
+      romaji: wordObj.romaji || ""
+    });
+    return { ok: true };
+  } catch (e) {
+    console.error("Error marking word:", e);
+    return { ok: false, error: e.message || String(e) };
+  }
+};
+
+window.__fb_unmarkWord = async function(wordKey) {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Not signed in');
+    const docRef = doc(db, 'users', user.uid, 'markedWords', wordKey);
+    await deleteDoc(docRef);
+    return { ok: true };
+  } catch (e) {
+    console.error("Error unmarking word:", e);
+    return { ok: false, error: e.message || String(e) };
+  }
+};
+
 // Expose sign out
 window.__signOut = () => signOut(auth);
+

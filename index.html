@@ -29,6 +29,7 @@
       <button onclick="showSection('overall-leaderboard-section')">🏆 Overall Leaderboard</button>
       <button onclick="showSection('todays-leaderboard-section')">📅 Today’s Leaderboard</button>
       <button onclick="showSection('mistakes-section')">❗ Mistakes</button>
+      <button onclick="showSection('marked-section')">📌 Marked Words</button>
       <button onclick="saveCurrentScore()">💾 Save Progress</button>
       <button onclick="resetSite()">🔁 Reset</button>
     </nav>
@@ -90,6 +91,7 @@
             <button onclick="prevLearn()">⬅️ Previous</button>
             <button onclick="showLearnRomaji()">👁 Show Details</button>
             <button onclick="nextLearn()">➡️ Next</button>
+            <button id="learn-mark-btn" onclick="markCurrentWord()">📌 Mark</button>
           </div>
           <div id="learn-extra" class="muted" style="margin-top:8px;"></div>
         </section>
@@ -107,6 +109,7 @@
             <button onclick="skipQuestion()">Skip</button>
             <button onclick="showRomaji()">👁 Show Details</button>
             <button onclick="showMeaning()">💡 Show Meaning</button>
+            <button id="learn-mark-btn" onclick="markCurrentWord()">📌 Mark</button>
           </div>
           <div id="extra-info" style="margin-top: 10px; font-size: 16px;"></div>
         </section>
@@ -158,6 +161,7 @@
             <button id="write-skip" onclick="writeSkip()">Skip</button>
             <button id="write-details" onclick="writeShowDetails()">👁 Show Details</button>
             <button id="write-next" onclick="writeNext()">Next ➡️</button>
+            <button id="write-mark-btn" onclick="markCurrentWord()">📌 Mark</button>
           </div>
 
           <div id="write-feedback" class="pg-feedback muted"></div>
@@ -228,6 +232,21 @@
           <button onclick="startMistakePractice()">Practice Mistakes</button>
           <button onclick="clearMistakes()">Clear Mistakes</button>
         </section>
+        <!-- index.html (Marked Words section) -->
+        <section id="marked-section" class="hidden">
+          <h2>📌 Marked Words</h2>
+          <p id="marked-status" class="muted" style="margin: 8px 0;"></p>
+          <div id="marked-container"></div>
+          <div id="marked-mode-select">
+            <h3>Select Mode</h3>
+            <button onclick="startMarkedLearn()">🧠 Learn</button>
+            <button onclick="startMarkedPractice('jp-en')">Japanese → English</button>
+            <button onclick="startMarkedPractice('en-jp')">English → Japanese</button>
+            <button onclick="startMarkedWrite()">✍️ Write Words</button>
+          </div>
+        </section>
+        <!-- index.html (Toast container at end of body) -->
+        <div id="toast" class="toast"></div>
       </main>
     </div>
   </div>

@@ -62,6 +62,10 @@ let notesCache = {};         // { [deckName]: { [wordKey]: note } }
 let learnNoteTimer = null;   // debounce timer for autosave
 let learnNoteLastKey = null; // currently-bound key for textarea
 
+// script.js (global state additions)
+let markedWordsList = [];       // Array of marked word objects ({front, back, romaji})
+let markedMap = {};             // Lookup map for quick check of marked words (keys are "front|back")
+
 // ---------------- DOM helpers ----------------
 const $ = (id) => document.getElementById(id);
 const setText = (id, txt) => { const el = $(id); if (el) el.innerText = txt; };
@@ -163,9 +167,22 @@ window.onload = () => {
   updateScore();
 };
 
-window.__initAfterLogin = () => {
+// script.js (__initAfterLogin update)
+window.__initAfterLogin = async () => {
   renderProgress();
+  // Fetch and cache the user's marked words from Firebase
+  if (window.__fb_fetchMarkedWords) {
+    const words = await window.__fb_fetchMarkedWords();
+    markedWordsList = words;
+    markedMap = {};
+    for (const w of words) {
+      const key = w.front + "|" + w.back;
+      markedMap[key] = true;
+    }
+    renderMarkedList();  // populate the Marked Words section UI with the list
+  }
 };
+
 
 window.addEventListener('pagehide', () => {
   try {
@@ -342,6 +359,13 @@ function writeRender() {
   if (card) {
     card.className = "flashcard";
     card.textContent = item ? (item.back || "(no meaning)") : "(finished)";
+  }
+
+  // script.js (inside writeRender, after setting up the card and resetting input)
+  const markBtn = $("write-mark-btn");
+  if (markBtn) {
+    const key = item ? item.front + "|" + item.back : "";
+    markBtn.classList.toggle("hidden", key && !!markedMap[key]);
   }
 
   const input = $("write-input");
@@ -615,7 +639,15 @@ function showQuestion() {
     optionsList.appendChild(li);
   });
 
+  // script.js (inside showQuestion, after setting question and options)
+  const markBtn = $("practice-mark-btn");
+  if (markBtn) {
+    const qKey = q.front + "|" + q.back;
+    markBtn.classList.toggle("hidden", !!markedMap[qKey]);
+  }
+
   updateDeckProgress();
+
 }
 
 function generateOptions(correct) {
@@ -739,6 +771,12 @@ function showLearnCard() {
   // Clear romaji line under the card
   const extra = $("learn-extra");
   if (extra) extra.textContent = "";
+
+  const markBtn = $("learn-mark-btn");
+  if (markBtn) {
+    const key = word.front + "|" + word.back;
+    markBtn.classList.toggle("hidden", !!markedMap[key]);
+  }
 }
 
 function nextLearn() {
@@ -1555,3 +1593,181 @@ function saveLocalNotes(deckName, obj){
     localStorage.setItem(lsNotesKey(deckName), JSON.stringify(obj || {}));
   }catch(e){}
 }
+
+// script.js (Marked Words list rendering)
+function renderMarkedList() {
+  const container = $("marked-container");
+  const statusEl = $("marked-status");
+  const modeSelectEl = $("marked-mode-select");
+  if (!container || !statusEl) return;
+  
+  container.innerHTML = "";  // clear current list
+  if (markedWordsList.length === 0) {
+    // No marked words
+    statusEl.textContent = "No words marked yet.";
+    if (modeSelectEl) modeSelectEl.classList.add("hidden");
+    return;
+  }
+  
+  statusEl.textContent = `You have ${markedWordsList.length} marked word(s).`;
+  if (modeSelectEl) modeSelectEl.classList.remove("hidden");
+  
+  // Create a card for each marked word
+  markedWordsList.forEach(word => {
+    const wordKey = word.front + "|" + word.back;
+    const card = document.createElement("div");
+    card.className = "card marked-card";
+    card.innerHTML = `<b>${word.front}</b> — ${word.back}`;
+    // "Unmark" button for this word
+    const btn = document.createElement("button");
+    btn.textContent = "Unmark";
+    btn.className = "unmark-btn";
+    btn.onclick = () => unmarkWord(wordKey);
+    card.appendChild(btn);
+    container.appendChild(card);
+  });
+}
+
+// script.js (Mark current word logic)
+window.markCurrentWord = async function() {
+  // Determine the word object the user is viewing in the current mode
+  let word;
+  if (mode === "write") {
+    // In Write mode, current index is managed in writeState
+    const idx = writeState.order[writeState.i];
+    word = currentDeck[idx];
+  } else {
+    // In Learn or MCQ practice modes
+    word = currentDeck[currentIndex];
+  }
+  if (!word) return;
+  
+  const key = word.front + "|" + word.back;
+  if (markedMap[key]) {
+    // Already marked, no need to mark again
+    return;
+  }
+  
+  // Optimistically disable the Mark button to prevent double-clicks
+  const markBtnIds = ["learn-mark-btn", "practice-mark-btn", "write-mark-btn"];
+  markBtnIds.forEach(id => $(id)?.setAttribute("disabled", "true"));
+  
+  // Save the word to Firebase
+  const res = window.__fb_markWord ? await window.__fb_markWord(word) : { ok: false };
+  if (res.ok) {
+    // Update local state
+    markedWordsList.push({ front: word.front, back: word.back, romaji: word.romaji || "" });
+    markedMap[key] = true;
+    // Show confirmation toast
+    const toast = $("toast");
+    if (toast) {
+      toast.textContent = "Marked!";
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2000);
+    }
+    // Hide/disable the Mark button now that it's marked
+    markBtnIds.forEach(id => $(id)?.classList.add("hidden"));
+    // Update the Marked Words list UI (in case user views it next)
+    renderMarkedList();
+  } else {
+    // Marking failed (e.g., network issue) – re-enable button and show error
+    markBtnIds.forEach(id => $(id)?.removeAttribute("disabled"));
+    const toast = $("toast");
+    if (toast) {
+      toast.textContent = "Failed to mark. Please try again.";
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2000);
+    }
+    console.error("Mark Word error:", res.error);
+  }
+};
+
+// script.js (Unmark a word)
+window.unmarkWord = async function(wordKey) {
+  if (!wordKey) return;
+  // Confirmation prompt to avoid accidental removal
+  const confirmMsg = "Remove this word from Marked Words?";
+  if (!confirm(confirmMsg)) {
+    return;
+  }
+  // Remove from Firebase
+  const res = window.__fb_unmarkWord ? await window.__fb_unmarkWord(wordKey) : { ok: false };
+  if (res.ok) {
+    // Update local data: filter out the removed word
+    markedWordsList = markedWordsList.filter(w => (w.front + "|" + w.back) !== wordKey);
+    delete markedMap[wordKey];
+    // Re-render the list and update status
+    renderMarkedList();
+  } else {
+    console.error("Unmark Word error:", res.error);
+    // (Optional: show a toast or alert for failure, not implemented for brevity)
+  }
+};
+
+// script.js (start practice with Marked Words deck)
+window.startMarkedLearn = async function() {
+  if (markedWordsList.length === 0) {
+    alert("No marked words to learn!");
+    return;
+  }
+  // Treat markedWordsList as the current deck
+  currentDeck = markedWordsList.slice();  // use a copy of the array
+  currentDeckName = "Marked Words";
+  currentIndex = 0;
+  mode = "learn";
+  // Reset session buffer for this "deck"
+  sessionBuf = {
+    deckName: "Marked Words",
+    mode: "learn",
+    correct: 0, wrong: 0, skipped: 0, total: 0,
+    jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
+  };
+  persistSession();
+  // (Optional: disable audio for mixed deck, since audio folder cannot be resolved)
+  currentAudioFolder = null;
+  // Start Learn mode similar to a normal deck
+  await ensureDeckNotesLoaded(currentDeckName);
+  showSection("learn");
+  showLearnCard();
+  learnNoteBindForCurrent();
+};
+
+window.startMarkedPractice = function(selectedMode) {
+  if (markedWordsList.length === 0) {
+    alert("No marked words to practice!");
+    return;
+  }
+  currentDeck = markedWordsList.slice();
+  currentDeckName = "Marked Words";
+  currentIndex = 0;
+  // Prepare session buffer for this practice session
+  sessionBuf = {
+    deckName: "Marked Words",
+    mode: selectedMode,
+    correct: 0, wrong: 0, skipped: 0, total: 0,
+    jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
+  };
+  persistSession();
+  // Use existing startPractice flow (shuffles deck and shows questions)
+  startPractice(selectedMode);
+};
+
+window.startMarkedWrite = function() {
+  if (markedWordsList.length === 0) {
+    alert("No marked words to practice!");
+    return;
+  }
+  currentDeck = markedWordsList.slice();
+  currentDeckName = "Marked Words";
+  currentIndex = 0;
+  // Set up session buffer
+  sessionBuf = {
+    deckName: "Marked Words",
+    mode: "write",
+    correct: 0, wrong: 0, skipped: 0, total: 0,
+    jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
+  };
+  persistSession();
+  // Reuse the existing startWriteWords logic
+  window.startWriteWords();
+};
