@@ -47,6 +47,7 @@ const pgState = {
   wrong: 0,
   answered: false     // prevent resubmission until Next
 };
+let pgKeyHandler = null;
 
 // ---- Write Words (EN -> JP typing) ----
 const writeState = {
@@ -102,6 +103,15 @@ function updateDeckProgress() {
   if (bar) bar.style.width = `${p}%`;
   if (txt) txt.textContent = `${done} / ${totalQs} (${p}%)`;
 }
+function pgSkip() {
+  // count as skipped for the session (no correct/wrong)
+  sessionBuf.skipped++;
+  sessionBuf.total++;
+  persistSession();
+  updateScore();
+  pgNext();
+}
+window.pgSkip = pgSkip;
 
 // ---------------- Autosave bridge ----------------
 async function autoCommitIfNeeded(reason = "") {
@@ -183,6 +193,11 @@ function showSection(id) {
     if (filesBox) filesBox.classList.remove('hidden');
     const area = $("pg-area");
     if (area) area.classList.add('hidden');
+
+    if (pgKeyHandler) {
+      document.removeEventListener('keydown', pgKeyHandler);
+      pgKeyHandler = null;
+    }
   }
   // NEW: leaving Write Words => autosave + unbind keys
   if (currentSectionId === "write" && id !== "write") {
@@ -203,7 +218,36 @@ function showSection(id) {
   currentSectionId = id;
 
   if (id === "practice") updateDeckProgress();
-  if (id === "practice-grammar") pgUpdateProgress();
+  if (id === "practice-grammar") {
+    pgUpdateProgress();
+    if (!pgKeyHandler) {
+      pgKeyHandler = (e) => {
+        if (currentSectionId !== "practice-grammar") return;
+        const input = $("pg-input");
+        const disabled = !input || input.disabled;
+
+        // Ctrl/Cmd + Enter -> Next
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          pgNext();
+          return;
+        }
+        // Esc -> Skip
+        if (e.key === "Escape") {
+          e.preventDefault();
+          pgSkip();
+          return;
+        }
+        // Enter -> Submit (only if input enabled)
+        if (e.key === "Enter" && !disabled) {
+          e.preventDefault();
+          pgSubmit();
+          return;
+        }
+      };
+      document.addEventListener("keydown", pgKeyHandler);
+    }
+  }
   if (id === "write") {
     writeUpdateProgress();
     // NEW: (re)bind keyboard shortcuts when entering write
