@@ -152,7 +152,7 @@ Examples:
 
 👉 Think of it as: “Teacher / Master / Doctor” (respectful title)."
 
-きょうし,"teacher, instructor","きょうし (Kyōshi)
+きょうし,"teacher, instructor (Profession)","きょうし (Kyōshi)
 
 Literal meaning: “Teacher, instructor.”
 
@@ -1201,7 +1201,7 @@ Examples:
 どうも ありがとうございます。→ Thank you very much.
 
 👉 Think of it as: “Thank you / thank you very much.”"
-"これからおせわになります","I hope for your kind assistance hereafter","これからおせわになります (Korekaraosewaninarimasu)
+"これからおせわになります","Thank you in advance","これからおせわになります (Korekaraosewaninarimasu)
 
 Literal meaning: “I hope for your kind assistance hereafter”.
 
@@ -1214,7 +1214,7 @@ Examples:
 どうぞ よろしく おねがいします。→ I look forward to working with you.
 
 👉 Think of it as: “I’ll be in your care.”"
-"こちらこそよろしく","I am pleased to meet you","こちらこそよろしく (Kochirakosoyoroshiku)
+"こちらこそよろしく","I am pleased to meet you too","こちらこそよろしく (Kochirakosoyoroshiku)
 
 Literal meaning: “I am pleased to meet you”.
 
@@ -1605,3 +1605,82 @@ Examples:
 2. ネクタイをください。(Nekutai o kudasai.) → Please give me a necktie.
 3. このほんをください。(Kono hon o kudasai.) → Please give me this book.
 Politeness: Polite."
+ぜろ,0,zero
+いち,1,ichi
+に,2,ni
+さん,3,san
+よん,4,yon
+ご,5,go
+ろく,6,roku
+なな,7,nana
+はち,8,hachi
+きゅう,9,kyuu
+じゅう,10,juu
+じゅういち,11,juuichi
+じゅうに,12,juuni
+じゅうさん,13,juusan
+じゅうよん,14,juuyon
+じゅうご,15,juugo
+じゅうろく,16,juuroku
+じゅうなな,17,juunana
+じゅうはち,18,juuhachi
+じゅうきゅう,19,juukyuu
+にじゅう,20,nijuu
+にじゅうさん,23,nijuusan
+にじゅうご,25,nijuugo
+にじゅうきゅう,29,nijuukyuu
+さんじゅう,30,sanjuu
+さんじゅうよん,34,sanjuuyon
+さんじゅうはち,38,sanjuuhachi
+よんじゅう,40,yonjuu
+よんじゅうご,45,yonjuugo
+ごじゅう,50,gojuu
+ごじゅういち,51,gojuuichi
+ろくじゅう,60,rokujuu
+ろくじゅうなな,67,rokujuunana
+ななじゅう,70,nanajuu
+ななじゅうきゅう,79,nanajuukyuu
+はちじゅう,80,hachijuu
+はちじゅうよん,84,hachijuuyon
+きゅうじゅう,90,kyuujuu
+きゅうじゅうご,95,kyuujuugo
+ひゃく,100,hyaku
+ひゃくいち,101,hyakuichi
+ひゃくにじゅう,120,hyakunijuu
+ひゃくさんじゅうご,135,hyakusanjuugo
+にひゃく,200,nihyaku
+にひゃくよんじゅうはち,248,nihyakuyonjuuhachi
+さんびゃく,300,sanbyaku
+さんびゃくにじゅう,320,sanbyakunijuu
+よんひゃく,400,yonhyaku
+よんひゃくごじゅうなな,457,yonhyakugojuunana
+ごひゃく,500,gohyaku
+ごひゃくはちじゅうきゅう,589,gohyakuhachijuukyuu
+ろっぴゃく,600,roppyaku
+ろっぴゃくさんじゅうに,632,roppyakusanjuuni
+ななひゃく,700,nanahyaku
+ななひゃくじゅうご,715,nanahyakujugo
+はっぴゃく,800,happyaku
+はっぴゃくろくじゅうはち,868,happyakurokujuuhachi
+きゅうひゃく,900,kyuuhyaku
+きゅうひゃくきゅうじゅうきゅう,999,kyuuhyakukyuujuukyuu
+せん,1000,sen
+せんじゅうに,1012,senjuuni
+にせん,2000,nisen
+にせんよんひゃく,2400,nisenyonhyaku
+さんぜん,3000,sanzen
+さんぜんろっぴゃくごじゅう,3650,sanzenroppyakugojuu
+よんせん,4000,yonsen
+よんせんはっぴゃく,4800,yonsenhappyaku
+ごせん,5000,gosen
+ごせんにひゃくよんじゅう,5240,gosennihyakuyonjuu
+ろくせん,6000,rokusen
+ろくせんななひゃく,6700,rokusennanahyaku
+ななせん,7000,nanasen
+ななせんさんびゃくろくじゅう,7360,nanasensanbyakurokujuu
+はっせん,8000,hassen
+はっせんよんひゃくきゅうじゅう,8490,hassenyonhyakukyuujuu
+きゅうせん,9000,kyuusen
+きゅうせんきゅうひゃくきゅうじゅうきゅう,9999,kyuusenkyuuhyakukyuujuukyuu
+いちまん,10000,ichiman
+いちまんにせんさんびゃくよんじゅうご,12345,ichimannisansanbyakuyonjuugo
