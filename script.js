@@ -233,13 +233,6 @@ function showSection(id) {
   else console.warn('showSection: no element with id:', id);
 
   currentSectionId = id;
-  // Lazy-load leaderboards on demand (uses 60s caching in firebase.js)
-  if (id === "overall-leaderboard-section" && window.__fb_loadLeaderboardsOnDemand) {
-    window.__fb_loadLeaderboardsOnDemand('overall');
-  }
-  if (id === "todays-leaderboard-section" && window.__fb_loadLeaderboardsOnDemand) {
-    window.__fb_loadLeaderboardsOnDemand('today');
-  }
 
   if (id === "practice") updateDeckProgress();
   if (id === "practice-grammar") {
