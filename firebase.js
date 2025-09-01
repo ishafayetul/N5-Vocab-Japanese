@@ -49,6 +49,17 @@ const adminAdd   = el('admin-task-add');
 const overallLbList = el('overall-leaderboard-list');
 const todaysLbList  = el('todays-leaderboard-list');
 
+// --- Lightweight, memory caches to avoid repeat reads for tab toggles ---
+const __cache = {
+  overallLB: { at: 0, data: [] },
+  todaysLB:  { at: 0, data: [] },
+  attempts:  { at: 0, data: [] },
+  marked:    { at: 0, data: [] },
+};
+const CACHE_MS = 60 * 1000; // 60s is enough to prevent thrash while still "fresh"
+
+function fresh(since){ return (Date.now() - since) < CACHE_MS; }
+
 const showError = (msg) => { if (authErr) { authErr.textContent = msg; authErr.style.display = 'block'; } };
 const hideError = () => { if (authErr) authErr.style.display = 'none'; };
 
@@ -403,87 +414,140 @@ async function markTask(uid, dkey, taskId, text, done) {
    - Overall = SUM of all dailyLeaderboard/{date}/users per uid
    - Today   = dailyLeaderboard/{YYYY-MM-DD}/users
 ------------------------------------------------------------------- */
-function subscribeOverallLeaderboard() {
-  if (!overallLbList) return;
+// function subscribeOverallLeaderboard() {
+//   if (!overallLbList) return;
 
-  const cg = collectionGroup(db, 'users'); // 'dailyLeaderboard/{date}/users/{uid}'
-  if (unsubOverallLB) unsubOverallLB();
+//   const cg = collectionGroup(db, 'users'); // 'dailyLeaderboard/{date}/users/{uid}'
+//   if (unsubOverallLB) unsubOverallLB();
 
-  unsubOverallLB = onSnapshot(cg, (ss) => {
-    const agg = new Map();
-    ss.forEach(docSnap => {
-      const d = docSnap.data() || {};
-      const uid = d.uid || docSnap.id;
-      if (!agg.has(uid)) {
-        agg.set(uid, {
-          uid,
-          displayName: d.displayName || 'Anonymous',
-          jpEnCorrect: 0,
-          enJpCorrect: 0,
-          grammarCorrect: 0,
-          tasksCompleted: 0,
-          score: 0
-        });
-      }
-      const row = agg.get(uid);
-      row.jpEnCorrect    += d.jpEnCorrect    || 0;
-      row.enJpCorrect    += d.enJpCorrect    || 0;
-      row.grammarCorrect += d.grammarCorrect || 0;
-      row.tasksCompleted += d.tasksCompleted || 0;
-      row.score          += d.score          || 0;
+//   unsubOverallLB = onSnapshot(cg, (ss) => {
+//     const agg = new Map();
+//     ss.forEach(docSnap => {
+//       const d = docSnap.data() || {};
+//       const uid = d.uid || docSnap.id;
+//       if (!agg.has(uid)) {
+//         agg.set(uid, {
+//           uid,
+//           displayName: d.displayName || 'Anonymous',
+//           jpEnCorrect: 0,
+//           enJpCorrect: 0,
+//           grammarCorrect: 0,
+//           tasksCompleted: 0,
+//           score: 0
+//         });
+//       }
+//       const row = agg.get(uid);
+//       row.jpEnCorrect    += d.jpEnCorrect    || 0;
+//       row.enJpCorrect    += d.enJpCorrect    || 0;
+//       row.grammarCorrect += d.grammarCorrect || 0;
+//       row.tasksCompleted += d.tasksCompleted || 0;
+//       row.score          += d.score          || 0;
 
-      if (d.displayName) row.displayName = d.displayName;
-    });
+//       if (d.displayName) row.displayName = d.displayName;
+//     });
 
-    const rows = [...agg.values()]
-      .sort((a, b) => (b.score || 0) - (a.score || 0))
-      .slice(0, 50);
+//     const rows = [...agg.values()]
+//       .sort((a, b) => (b.score || 0) - (a.score || 0))
+//       .slice(0, 50);
 
-    overallLbList.innerHTML = '';
-    let rank = 1;
-    rows.forEach(u => {
-      const li = document.createElement('li');
-      li.innerHTML = `
-        <div class="lb-row">
-          <span class="lb-rank">#${rank++}</span>
-          <span class="lb-name">${u.displayName || 'Anonymous'}</span>
-          <span class="lb-part">JP→EN: <b>${u.jpEnCorrect || 0}</b></span>
-          <span class="lb-part">EN→JP: <b>${u.enJpCorrect || 0}</b></span>
-          <span class="lb-part">Grammar: <b>${u.grammarCorrect || 0}</b></span>
-          <span class="lb-part">Tasks: <b>${u.tasksCompleted || 0}</b></span>
-          <span class="lb-score">${u.score || 0} pts</span>
-        </div>`;
-      overallLbList.appendChild(li);
-    });
-  }, (err) => console.error('[overall LB] snapshot error:', err));
+//     overallLbList.innerHTML = '';
+//     let rank = 1;
+//     rows.forEach(u => {
+//       const li = document.createElement('li');
+//       li.innerHTML = `
+//         <div class="lb-row">
+//           <span class="lb-rank">#${rank++}</span>
+//           <span class="lb-name">${u.displayName || 'Anonymous'}</span>
+//           <span class="lb-part">JP→EN: <b>${u.jpEnCorrect || 0}</b></span>
+//           <span class="lb-part">EN→JP: <b>${u.enJpCorrect || 0}</b></span>
+//           <span class="lb-part">Grammar: <b>${u.grammarCorrect || 0}</b></span>
+//           <span class="lb-part">Tasks: <b>${u.tasksCompleted || 0}</b></span>
+//           <span class="lb-score">${u.score || 0} pts</span>
+//         </div>`;
+//       overallLbList.appendChild(li);
+//     });
+//   }, (err) => console.error('[overall LB] snapshot error:', err));
+// }
+
+// function subscribeTodaysLeaderboard() {
+//   if (!todaysLbList) return;
+//   const dkey = localDateKey();
+//   const qy = query(collection(db, 'dailyLeaderboard', dkey, 'users'), orderBy('score', 'desc'), limit(50));
+//   if (unsubTodayLB) unsubTodayLB();
+
+//   unsubTodayLB = onSnapshot(qy, (ss) => {
+//     todaysLbList.innerHTML = '';
+//     let rank = 1;
+//     ss.forEach(docSnap => {
+//       const u = docSnap.data();
+//       const li = document.createElement('li');
+//       li.innerHTML = `
+//         <div class="lb-row">
+//           <span class="lb-rank">#${rank++}</span>
+//           <span class="lb-name">${u.displayName || 'Anonymous'}</span>
+//           <span class="lb-part">JP→EN: <b>${u.jpEnCorrect || 0}</b></span>
+//           <span class="lb-part">EN→JP: <b>${u.enJpCorrect || 0}</b></span>
+//           <span class="lb-part">Grammar: <b>${u.grammarCorrect || 0}</b></span>
+//           <span class="lb-part">Tasks: <b>${u.tasksCompleted || 0}</b></span>
+//           <span class="lb-score">${u.score || 0} pts</span>
+//         </div>`;
+//       todaysLbList.appendChild(li);
+//     });
+//   }, (err) => console.error('[today LB] snapshot error:', err));
+// }
+// ---- On-demand leaderboard fetchers (no live listeners) ----
+async function fetchOverallLeaderboardOnce() {
+  if (fresh(__cache.overallLB.at) && __cache.overallLB.data?.length) return __cache.overallLB.data;
+
+  const q = query(
+    collectionGroup(db, "daily"),
+    orderBy("score", "desc"),
+    limit(20)
+  );
+  const ss = await getDocs(q);
+  const rows = [];
+  ss.forEach(d => rows.push(d.data()));
+  __cache.overallLB = { at: Date.now(), data: rows };
+  return rows;
 }
 
-function subscribeTodaysLeaderboard() {
-  if (!todaysLbList) return;
+async function fetchTodaysLeaderboardOnce() {
+  if (fresh(__cache.todaysLB.at) && __cache.todaysLB.data?.length) return __cache.todaysLB.data;
+
   const dkey = localDateKey();
-  const qy = query(collection(db, 'dailyLeaderboard', dkey, 'users'), orderBy('score', 'desc'), limit(50));
-  if (unsubTodayLB) unsubTodayLB();
-
-  unsubTodayLB = onSnapshot(qy, (ss) => {
-    todaysLbList.innerHTML = '';
-    let rank = 1;
-    ss.forEach(docSnap => {
-      const u = docSnap.data();
-      const li = document.createElement('li');
-      li.innerHTML = `
-        <div class="lb-row">
-          <span class="lb-rank">#${rank++}</span>
-          <span class="lb-name">${u.displayName || 'Anonymous'}</span>
-          <span class="lb-part">JP→EN: <b>${u.jpEnCorrect || 0}</b></span>
-          <span class="lb-part">EN→JP: <b>${u.enJpCorrect || 0}</b></span>
-          <span class="lb-part">Grammar: <b>${u.grammarCorrect || 0}</b></span>
-          <span class="lb-part">Tasks: <b>${u.tasksCompleted || 0}</b></span>
-          <span class="lb-score">${u.score || 0} pts</span>
-        </div>`;
-      todaysLbList.appendChild(li);
-    });
-  }, (err) => console.error('[today LB] snapshot error:', err));
+  const col = collection(db, "dailyLeaderboard", dkey, "users");
+  const qy  = query(col, orderBy("score", "desc"), limit(20));
+  const ss  = await getDocs(qy);
+  const rows = [];
+  ss.forEach(s => rows.push(s.data()));
+  __cache.todaysLB = { at: Date.now(), data: rows };
+  return rows;
 }
+
+// Expose for script.js to call when those sections are shown
+window.__fb_loadLeaderboardsOnDemand = async function(target /* 'overall'|'today' */){
+  const listEl = (target === 'overall') ? overallLbList : todaysLbList;
+  if (!listEl) return;
+  listEl.innerHTML = "<li class='muted'>Loading…</li>";
+
+  const rows = target === 'overall'
+    ? await fetchOverallLeaderboardOnce()
+    : await fetchTodaysLeaderboardOnce();
+
+  listEl.innerHTML = "";
+  rows.forEach((row, i) => {
+    const li = document.createElement("li");
+    li.className = "lb-row";
+    li.innerHTML = `
+      <span class="lb-rank">#${i+1}</span>
+      <span class="lb-name">${row.displayName || "Anonymous"}</span>
+      <span class="lb-part">JP-EN: ${row.jpEnCorrect||0}</span>
+      <span class="lb-part">EN-JP: ${row.enJpCorrect||0}</span>
+      <span class="lb-part">Grammar: ${row.grammarCorrect||0}</span>
+      <span class="lb-score">Score: ${row.score||0}</span>`;
+    listEl.appendChild(li);
+  });
+};
 
 /* ------------------------------------------------------------------
    Commit a buffered session (single write burst)
@@ -583,10 +647,14 @@ async function __fb_commitLocalPendingSession() {
 /* ------------------------------------------------------------------
    Progress feed: recent attempts
 ------------------------------------------------------------------- */
+// recent attempts (progress feed)
 window.__fb_fetchAttempts = async function (limitN = 20) {
   const user = getAuth().currentUser;
   if (!user) return [];
-  const db = getFirestore();
+
+  if (fresh(__cache.attempts.at) && __cache.attempts.data?.length) {
+    return __cache.attempts.data.slice(0, limitN);
+  }
 
   const colRef = collection(db, 'users', user.uid, 'attempts');
   const qy = query(colRef, orderBy('createdAt', 'desc'), limit(limitN));
@@ -598,16 +666,24 @@ window.__fb_fetchAttempts = async function (limitN = 20) {
     const ts = d.createdAt || (d.createdAtServer?.toMillis ? d.createdAtServer.toMillis() : Date.now());
     list.push({ id: docSnap.id, ...d, createdAt: ts });
   });
+  __cache.attempts = { at: Date.now(), data: list };
   return list;
 };
+
 
 /* ------------------------------------------------------------------
    Marked Words (Favorites) Helpers
 ------------------------------------------------------------------- */
+// Marked words (favorites)
 window.__fb_fetchMarkedWords = async function () {
   try {
     const user = auth.currentUser;
     if (!user) return [];
+
+    if (fresh(__cache.marked.at) && __cache.marked.data?.length) {
+      return __cache.marked.data;
+    }
+
     const colRef = collection(db, 'users', user.uid, 'markedWords');
     const snapshot = await getDocs(colRef);
     const result = [];
@@ -617,12 +693,14 @@ window.__fb_fetchMarkedWords = async function () {
         result.push({ front: data.front, back: data.back, romaji: data.romaji || "" });
       }
     });
+    __cache.marked = { at: Date.now(), data: result };
     return result;
   } catch (e) {
     console.warn("[markedWords] fetch error:", e);
     return [];
   }
 };
+
 
 window.__fb_markWord = async function(wordObj) {
   try {
