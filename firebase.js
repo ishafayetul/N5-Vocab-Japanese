@@ -13,14 +13,24 @@ import {
 /* ------------------------------------------------------------------
    Firebase project config
 ------------------------------------------------------------------- */
+// const firebaseConfig = {
+//   apiKey: "AIzaSyCP-JzANiomwA-Q5MB5fnNoz0tUjdNX3Og",
+//   authDomain: "japanese-n5-53295.firebaseapp.com",
+//   projectId: "japanese-n5-53295",
+//   storageBucket: "japanese-n5-53295.firebasestorage.app",
+//   messagingSenderId: "176625372154",
+//   appId: "1:176625372154:web:66acdaf3304e9ed03e7243",
+//   measurementId: "G-JQ03SE08KW"
+// };
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyCP-JzANiomwA-Q5MB5fnNoz0tUjdNX3Og",
-  authDomain: "japanese-n5-53295.firebaseapp.com",
-  projectId: "japanese-n5-53295",
-  storageBucket: "japanese-n5-53295.firebasestorage.app",
-  messagingSenderId: "176625372154",
-  appId: "1:176625372154:web:66acdaf3304e9ed03e7243",
-  measurementId: "G-JQ03SE08KW"
+  apiKey: "AIzaSyCIAoRM5KuCC6beLAAIHZief0wIiZOcu8I",
+  authDomain: "cool-kit-469207-r6.firebaseapp.com",
+  projectId: "cool-kit-469207-r6",
+  storageBucket: "cool-kit-469207-r6.firebasestorage.app",
+  messagingSenderId: "801430687128",
+  appId: "1:801430687128:web:d30d5c33ac1b7b06a62fed",
+  measurementId: "G-9KB1WBZ847"
 };
 
 const app = initializeApp(firebaseConfig);
