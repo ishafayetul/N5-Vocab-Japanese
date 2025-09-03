@@ -117,7 +117,7 @@ function ttsSpeak(text) {
   }
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'ja-JP';
-  u.rate = 0.75;
+  u.rate = 0.5;
   if (ttsSpeak._voice) u.voice = ttsSpeak._voice;
   if (!ttsSpeak._voice && (speechSynthesis.getVoices() || []).length === 0) {
     speechSynthesis.onvoiceschanged = () => { ttsSpeak(text); speechSynthesis.onvoiceschanged = null; };
