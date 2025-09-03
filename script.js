@@ -1926,3 +1926,52 @@ window.startMarkedWrite = function() {
   // Reuse the existing startWriteWords logic
   window.startWriteWords();
 };
+window.startMistakeLearn = async function() {
+  if (mistakes.length === 0) return alert("No mistakes yet!");
+  currentDeck = mistakes.slice();
+  currentDeckName = "Mistakes";
+  currentIndex = 0;
+  mode = "learn";
+  sessionBuf = {
+    deckName: "Mistakes",
+    mode: "learn",
+    correct: 0, wrong: 0, skipped: 0, total: 0,
+    jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
+  };
+  persistSession();
+  currentAudioFolder = null; // disable mixed audio
+  await ensureDeckNotesLoaded(currentDeckName);
+  showSection("learn");
+  showLearnCard();
+  learnNoteBindForCurrent();
+};
+
+window.startMistakePractice = function(selectedMode) {
+  if (mistakes.length === 0) return alert("No mistakes yet!");
+  currentDeck = mistakes.slice();
+  currentDeckName = "Mistakes";
+  currentIndex = 0;
+  sessionBuf = {
+    deckName: "Mistakes",
+    mode: selectedMode,
+    correct: 0, wrong: 0, skipped: 0, total: 0,
+    jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
+  };
+  persistSession();
+  startPractice(selectedMode);
+};
+
+window.startMistakeWrite = function() {
+  if (mistakes.length === 0) return alert("No mistakes yet!");
+  currentDeck = mistakes.slice();
+  currentDeckName = "Mistakes";
+  currentIndex = 0;
+  sessionBuf = {
+    deckName: "Mistakes",
+    mode: "write",
+    correct: 0, wrong: 0, skipped: 0, total: 0,
+    jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
+  };
+  persistSession();
+  window.startWriteWords();
+};
