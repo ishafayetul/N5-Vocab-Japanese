@@ -754,8 +754,8 @@ function showLearnCard() {
 
   const box = $("learn-box");
   if (box) {
-    const audioEnabled = !!(audioManifestLoaded && currentAudioFolder);
-    const disabledAttr = audioEnabled ? "" : "disabled title='Audio not available for this deck'";
+    const audioEnabled = !!(audioManifestLoaded && currentAudioFolder) || ('speechSynthesis' in window);
+    const disabledAttr = audioEnabled ? "" : "disabled title='Audio not available on this device'";
     const aria = `aria-label="Play pronunciation"`;
     const kb = `onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); playLearnAudio();}"`;
     
@@ -1515,32 +1515,101 @@ function showToast(msg, ms = 2200) {
   showToast._timer = setTimeout(() => t.classList.remove("show"), ms);
 }
 
+// window.playLearnAudio = function () {
+//   const word = currentDeck[currentIndex];
+//   if (!word) return;
+
+//   if (!audioManifestLoaded || !currentAudioFolder) {
+//     showToast("Audio not available for this word.");
+//     return;
+//   }
+
+//   const nn = pad2(currentIndex + 1); // 1-based index in learn sequence
+//   const fileName = `${nn}_${word.front}.mp3`;
+//   const url = `${AUDIO_BASE}/${currentAudioFolder}/${fileName}`;
+
+//   const audio = ensureAudioElement();
+//   // Clean up any previous listeners
+//   audio.oncanplay = null;
+//   audio.onerror = null;
+
+//   audio.src = url;
+//   audio.oncanplay = () => { try { audio.play(); } catch {} };
+//   audio.onerror = () => {
+//     showToast("Audio not available for this word.");
+//   };
+//   // Kick it off
+//   audio.load();
+// };
+// ---- Hybrid audio: try MP3 by deck, else fall back to ja-JP TTS
 window.playLearnAudio = function () {
   const word = currentDeck[currentIndex];
   if (!word) return;
 
-  if (!audioManifestLoaded || !currentAudioFolder) {
-    showToast("Audio not available for this word.");
+  // If we have an audio folder for this deck, try to play the MP3 first
+  const canUseFiles = !!(audioManifestLoaded && currentAudioFolder);
+  if (canUseFiles) {
+    const nn = pad2(currentIndex + 1); // 1-based index in learn sequence
+    const fileName = `${nn}_${word.front}.mp3`;
+    const url = `${AUDIO_BASE}/${currentAudioFolder}/${fileName}`;
+
+    const audio = ensureAudioElement();
+    audio.oncanplay = null;
+    audio.onerror = null;
+
+    let triedFile = false;
+
+    audio.src = url;
+    audio.oncanplay = () => { triedFile = true; try { audio.play(); } catch {} };
+    audio.onerror = () => {
+      // If the specific MP3 is missing, gracefully fall back to TTS
+      if (!triedFile) ttsSpeak(word.front);
+      else showToast("Audio not available for this word.");
+    };
+    audio.load();
     return;
   }
 
-  const nn = pad2(currentIndex + 1); // 1-based index in learn sequence
-  const fileName = `${nn}_${word.front}.mp3`;
-  const url = `${AUDIO_BASE}/${currentAudioFolder}/${fileName}`;
-
-  const audio = ensureAudioElement();
-  // Clean up any previous listeners
-  audio.oncanplay = null;
-  audio.onerror = null;
-
-  audio.src = url;
-  audio.oncanplay = () => { try { audio.play(); } catch {} };
-  audio.onerror = () => {
-    showToast("Audio not available for this word.");
-  };
-  // Kick it off
-  audio.load();
+  // No file-based audio configured → use TTS if available
+  ttsSpeak(word.front);
 };
+
+// ---- Simple ja-JP TTS helper (fallback)
+function ttsSpeak(text) {
+  if (!('speechSynthesis' in window)) {
+    showToast("Audio not available on this device.");
+    return;
+  }
+  // Try to pick a Japanese voice once and cache it
+  if (!ttsSpeak._voice) {
+    const voices = speechSynthesis.getVoices() || [];
+    ttsSpeak._voice =
+      voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ja')) ||
+      voices.find(v => /japanese/i.test(v.name)) ||
+      null;
+  }
+
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ja-JP';
+  u.rate = 0.95;   // slightly slower for clarity
+  u.pitch = 1.0;
+  if (ttsSpeak._voice) u.voice = ttsSpeak._voice;
+
+  // Some browsers load voices asynchronously — retry once if empty
+  if (!ttsSpeak._voice && (speechSynthesis.getVoices() || []).length === 0) {
+    speechSynthesis.onvoiceschanged = () => {
+      const voices = speechSynthesis.getVoices() || [];
+      ttsSpeak._voice =
+        voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ja')) ||
+        voices.find(v => /japanese/i.test(v.name)) ||
+        null;
+      speechSynthesis.speak(u);
+      speechSynthesis.onvoiceschanged = null;
+    };
+  } else {
+    speechSynthesis.speak(u);
+  }
+}
 
 // ---------------- Navbar actions ----------------
 window.saveCurrentScore = async function () {
