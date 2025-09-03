@@ -77,6 +77,63 @@ function statusLine(id, msg) {
 function persistSession() {
   localStorage.setItem("sessionBuf", JSON.stringify(sessionBuf));
 }
+// ---- Audio core: try deck MP3 first, fallback to ja-JP TTS
+function ensureAudioElement() {
+  let a = document.getElementById('__shared-audio');
+  if (!a) {
+    a = document.createElement('audio');
+    a.id = '__shared-audio';
+    a.preload = 'none';
+    document.body.appendChild(a);
+  }
+  return a;
+}
+function pad2(n){ return String(n).padStart(2, '0'); }
+
+function ttsSpeak(text) {
+  if (!('speechSynthesis' in window)) { console.warn('No speechSynthesis'); return; }
+  if (!ttsSpeak._voice) {
+    const voices = speechSynthesis.getVoices() || [];
+    ttsSpeak._voice =
+      voices.find(v => (v.lang || '').toLowerCase().startsWith('ja')) ||
+      voices.find(v => /japanese/i.test(v.name)) || null;
+  }
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ja-JP';
+  u.rate = 0.95;
+  if (ttsSpeak._voice) u.voice = ttsSpeak._voice;
+  if (!ttsSpeak._voice && (speechSynthesis.getVoices() || []).length === 0) {
+    speechSynthesis.onvoiceschanged = () => { ttsSpeak(text); speechSynthesis.onvoiceschanged = null; };
+    return;
+  }
+  speechSynthesis.speak(u);
+}
+
+/**
+ * Play audio for a given deck index.
+ * - If the per-deck MP3 exists (AUDIO_BASE/currentAudioFolder/NN_【front】.mp3), play it.
+ * - Else speak `front` with ja-JP TTS.
+ */
+function playWordAudioByIndex(deckIndex) {
+  const word = currentDeck[deckIndex];
+  if (!word) return;
+
+  const canUseFiles = !!(audioManifestLoaded && currentAudioFolder);
+  if (canUseFiles) {
+    const nn = pad2(deckIndex + 1); // 1-based index
+    const fileName = `${nn}_${word.front}.mp3`;
+    const url = `${AUDIO_BASE}/${currentAudioFolder}/${fileName}`;
+    const audio = ensureAudioElement();
+    let triedFile = false;
+    audio.oncanplay = () => { triedFile = true; try { audio.play(); } catch {} };
+    audio.onerror   = () => { if (!triedFile) ttsSpeak(word.front); };
+    audio.src = url;
+    audio.load();
+    return;
+  }
+  // Fallback: TTS
+  ttsSpeak(word.front);
+}
 
 async function loadAudioManifest() {
   try {
@@ -358,7 +415,15 @@ function writeRender() {
   const card = $("write-card");
   if (card) {
     card.className = "flashcard";
-    card.textContent = item ? (item.back || "(no meaning)") : "(finished)";
+    card.innerHTML = item ? `
+      <div class="learn-word-row">
+        <div class="learn-word">${item.back || "(no meaning)"}</div>
+        <button class="icon-btn" aria-label="Play pronunciation"
+                onclick="(function(){ const idx = writeState.order[writeState.i]; playWordAudioByIndex(idx); })()"
+                onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); const idx = writeState.order[writeState.i]; playWordAudioByIndex(idx);}">🔊</button>
+      </div>
+    ` : "(finished)";
+
   }
 
   // script.js (inside writeRender, after setting up the card and resetting input)
@@ -626,8 +691,18 @@ function showQuestion() {
   const options = generateOptions(answer);
 
   const qb = $("question-box");
-  if (qb) qb.className = "flashcard";
-  setText("question-box", front);
+  if (qb) {
+  qb.className = "flashcard";
+  qb.innerHTML = `
+    <div class="learn-word-row">
+      <div class="learn-word">${front || "—"}</div>
+      <button class="icon-btn" aria-label="Play pronunciation"
+              onclick="playWordAudioByIndex(currentIndex)"
+              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); playWordAudioByIndex(currentIndex);}">🔊</button>
+    </div>
+  `;
+  }
+
   setText("extra-info", "");
   const optionsList = $("options");
   if (!optionsList) return;
@@ -764,7 +839,9 @@ function showLearnCard() {
     box.innerHTML = `
       <div class="learn-word-row">
         <div class="learn-word">${word.front || "—"}</div>
-        <button class="icon-btn" ${aria} ${kb} onclick="playLearnAudio()" ${disabledAttr}>🔊</button>
+        <button class="icon-btn" aria-label="Play pronunciation"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); playWordAudioByIndex(currentIndex);}"
+        onclick="playWordAudioByIndex(currentIndex)" ${disabledAttr}>🔊</button>
       </div>
       <div class="learn-meaning muted">Meaning: ${word.back || "(no meaning)"} </div>
     `;
