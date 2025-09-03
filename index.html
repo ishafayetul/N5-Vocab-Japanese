@@ -64,6 +64,25 @@
           <h2>Vocab</h2>
           <p id="deck-status" class="muted" style="margin:8px 0"></p>
           <div id="deck-buttons"></div>
+          <!-- Multi-select Vocab -->
+          <div id="deck-multi" class="card" style="margin-top:10px;">
+            <details open>
+              <summary><b>🧩 Mix multiple vocab decks</b></summary>
+              <div id="deck-multi-list" style="margin:10px 0;"></div>
+              <div class="practice-actions">
+                <button onclick="multiSelectDeckAll()">Select All</button>
+                <button onclick="multiSelectDeckNone()">Clear</button>
+              </div>
+              <div class="practice-actions" style="margin-top:6px;">
+                <button onclick="startMixedLearn()">🧠 Learn (mixed)</button>
+                <button onclick="startMixedPractice('jp-en')">JP → EN (mixed)</button>
+                <button onclick="startMixedPractice('en-jp')">EN → JP (mixed)</button>
+                <button onclick="startMixedWrite()">✍️ Write Words (mixed)</button>
+              </div>
+              <p id="deck-multi-status" class="muted" style="margin-top:6px;">Select decks to enable.</p>
+            </details>
+          </div>
+
         </section>
 
         <!-- Mode -->
@@ -127,6 +146,19 @@
           <h2>Practice Grammar</h2>
           <p id="pg-status" class="muted" style="margin:8px 0">Loading practice sets…</p>
           <div id="pg-file-buttons" class="pg-files"></div>
+          <!-- Multi-select Grammar -->
+          <div id="pg-multi" class="card" style="margin-top:10px;">
+            <details>
+              <summary><b>🧩 Mix multiple grammar sets</b></summary>
+              <div id="pg-multi-list" class="pg-files" style="margin:10px 0;"></div>
+              <div class="practice-actions">
+                <button onclick="pgMultiSelectAll()">Select All</button>
+                <button onclick="pgMultiSelectNone()">Clear</button>
+                <button onclick="pgStartMixed()">Start Mixed Grammar ➡️</button>
+              </div>
+              <p id="pg-multi-status" class="muted" style="margin-top:6px;">Pick sets to combine.</p>
+            </details>
+          </div>
 
           <!-- Shown when a set is started -->
           <div id="pg-area" class="hidden">

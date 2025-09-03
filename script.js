@@ -12,6 +12,8 @@ let score = { correct: 0, wrong: 0, skipped: 0 };
 
 let mistakes = JSON.parse(localStorage.getItem("mistakes") || "[]");
 let masteryMap = JSON.parse(localStorage.getItem("masteryMap") || "{}");
+// --- Mixed Vocab selection state ---
+let multiSelectedDecks = new Set(); // deck names chosen for mixing
 
 // ---- Audio (Learn Mode) ----
 const AUDIO_BASE = "audio";            // no leading slash (keeps it relative on GitHub Pages)
@@ -399,6 +401,7 @@ async function loadDeckManifest() {
     }
 
     renderDeckButtons();
+    renderDeckMultiSelect(); // NEW
     statusLine("deck-status", `Loaded ${Object.keys(allDecks).length} deck(s).`);
   } catch (err) {
     console.error("Failed to load decks:", err);
@@ -1079,7 +1082,7 @@ async function loadGrammarPracticeManifest() {
         container.appendChild(btn);
       });
     }
-
+    renderPgMultiList(); // NEW
     if (statusEl) statusEl.textContent = `Loaded ${lines.length} set(s). Choose one to start.`;
   } catch (err) {
     console.warn("Practice grammar manifest failed:", err);
@@ -2002,3 +2005,222 @@ window.startMistakeWrite = function () {
   window.startWriteWords();   // reuses your typing mode
 };
 
+function renderDeckMultiSelect() {
+  const wrap = $("deck-multi-list");
+  const status = $("deck-multi-status");
+  if (!wrap) return;
+
+  wrap.innerHTML = ""; // reset
+  Object.keys(allDecks)
+    .sort((a,b)=>a.localeCompare(b, undefined, {numeric:true}))
+    .forEach(name => {
+      const id = "ms-" + name;
+      const label = document.createElement("label");
+      label.style.display = "inline-flex";
+      label.style.alignItems = "center";
+      label.style.gap = "8px";
+      label.style.margin = "4px 10px 4px 0";
+
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.id = id;
+      cb.checked = multiSelectedDecks.has(name);
+      cb.onchange = () => {
+        if (cb.checked) multiSelectedDecks.add(name);
+        else multiSelectedDecks.delete(name);
+        updateDeckMultiStatus();
+      };
+
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(name));
+      wrap.appendChild(label);
+    });
+
+  updateDeckMultiStatus();
+}
+
+function updateDeckMultiStatus() {
+  const status = $("deck-multi-status");
+  if (status) {
+    const n = multiSelectedDecks.size;
+    status.textContent = n ? `${n} deck(s) selected.` : "Select decks to enable.";
+  }
+}
+
+window.multiSelectDeckAll = function(){
+  Object.keys(allDecks).forEach(n => multiSelectedDecks.add(n));
+  renderDeckMultiSelect();
+};
+window.multiSelectDeckNone = function(){
+  multiSelectedDecks.clear();
+  renderDeckMultiSelect();
+};
+function buildMixedVocabDeck() {
+  const names = [...multiSelectedDecks];
+  const merged = [];
+  names.forEach(n => {
+    const arr = allDecks[n] || [];
+    // tag each row with its source deck (optional, for future UX)
+    arr.forEach(x => merged.push({ ...x, __src: n }));
+  });
+  return merged;
+}
+
+window.startMixedLearn = async function(){
+  if (multiSelectedDecks.size === 0) return alert("Pick at least one deck.");
+  currentDeck = buildMixedVocabDeck();
+  if (!currentDeck.length) return alert("Selected decks are empty.");
+  shuffleArray(currentDeck); // mixed order
+  currentDeckName = `Mixed (${multiSelectedDecks.size})`;
+  currentIndex = 0;
+  mode = "learn";
+  sessionBuf = {
+    deckName: currentDeckName,
+    mode: "learn",
+    correct: 0, wrong: 0, skipped: 0, total: 0,
+    jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
+  };
+  persistSession();
+  currentAudioFolder = null; // mixed → disable per-deck audio mapping
+  await ensureDeckNotesLoaded(currentDeckName);
+  showSection("learn");
+  showLearnCard();
+  learnNoteBindForCurrent();
+};
+
+window.startMixedPractice = function(selectedMode){
+  if (multiSelectedDecks.size === 0) return alert("Pick at least one deck.");
+  currentDeck = buildMixedVocabDeck();
+  if (!currentDeck.length) return alert("Selected decks are empty.");
+  shuffleArray(currentDeck);
+  currentDeckName = `Mixed (${multiSelectedDecks.size})`;
+  currentIndex = 0;
+  sessionBuf = {
+    deckName: currentDeckName,
+    mode: selectedMode,
+    correct: 0, wrong: 0, skipped: 0, total: 0,
+    jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
+  };
+  persistSession();
+  startPractice(selectedMode);
+};
+
+window.startMixedWrite = function(){
+  if (multiSelectedDecks.size === 0) return alert("Pick at least one deck.");
+  currentDeck = buildMixedVocabDeck();
+  if (!currentDeck.length) return alert("Selected decks are empty.");
+  shuffleArray(currentDeck);
+  currentDeckName = `Mixed (${multiSelectedDecks.size})`;
+  currentIndex = 0;
+  sessionBuf = {
+    deckName: currentDeckName,
+    mode: "write",
+    correct: 0, wrong: 0, skipped: 0, total: 0,
+    jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
+  };
+  persistSession();
+  startWriteWords();
+};
+// --- Mixed Grammar selection state ---
+let pgMultiSelected = new Set();
+
+// Call this at the end of loadGrammarPracticeManifest()
+function renderPgMultiList() {
+  const listEl = $("pg-multi-list");
+  const status = $("pg-multi-status");
+  if (!listEl || !Array.isArray(pgState.files)) return;
+
+  listEl.innerHTML = "";
+  pgState.files.forEach(file => {
+    const id = "pgms-" + file;
+    const label = document.createElement("label");
+    label.className = "checkbox-pill";
+    label.style.display = "inline-flex";
+    label.style.gap = "8px";
+    label.style.alignItems = "center";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.id = id;
+    cb.checked = pgMultiSelected.has(file);
+    cb.onchange = () => {
+      if (cb.checked) pgMultiSelected.add(file);
+      else pgMultiSelected.delete(file);
+      updatePgMultiStatus();
+    };
+
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(file.replace(/\.csv$/i,"")));
+    listEl.appendChild(label);
+  });
+
+  updatePgMultiStatus();
+}
+
+function updatePgMultiStatus() {
+  const status = $("pg-multi-status");
+  if (status) {
+    const n = pgMultiSelected.size;
+    status.textContent = n ? `${n} set(s) selected.` : "Pick sets to combine.";
+  }
+}
+
+window.pgMultiSelectAll = function(){
+  (pgState.files || []).forEach(f => pgMultiSelected.add(f));
+  renderPgMultiList();
+};
+window.pgMultiSelectNone = function(){
+  pgMultiSelected.clear();
+  renderPgMultiList();
+};
+window.pgStartMixed = async function(){
+  if (pgMultiSelected.size === 0) {
+    alert("Select at least one grammar set.");
+    return;
+  }
+  try {
+    // Load all selected CSVs, concatenate, then shuffle
+    const all = [];
+    for (const file of pgMultiSelected) {
+      const res = await fetch(`practice-grammar/${file}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status} for ${file}`);
+      const text = (await res.text()).replace(/^\uFEFF/, "");
+      const rows = parseCSV(text)
+        .map(cols => ({ q: (cols[0]||"").trim(), a: (cols[1]||"").trim() }))
+        .filter(x => x.q && x.a);
+      rows.forEach(r => all.push(r));
+    }
+    if (!all.length) throw new Error("No valid rows in selected sets.");
+
+    // Prepare pgState
+    pgState.setName = `Mixed (${pgMultiSelected.size})`;
+    pgState.items = all;
+    pgState.order = [...all.keys()];
+    shuffleArray(pgState.order);
+    pgState.i = 0;
+    pgState.correct = 0;
+    pgState.wrong = 0;
+    pgState.answered = false;
+
+    sessionBuf.deckName = `Grammar Mixed (${pgMultiSelected.size})`;
+    sessionBuf.mode = "grammar";
+    sessionBuf.correct = 0; sessionBuf.wrong = 0; sessionBuf.skipped = 0; sessionBuf.total = 0;
+    sessionBuf.jpEnCorrect = 0; sessionBuf.enJpCorrect = 0; sessionBuf.grammarCorrect = 0;
+    persistSession();
+
+    // Show practice area
+    const filesBox = $("pg-file-buttons");
+    if (filesBox) filesBox.classList.add('hidden');
+    const area = $("pg-area");
+    if (area) area.classList.remove("hidden");
+
+    showSection("practice-grammar");
+    pgRender();
+    pgUpdateProgress();
+
+    const statusEl = $("pg-status");
+    if (statusEl) statusEl.textContent = `Loaded ${all.length} questions from ${pgMultiSelected.size} set(s).`;
+  } catch (e) {
+    alert("Failed to start mixed grammar: " + (e?.message || e));
+  }
+};
