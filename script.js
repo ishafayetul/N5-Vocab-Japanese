@@ -67,6 +67,21 @@ let markedWordsList = [];       // Array of marked word objects ({front, back, r
 let markedMap = {};             // Lookup map for quick check of marked words (keys are "front|back")
 
 // ---------------- DOM helpers ----------------
+function renderMistakesUI() {
+  const statusEl = document.getElementById("mistakes-status");
+  const modeSel = document.getElementById("mistakes-mode-select");
+  const n = Array.isArray(mistakes) ? mistakes.length : 0;
+
+  if (statusEl) {
+    statusEl.textContent = n > 0
+      ? `You have ${n} mistake word${n === 1 ? "" : "s"}.`
+      : "No mistakes yet.";
+  }
+  if (modeSel) {
+    modeSel.classList.toggle("hidden", n === 0);
+  }
+}
+
 const $ = (id) => document.getElementById(id);
 const setText = (id, txt) => { const el = $(id); if (el) el.innerText = txt; };
 function statusLine(id, msg) {
@@ -222,6 +237,7 @@ window.onload = () => {
   loadGrammarPracticeManifest(); // Practice grammar sets
   renderProgress();
   updateScore();
+  renderMistakesUI();
 };
 
 // script.js (__initAfterLogin update)
@@ -237,6 +253,7 @@ window.__initAfterLogin = async () => {
       markedMap[key] = true;
     }
     renderMarkedList();  // populate the Marked Words section UI with the list
+    renderMistakesUI();
   }
 };
 
@@ -290,7 +307,9 @@ function showSection(id) {
   else console.warn('showSection: no element with id:', id);
 
   currentSectionId = id;
-
+  if (id === "mistakes-section") {
+    renderMistakesUI(); // NEW
+  }
   if (id === "practice") updateDeckProgress();
   if (id === "practice-grammar") {
     pgUpdateProgress();
@@ -501,6 +520,7 @@ window.writeSubmit = function () {
 
   localStorage.setItem("mistakes", JSON.stringify(mistakes));
   localStorage.setItem("masteryMap", JSON.stringify(masteryMap));
+  renderMistakesUI(); // NEW
   persistSession();
   updateScore();
 
@@ -769,6 +789,7 @@ function checkAnswer(selected, correct, wordObj) {
 
   localStorage.setItem("mistakes", JSON.stringify(mistakes));
   localStorage.setItem("masteryMap", JSON.stringify(masteryMap));
+  renderMistakesUI(); 
   persistSession();
   updateScore();
   setTimeout(() => {
@@ -791,6 +812,7 @@ function skipQuestion() {
 
   localStorage.setItem("mistakes", JSON.stringify(mistakes));
   localStorage.setItem("masteryMap", JSON.stringify(masteryMap));
+  renderMistakesUI(); // NEW
   persistSession();
   updateScore();
   nextQuestion();
@@ -984,24 +1006,26 @@ window.learnNoteSaveNow = async function(){
 };
 
 // ---------------- MISTAKES ----------------
-function startMistakePractice() {
-  if (mistakes.length === 0) return alert("No mistakes yet!");
-  currentDeck = mistakes.slice();
-  currentDeckName = "Mistakes";
-  currentIndex = 0;
-  showSection("practice");
-  startPractice(mode);
-}
-window.startMistakePractice = startMistakePractice;
+// function startMistakePractice() {
+//   if (mistakes.length === 0) return alert("No mistakes yet!");
+//   currentDeck = mistakes.slice();
+//   currentDeckName = "Mistakes";
+//   currentIndex = 0;
+//   showSection("practice");
+//   startPractice(mode);
+// }
+// window.startMistakePractice = startMistakePractice;
 
 function clearMistakes() {
   if (confirm("Clear all mistake words?")) {
     mistakes = [];
     localStorage.setItem("mistakes", JSON.stringify([]));
     alert("Mistakes cleared.");
+    renderMistakesUI(); // NEW
   }
 }
 window.clearMistakes = clearMistakes;
+
 
 // ---------------- GRAMMAR (PDF links) ----------------
 async function loadGrammarManifest() {
@@ -1926,7 +1950,9 @@ window.startMarkedWrite = function() {
   // Reuse the existing startWriteWords logic
   window.startWriteWords();
 };
-window.startMistakeLearn = async function() {
+
+
+window.startMistakeLearn = async function () {
   if (mistakes.length === 0) return alert("No mistakes yet!");
   currentDeck = mistakes.slice();
   currentDeckName = "Mistakes";
@@ -1939,14 +1965,14 @@ window.startMistakeLearn = async function() {
     jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
   };
   persistSession();
-  currentAudioFolder = null; // disable mixed audio
+  currentAudioFolder = null; // mixed deck → disable per-deck audio
   await ensureDeckNotesLoaded(currentDeckName);
   showSection("learn");
   showLearnCard();
   learnNoteBindForCurrent();
 };
 
-window.startMistakePractice = function(selectedMode) {
+window.startMistakePractice = function (selectedMode) {
   if (mistakes.length === 0) return alert("No mistakes yet!");
   currentDeck = mistakes.slice();
   currentDeckName = "Mistakes";
@@ -1958,10 +1984,10 @@ window.startMistakePractice = function(selectedMode) {
     jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
   };
   persistSession();
-  startPractice(selectedMode);
+  startPractice(selectedMode); // reuses your MCQ flow
 };
 
-window.startMistakeWrite = function() {
+window.startMistakeWrite = function () {
   if (mistakes.length === 0) return alert("No mistakes yet!");
   currentDeck = mistakes.slice();
   currentDeckName = "Mistakes";
@@ -1973,5 +1999,6 @@ window.startMistakeWrite = function() {
     jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
   };
   persistSession();
-  window.startWriteWords();
+  window.startWriteWords();   // reuses your typing mode
 };
+
