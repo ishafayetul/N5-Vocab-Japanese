@@ -69,6 +69,23 @@ let markedWordsList = [];       // Array of marked word objects ({front, back, r
 let markedMap = {};             // Lookup map for quick check of marked words (keys are "front|back")
 
 // ---------------- DOM helpers ----------------
+// ===== AI Grammar Review (serverless endpoint) =====
+const AI_REVIEW_ENDPOINT = '/api/grammar-review';  // change if you host elsewhere
+
+async function reviewWithAI({ question, user, correct, level = 'JLPT N5' }) {
+  const res = await fetch(AI_REVIEW_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, userAnswer: user, correctAnswer: correct, level })
+  });
+  if (!res.ok) throw new Error(`AI review HTTP ${res.status}`);
+  // { is_correct:boolean, verdict:string, better:string, issues:string[], score:number(0..1) }
+  return await res.json();
+}
+
+// tiny fallback (only if you don't already have it)
+function escapeHtml(s){ return String(s ?? "").replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m])); }
+
 function renderMistakesUI() {
   const statusEl = document.getElementById("mistakes-status");
   const modeSel = document.getElementById("mistakes-mode-select");
@@ -1261,44 +1278,105 @@ function escapeHtml(s) {
   return (s || "").replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
 }
 
-function pgSubmit() {
+// function pgSubmit() {
+//   const idx = pgState.order[pgState.i];
+//   const item = pgState.items[idx];
+//   if (!item || pgState.answered) return;
+
+//   const input = $("pg-input");
+//   const fb = $("pg-feedback");
+//   const userAnsRaw = input ? input.value : "";
+
+//   const ok = normalizeAnswer(userAnsRaw) === normalizeAnswer(item.a);
+
+//   // Show correct answer always, plus mismatch view
+//   if (fb) {
+//     const userDiffHtml = highlightDiff(userAnsRaw, item.a);
+//     fb.innerHTML = ok
+//       ? `✅ Correct!<br><b>Answer:</b> ${escapeHtml(item.a)}<br><b>Your answer:</b> ${escapeHtml(userAnsRaw)}`
+//       : `❌ Wrong.<br><b>Answer:</b> ${escapeHtml(item.a)}<br><b>Your answer:</b> ${userDiffHtml}`;
+//   }
+
+//   if (ok) {
+//     pgState.correct++;
+//     sessionBuf.correct++;
+//     sessionBuf.total++;
+//     sessionBuf.grammarCorrect = (sessionBuf.grammarCorrect || 0) + 1;
+//   } else {
+//     pgState.wrong++;
+//     sessionBuf.wrong++;
+//     sessionBuf.total++;
+//   }
+//   persistSession();
+
+//   // Lock input until Next is clicked; question won't auto-advance
+//   if (input) input.disabled = true;
+//   const submitBtn = $("pg-submit");
+//   if (submitBtn) submitBtn.disabled = true;
+//   pgState.answered = true;
+// }
+//window.pgSubmit = pgSubmit;
+window.pgSubmit = async function () {
+  const input = $("pg-input");
+  const fb = $("pg-feedback");
+  if (!input || !fb) return;
+
   const idx = pgState.order[pgState.i];
   const item = pgState.items[idx];
   if (!item || pgState.answered) return;
 
-  const input = $("pg-input");
-  const fb = $("pg-feedback");
-  const userAnsRaw = input ? input.value : "";
+  const userAnsRaw = input.value || "";
+  const question   = item.q || "";         // from your CSV row
+  const correctRef = item.a || "";         // model/reference answer (context only)
 
-  const ok = normalizeAnswer(userAnsRaw) === normalizeAnswer(item.a);
+  // UI: loading state
+  fb.className = "pg-feedback loading";
+  fb.textContent = "🤖 Checking your answer…";
 
-  // Show correct answer always, plus mismatch view
-  if (fb) {
-    const userDiffHtml = highlightDiff(userAnsRaw, item.a);
-    fb.innerHTML = ok
-      ? `✅ Correct!<br><b>Answer:</b> ${escapeHtml(item.a)}<br><b>Your answer:</b> ${escapeHtml(userAnsRaw)}`
-      : `❌ Wrong.<br><b>Answer:</b> ${escapeHtml(item.a)}<br><b>Your answer:</b> ${userDiffHtml}`;
+  try {
+    // --- AI decides correctness ---
+    const data = await reviewWithAI({
+      question, user: userAnsRaw, correct: correctRef, level: 'JLPT N5'
+    });
+
+    const isOk   = !!data?.is_correct;
+    const verdict= data?.verdict || (isOk ? "Looks correct!" : "Needs improvement.");
+    const better = data?.better ? `<div><b>Better:</b> ${escapeHtml(data.better)}</div>` : "";
+    const issues = Array.isArray(data?.issues) && data.issues.length
+                  ? `<ul>${data.issues.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul>` : "";
+
+    // --- show feedback from AI ---
+    fb.className = `pg-feedback ${isOk ? 'ok' : 'bad'}`;
+    fb.innerHTML = `${escapeHtml(verdict)} ${better} ${issues}`;
+
+    // --- scoring based on AI verdict ---
+    if (isOk) {
+      pgState.correct++;
+      score.correct++;
+      sessionBuf.correct++;
+      sessionBuf.total++;
+      sessionBuf.grammarCorrect++;  // this flows into your Firestore + leaderboards
+    } else {
+      pgState.wrong++;
+      score.wrong++;
+      sessionBuf.wrong++;
+      sessionBuf.total++;
+    }
+    persistSession();  // keep your existing buffer lifecycle
+    updateScore();
+
+  } catch (e) {
+    console.warn("[AI review] error:", e);
+    fb.className = "pg-feedback bad";
+    fb.textContent = "AI review failed. Please check your connection and try again.";
+    // do not advance counters on failure
   }
 
-  if (ok) {
-    pgState.correct++;
-    sessionBuf.correct++;
-    sessionBuf.total++;
-    sessionBuf.grammarCorrect = (sessionBuf.grammarCorrect || 0) + 1;
-  } else {
-    pgState.wrong++;
-    sessionBuf.wrong++;
-    sessionBuf.total++;
-  }
-  persistSession();
-
-  // Lock input until Next is clicked; question won't auto-advance
-  if (input) input.disabled = true;
-  const submitBtn = $("pg-submit");
-  if (submitBtn) submitBtn.disabled = true;
+  // lock input until Next
+  input.disabled = true;
+  const btn = $("pg-submit"); if (btn) btn.disabled = true;
   pgState.answered = true;
-}
-window.pgSubmit = pgSubmit;
+};
 
 function pgShowAnswer() {
   const idx = pgState.order[pgState.i];

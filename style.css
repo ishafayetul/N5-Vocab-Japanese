@@ -489,3 +489,5 @@ button.unmark-btn:hover {
   justify-content: space-between;
   margin-bottom: 8px;
 }
+/* Optional AI loading tint */
+.pg-feedback.loading { background: var(--warning); color: #7c2d12; }
