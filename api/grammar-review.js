@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     "Input: question/prompt, learner's answer, and reference correct answer (for guidance).",
     "Task: Decide if the learner's answer is correct at N5 level.",
     "Return ONLY JSON with:",
-    "is_correct (bool), verdict (short string with explanation　in english), better (corrected version　in hiragana or katakana, do not write in kanji),",
+    "is_correct (bool), verdict (short string with explanation　if incorrect　in english), better (corrected version　in hiragana or katakana, do not write in kanji),",
     "issues (array of bullet points), score (0..1)."
   ].join(" ");
 
