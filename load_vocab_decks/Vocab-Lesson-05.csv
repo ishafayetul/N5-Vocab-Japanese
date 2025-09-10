@@ -47,9 +47,9 @@
 なんにち,"which day of the month, how many days",nannichi
 いつ,when,itsu
 たんじょうび,birthday,tanjoubi
-ふつう,local (train),futsuu
-きゅうこう,rapid,kyuukou
-とっきゅう,express,tokkyuu
+ふつう,"local (train)",futsuu
+きゅうこう,rapid train,kyuukou
+とっきゅう,express train,tokkyuu
 つぎの,next,tsugino
 どういたしまして,"You're welcome, Don't mention it",douitashimashite
 ～ばんせん,"platform ~, ~th platform",～bansen

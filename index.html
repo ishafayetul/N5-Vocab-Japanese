@@ -78,6 +78,7 @@
                 <button onclick="startMixedPractice('jp-en')">JP → EN (mixed)</button>
                 <button onclick="startMixedPractice('en-jp')">EN → JP (mixed)</button>
                 <button onclick="startMixedWrite()">✍️ Write Words (mixed)</button>
+                <button onclick="startMixedMake()">📝 Make Sentence (mixed)</button>
               </div>
               <p id="deck-multi-status" class="muted" style="margin-top:6px;">Select decks to enable.</p>
             </details>
@@ -92,6 +93,7 @@
           <button onclick="startPractice('jp-en')">Japanese → English</button>
           <button onclick="startPractice('en-jp')">English → Japanese</button>
           <button onclick="startWriteWords()">✍️ Write Words</button>
+          <button onclick="startMakeSentence()">📝 Make Sentence</button>
         </section>
 
         <!-- Learn (flashcard + prev/next + romaji in middle) -->
@@ -198,6 +200,25 @@
           </div>
 
           <div id="write-feedback" class="pg-feedback muted"></div>
+        </section>
+        <section id="make" class="hidden">
+          <div class="deck-progress">
+            <div class="deck-progress-bar" id="make-progress-bar"></div>
+            <div class="deck-progress-text" id="make-progress-text">0 / 0 (0%)</div>
+          </div>
+
+          <div class="flashcard" id="make-card"></div>
+
+          <div class="pg-input-row">
+            <textarea id="make-input" class="pg-input make-textarea" rows="3"
+              placeholder="Write a Japanese sentence using ALL shown word(s)…"></textarea>
+            <button id="make-submit" onclick="makeSubmit()">Submit</button>
+            <button id="make-skip" onclick="makeSkip()">Skip</button>
+            <button id="make-hints" onclick="makeShowHints()">👁 Show Hints</button>
+            <button id="make-next" onclick="makeNext()">Next ➡️</button>
+          </div>
+
+          <div id="make-feedback" class="pg-feedback muted"></div>
         </section>
 
         <!-- Progress -->

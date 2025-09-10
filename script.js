@@ -38,6 +38,15 @@ let sessionBuf = JSON.parse(localStorage.getItem("sessionBuf") || "null") || {
 let currentSectionId = "deck-select";
 let committing = false;
 
+// ---- Make Sentence (free-form, AI-checked) ----
+const makeState = {
+  round: 0,
+  totalRounds: 0,
+  group: [],       // array of vocab items (1–3 words)
+  answered: false
+};
+let makeKeyHandler = null;
+
 // Practice Grammar state
 const pgState = {
   files: [],          // ['lesson-01.csv', ...]
@@ -309,6 +318,13 @@ function showSection(id) {
       pgKeyHandler = null;
     }
   }
+  if (currentSectionId === "make" && id !== "make") {
+    autoCommitIfNeeded("leaving make-sentence");
+    if (makeKeyHandler) {
+      document.removeEventListener('keydown', makeKeyHandler);
+      makeKeyHandler = null;
+    }
+  }
   // NEW: leaving Write Words => autosave + unbind keys
   if (currentSectionId === "write" && id !== "write") {
     autoCommitIfNeeded("leaving write words");
@@ -388,6 +404,31 @@ function showSection(id) {
         }
       };
       document.addEventListener('keydown', writeKeyHandler);
+    }
+  }
+
+  if (id === "make") {
+    makeUpdateProgress();
+    if (!makeKeyHandler) {
+      makeKeyHandler = (e) => {
+        if (currentSectionId !== "make") return;
+        const input = $("make-input");
+        const disabled = !input || input.disabled;
+
+        // Ctrl/Cmd + Enter → Next
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault(); makeNext(); return;
+        }
+        // Esc → Skip
+        if (e.key === "Escape") {
+          e.preventDefault(); makeSkip(); return;
+        }
+        // Enter → Submit (only if input enabled)
+        if (e.key === "Enter" && !disabled) {
+          e.preventDefault(); makeSubmit(); return;
+        }
+      };
+      document.addEventListener("keydown", makeKeyHandler);
     }
   }
 }
@@ -1646,6 +1687,30 @@ async function renderProgress() {
 window.renderProgress = renderProgress;
 
 // ---------------- Utilities ----------------
+function isLikelyVerb(item){
+  const s = (item?.back || "").toLowerCase();
+  return /^to\s/.test(s) || /\bverb\b/.test(s) || /\(v\)/.test(s);
+}
+function pickMakeGroup(){
+  const pool = currentDeck || [];
+  if (!pool.length) return [];
+  // 1 word (60%), 2 words (30%), 3 words (10%)
+  const r = Math.random();
+  const k = r < 0.6 ? 1 : (r < 0.9 ? 2 : 3);
+  const want = Math.min(k, pool.length);
+
+  const idxs = new Set();
+  while (idxs.size < want) idxs.add(Math.floor(Math.random() * pool.length));
+  let group = [...idxs].map(i => pool[i]);
+
+  // If multi-word but no verb, try inject a verb to help form a full sentence.
+  if (group.length > 1 && !group.some(isLikelyVerb)) {
+    const verbs = pool.filter(isLikelyVerb);
+    if (verbs.length) group[0] = verbs[Math.floor(Math.random() * verbs.length)];
+  }
+  return group;
+}
+
 function shuffleArray(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -2082,6 +2147,51 @@ window.startMistakeWrite = function () {
   persistSession();
   window.startWriteWords();   // reuses your typing mode
 };
+window.startMakeSentence = function () {
+  if (!currentDeck.length) return alert("Pick a deck first!");
+  mode = "make-sentence";
+  sessionBuf.mode = "make-sentence";
+  currentIndex = 0;
+  score = { correct: 0, wrong: 0, skipped: 0 };
+
+  makeState.round = 0;
+  makeState.totalRounds = Math.min(currentDeck.length, 15); // short focused set
+  makeState.answered = false;
+  makeState.group = pickMakeGroup();
+
+  showSection("make");
+  makeRender();
+  makeUpdateProgress();
+  updateScore();
+};
+
+window.startMixedMake = function () {
+  if (multiSelectedDecks.size === 0) return alert("Pick at least one deck.");
+  currentDeck = buildMixedVocabDeck();
+  if (!currentDeck.length) return alert("Selected decks are empty.");
+  shuffleArray(currentDeck);
+  currentDeckName = `Mixed (${multiSelectedDecks.size})`;
+
+  mode = "make-sentence";
+  sessionBuf = {
+    deckName: currentDeckName,
+    mode: "make-sentence",
+    correct: 0, wrong: 0, skipped: 0, total: 0,
+    jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
+  };
+  persistSession();
+
+  score = { correct: 0, wrong: 0, skipped: 0 };
+  makeState.round = 0;
+  makeState.totalRounds = Math.min(currentDeck.length, 15);
+  makeState.answered = false;
+  makeState.group = pickMakeGroup();
+
+  showSection("make");
+  makeRender();
+  makeUpdateProgress();
+  updateScore();
+};
 
 function renderDeckMultiSelect() {
   const wrap = $("deck-multi-list");
@@ -2300,5 +2410,111 @@ window.pgStartMixed = async function(){
     if (statusEl) statusEl.textContent = `Loaded ${all.length} questions from ${pgMultiSelected.size} set(s).`;
   } catch (e) {
     alert("Failed to start mixed grammar: " + (e?.message || e));
+  }
+};
+function makeRender() {
+  const words = makeState.group || [];
+  const card = $("make-card");
+  if (card) {
+    const jp = words.map(w => w.front).join(" ・ ");
+    card.className = "flashcard";
+    card.innerHTML = `
+      <div class="learn-word-row">
+        <div class="learn-word">${jp || "—"}</div>
+      </div>
+    `;
+  }
+  const input = $("make-input");
+  if (input) { input.value = ""; input.disabled = false; input.focus(); }
+
+  const submitBtn = $("make-submit"); if (submitBtn) submitBtn.disabled = false;
+  const fb = $("make-feedback"); if (fb) { fb.className = "pg-feedback muted"; fb.innerHTML = ""; }
+
+  makeState.answered = false;
+}
+
+function makeUpdateProgress() {
+  const total = makeState.totalRounds || 0;
+  const done = Math.min(makeState.round, total);
+  const p = percent(done, total || 1);
+  const bar = $("make-progress-bar");
+  const txt = $("make-progress-text");
+  if (bar) bar.style.width = `${p}%`;
+  if (txt) txt.textContent = `${done} / ${total} (${p}%)`;
+}
+
+window.makeSubmit = async function () {
+  const input = $("make-input");
+  const fb = $("make-feedback");
+  if (!input || !fb || makeState.answered) return;
+
+  const userSentence = (input.value || "").trim();
+  if (!userSentence) return;
+
+  const words = (makeState.group || []).map(w => w.front);
+  fb.className = "pg-feedback loading";
+  fb.textContent = "🤖 Checking your sentence…";
+
+  // We reuse your existing serverless checker; we encode the 'rules' in the prompt.
+  const question = `Make one simple JLPT N5-level Japanese sentence using ALL of these word(s): ${words.join(", ")}.`;
+  const correctRef = `Must include all: ${words.join(", ")}. Allow inflections and particles; kana/kanji both okay.`;
+
+  try {
+    const data = await reviewWithAI({
+      question, user: userSentence, correct: correctRef, level: 'JLPT N5'
+    });
+
+    const ok = !!data?.is_correct;
+    const verdict = data?.verdict || (ok ? "Good sentence!" : "Needs improvement.");
+    const better  = data?.better ? `<div><b>Better:</b> ${escapeHtml(data.better)}</div>` : "";
+    const issues  = Array.isArray(data?.issues) && data.issues.length
+      ? `<ul>${data.issues.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul>` : "";
+
+    fb.className = `pg-feedback ${ok ? "ok" : "bad"}`;
+    fb.innerHTML = `${escapeHtml(verdict)} ${better} ${issues}`;
+
+    if (ok) {
+      score.correct++; sessionBuf.correct++; sessionBuf.total++; sessionBuf.grammarCorrect++;
+    } else {
+      score.wrong++;   sessionBuf.wrong++;   sessionBuf.total++;
+    }
+    persistSession();
+    updateScore();
+
+    input.disabled = true;
+    const submitBtn = $("make-submit"); if (submitBtn) submitBtn.disabled = true;
+    makeState.answered = true;
+  } catch (e) {
+    console.warn("[make] AI check failed:", e);
+    fb.className = "pg-feedback bad";
+    fb.textContent = "AI review failed. Please try again.";
+  }
+};
+
+window.makeSkip = function () {
+  score.skipped++; sessionBuf.skipped++; sessionBuf.total++;
+  persistSession(); updateScore();
+  makeNext();
+};
+
+window.makeShowHints = function () {
+  const fb = $("make-feedback"); if (!fb) return;
+  const words = makeState.group || [];
+  const lines = words.map(w => `• ${escapeHtml(w.front)} — ${escapeHtml(w.back)}`).join("<br>");
+  const romaji = words.map(w => w.romaji).filter(Boolean).join(" ・ ");
+  fb.className = "pg-feedback";
+  fb.innerHTML = `💡 Hints:<br>${lines}${romaji ? `<div style="margin-top:4px;">(${escapeHtml(romaji)})</div>` : ""}`;
+};
+
+window.makeNext = function () {
+  makeState.round++;
+  makeUpdateProgress();
+  if (makeState.round >= makeState.totalRounds) {
+    alert(`Finished! ✅ ${score.correct} ❌ ${score.wrong} ➖ ${score.skipped}\nSaving your progress…`);
+    autoCommitIfNeeded("finish make-sentence");
+    showSection("deck-select");
+  } else {
+    makeState.group = pickMakeGroup();
+    makeRender();
   }
 };

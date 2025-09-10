@@ -237,6 +237,13 @@ button:disabled { opacity: .6; cursor: not-allowed; }
   border-color: #60a5fa;
   box-shadow: 0 0 0 4px rgba(59,130,246,.15);
 }
+/* Make Sentence: multi-line input uses the same look as pg-input */
+.pg-input.make-textarea{
+  height: auto;
+  min-height: 96px;
+  line-height: 1.4;
+  resize: vertical;
+}
 .pg-feedback{
   margin-top: 8px;
   font-size: 15px;
