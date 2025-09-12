@@ -2478,7 +2478,7 @@ window.makeSubmit = async function () {
     a) The sentence contains EVERY target word, or an acceptable inflected/conjugated/particle-attached form of it
         (e.g., たべる/たべます/たべて/たべました; kana/kanji variants acceptable; particles may be attached like を/に/へ/で/が/は, counters okay).
     b) The whole sentence is grammatically correct and natural at JLPT N5 level.
-  2) Extra words are allowed. Order of words does not matter.
+  2) Extra words are allowed, but sentence should be correct by meaning. Check grammatical order of words.
   3) If any target is missing or misused, set "is_correct": false.
   4) Return THIS JSON ONLY:
     {
