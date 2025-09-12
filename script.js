@@ -2456,8 +2456,43 @@ window.makeSubmit = async function () {
   fb.textContent = "🤖 Checking your sentence…";
 
   // We reuse your existing serverless checker; we encode the 'rules' in the prompt.
-  const question = `Make one simple JLPT N5-level Japanese sentence using ALL of these word(s): ${words.join(", ")}.`;
-  const correctRef = `Must include all: ${words.join(", ")}. Allow inflections and particles; kana/kanji both okay.`;
+  // const question = `Make one simple JLPT N5-level Japanese sentence using ALL of these word(s): ${words.join(", ")}.`;
+  // const correctRef = `Must include all: ${words.join(", ")}. Allow inflections and particles; kana/kanji both okay.`;
+// Build a task + rubric that is NOT strict about exact phrasing, only about
+// (1) presence of all target words (incl. inflections/variants), and
+// (2) overall grammaticality/naturalness at N5 level.
+  const targets = (makeState.group || []).map(w => ({
+    jp: w.front,
+    romaji: w.romaji || "",
+    meaning: w.back || ""
+  }));
+
+  const task = `Evaluate the user's sentence for JLPT N5 "Make Sentence" practice. The goal is to use ALL target word(s) in ONE natural, grammatical sentence. Extra words allowed; any order is fine.`;
+
+  const rubric = `
+  TARGET WORDS:
+  ${targets.map(t => `- ${t.jp}${t.romaji ? ` (${t.romaji})` : ""}${t.meaning ? ` — ${t.meaning}` : ""}`).join("\n")}
+
+  EVALUATION RULES:
+  1) Mark "is_correct": true ONLY IF:
+    a) The sentence contains EVERY target word, or an acceptable inflected/conjugated/particle-attached form of it
+        (e.g., たべる/たべます/たべて/たべました; kana/kanji variants acceptable; particles may be attached like を/に/へ/で/が/は, counters okay).
+    b) The whole sentence is grammatically correct and natural at JLPT N5 level.
+  2) Extra words are allowed. Order of words does not matter.
+  3) If any target is missing or misused, set "is_correct": false.
+  4) Return THIS JSON ONLY:
+    {
+      "is_correct": true|false,
+      "verdict": "one short line summarizing why",
+      "issues": ["bullet list of specific problems or missing target(s)"],
+      "better": "a corrected sentence that uses ALL target words naturally"
+    }
+  `;
+
+  // We pass a "question" that embeds the task, and a "correct" that embeds the rubric + targets.
+  // Your existing /api/grammar-review reads these fields; it will return { is_correct, verdict, issues, better }.
+  const question = `${task}\n\nUser must write one sentence using all target words.`;
+  const correctRef = `${rubric}\nBe concise. Judge STRICTLY by the two criteria (contains all targets; grammar ok).`;
 
   try {
     const data = await reviewWithAI({
