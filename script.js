@@ -1696,7 +1696,8 @@ function pickMakeGroup(){
   if (!pool.length) return [];
   // 1 word (60%), 2 words (30%), 3 words (10%)
   const r = Math.random();
-  const k = r < 0.6 ? 1 : (r < 0.9 ? 2 : 3);
+  // const k = r < 0.6 ? 1 : (r < 0.9 ? 2 : 3);
+  const k = 1
   const want = Math.min(k, pool.length);
 
   const idxs = new Set();
