@@ -1319,105 +1319,105 @@ function escapeHtml(s) {
   return (s || "").replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
 }
 
-// function pgSubmit() {
-//   const idx = pgState.order[pgState.i];
-//   const item = pgState.items[idx];
-//   if (!item || pgState.answered) return;
-
-//   const input = $("pg-input");
-//   const fb = $("pg-feedback");
-//   const userAnsRaw = input ? input.value : "";
-
-//   const ok = normalizeAnswer(userAnsRaw) === normalizeAnswer(item.a);
-
-//   // Show correct answer always, plus mismatch view
-//   if (fb) {
-//     const userDiffHtml = highlightDiff(userAnsRaw, item.a);
-//     fb.innerHTML = ok
-//       ? `✅ Correct!<br><b>Answer:</b> ${escapeHtml(item.a)}<br><b>Your answer:</b> ${escapeHtml(userAnsRaw)}`
-//       : `❌ Wrong.<br><b>Answer:</b> ${escapeHtml(item.a)}<br><b>Your answer:</b> ${userDiffHtml}`;
-//   }
-
-//   if (ok) {
-//     pgState.correct++;
-//     sessionBuf.correct++;
-//     sessionBuf.total++;
-//     sessionBuf.grammarCorrect = (sessionBuf.grammarCorrect || 0) + 1;
-//   } else {
-//     pgState.wrong++;
-//     sessionBuf.wrong++;
-//     sessionBuf.total++;
-//   }
-//   persistSession();
-
-//   // Lock input until Next is clicked; question won't auto-advance
-//   if (input) input.disabled = true;
-//   const submitBtn = $("pg-submit");
-//   if (submitBtn) submitBtn.disabled = true;
-//   pgState.answered = true;
-// }
-//window.pgSubmit = pgSubmit;
-window.pgSubmit = async function () {
-  const input = $("pg-input");
-  const fb = $("pg-feedback");
-  if (!input || !fb) return;
-
+function pgSubmit() {
   const idx = pgState.order[pgState.i];
   const item = pgState.items[idx];
   if (!item || pgState.answered) return;
 
-  const userAnsRaw = input.value || "";
-  const question   = item.q || "";         // from your CSV row
-  const correctRef = item.a || "";         // model/reference answer (context only)
+  const input = $("pg-input");
+  const fb = $("pg-feedback");
+  const userAnsRaw = input ? input.value : "";
 
-  // UI: loading state
-  fb.className = "pg-feedback loading";
-  fb.textContent = "🤖 Checking your answer…";
+  const ok = normalizeAnswer(userAnsRaw) === normalizeAnswer(item.a);
 
-  try {
-    // --- AI decides correctness ---
-    const data = await reviewWithAI({
-      question, user: userAnsRaw, correct: correctRef, level: 'JLPT N5'
-    });
-
-    const isOk   = !!data?.is_correct;
-    const verdict= data?.verdict || (isOk ? "Looks correct!" : "Needs improvement.");
-    const better = data?.better ? `<div><b>Better:</b> ${escapeHtml(data.better)}</div>` : "";
-    const issues = Array.isArray(data?.issues) && data.issues.length
-                  ? `<ul>${data.issues.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul>` : "";
-
-    // --- show feedback from AI ---
-    fb.className = `pg-feedback ${isOk ? 'ok' : 'bad'}`;
-    fb.innerHTML = `${escapeHtml(verdict)} ${better} ${issues}`;
-
-    // --- scoring based on AI verdict ---
-    if (isOk) {
-      pgState.correct++;
-      score.correct++;
-      sessionBuf.correct++;
-      sessionBuf.total++;
-      sessionBuf.grammarCorrect++;  // this flows into your Firestore + leaderboards
-    } else {
-      pgState.wrong++;
-      score.wrong++;
-      sessionBuf.wrong++;
-      sessionBuf.total++;
-    }
-    persistSession();  // keep your existing buffer lifecycle
-    updateScore();
-
-  } catch (e) {
-    console.warn("[AI review] error:", e);
-    fb.className = "pg-feedback bad";
-    fb.textContent = "AI review failed. Please check your connection and try again.";
-    // do not advance counters on failure
+  // Show correct answer always, plus mismatch view
+  if (fb) {
+    const userDiffHtml = highlightDiff(userAnsRaw, item.a);
+    fb.innerHTML = ok
+      ? `✅ Correct!<br><b>Answer:</b> ${escapeHtml(item.a)}<br><b>Your answer:</b> ${escapeHtml(userAnsRaw)}`
+      : `❌ Wrong.<br><b>Answer:</b> ${escapeHtml(item.a)}<br><b>Your answer:</b> ${userDiffHtml}`;
   }
 
-  // lock input until Next
-  input.disabled = true;
-  const btn = $("pg-submit"); if (btn) btn.disabled = true;
+  if (ok) {
+    pgState.correct++;
+    sessionBuf.correct++;
+    sessionBuf.total++;
+    sessionBuf.grammarCorrect = (sessionBuf.grammarCorrect || 0) + 1;
+  } else {
+    pgState.wrong++;
+    sessionBuf.wrong++;
+    sessionBuf.total++;
+  }
+  persistSession();
+
+  // Lock input until Next is clicked; question won't auto-advance
+  if (input) input.disabled = true;
+  const submitBtn = $("pg-submit");
+  if (submitBtn) submitBtn.disabled = true;
   pgState.answered = true;
-};
+}
+window.pgSubmit = pgSubmit;
+// window.pgSubmit = async function () {
+//   const input = $("pg-input");
+//   const fb = $("pg-feedback");
+//   if (!input || !fb) return;
+
+//   const idx = pgState.order[pgState.i];
+//   const item = pgState.items[idx];
+//   if (!item || pgState.answered) return;
+
+//   const userAnsRaw = input.value || "";
+//   const question   = item.q || "";         // from your CSV row
+//   const correctRef = item.a || "";         // model/reference answer (context only)
+
+//   // UI: loading state
+//   fb.className = "pg-feedback loading";
+//   fb.textContent = "🤖 Checking your answer…";
+
+//   try {
+//     // --- AI decides correctness ---
+//     const data = await reviewWithAI({
+//       question, user: userAnsRaw, correct: correctRef, level: 'JLPT N5'
+//     });
+
+//     const isOk   = !!data?.is_correct;
+//     const verdict= data?.verdict || (isOk ? "Looks correct!" : "Needs improvement.");
+//     const better = data?.better ? `<div><b>Better:</b> ${escapeHtml(data.better)}</div>` : "";
+//     const issues = Array.isArray(data?.issues) && data.issues.length
+//                   ? `<ul>${data.issues.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul>` : "";
+
+//     // --- show feedback from AI ---
+//     fb.className = `pg-feedback ${isOk ? 'ok' : 'bad'}`;
+//     fb.innerHTML = `${escapeHtml(verdict)} ${better} ${issues}`;
+
+//     // --- scoring based on AI verdict ---
+//     if (isOk) {
+//       pgState.correct++;
+//       score.correct++;
+//       sessionBuf.correct++;
+//       sessionBuf.total++;
+//       sessionBuf.grammarCorrect++;  // this flows into your Firestore + leaderboards
+//     } else {
+//       pgState.wrong++;
+//       score.wrong++;
+//       sessionBuf.wrong++;
+//       sessionBuf.total++;
+//     }
+//     persistSession();  // keep your existing buffer lifecycle
+//     updateScore();
+
+//   } catch (e) {
+//     console.warn("[AI review] error:", e);
+//     fb.className = "pg-feedback bad";
+//     fb.textContent = "AI review failed. Please check your connection and try again.";
+//     // do not advance counters on failure
+//   }
+
+//   // lock input until Next
+//   input.disabled = true;
+//   const btn = $("pg-submit"); if (btn) btn.disabled = true;
+//   pgState.answered = true;
+// };
 
 function pgShowAnswer() {
   const idx = pgState.order[pgState.i];
