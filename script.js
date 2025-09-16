@@ -2156,7 +2156,7 @@ window.startMakeSentence = function () {
   score = { correct: 0, wrong: 0, skipped: 0 };
 
   makeState.round = 0;
-  makeState.totalRounds = Math.min(currentDeck.length, 15); // short focused set
+  makeState.totalRounds = Math.min(currentDeck.length, 30); // short focused set
   makeState.answered = false;
   makeState.group = pickMakeGroup();
 
