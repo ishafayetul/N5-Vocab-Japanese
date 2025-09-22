@@ -1,106 +1,63 @@
-日,"day, sun",hi / nichi
-一,one,ichi
-国,country,kuni
-人,person,hito / jin
-年,year,toshi / nen
-大,big,oo(kii) / dai
-十,ten,juu
-二,two,ni
-本,"book, origin",hon
-中,"inside, middle",naka / chuu
-長,"long, leader",naga(i) / chou
-出,exit,de(ru) / shutsu
-三,three,san
-時,"time, hour",ji / toki
-行,go,i(ku) / kou
-見,see,mi(ru) / ken
-月,"month, moon",tsuki / getsu
-後,after,ato / go
-前,before,mae / zen
-生,"life, birth",i(kiru) / sei
-五,five,go
-間,"interval, space",aida / kan
-上,up,ue / jou
-東,east,higashi / tou
-四,four,shi / yon
-今,now,ima / kon
-金,"gold, money",kane / kin
-九,nine,kyuu
-入,enter,hai(ru) / nyuu
-学,study,mana(bu) / gaku
-高,"tall, expensive",taka(i) / kou
-円,"yen, circle",en
-子,child,ko / shi
-外,outside,soto / gai
-八,eight,hachi
-六,six,roku
-下,down,shita / ka
-来,come,ku(ru) / rai
-気,spirit,ki
-小,small,chii(sai) / shou
-七,seven,shichi
-山,mountain,yama / san
-話,talk,hanashi / wa
-女,woman,onna / jo
-北,north,kita / hoku
-午,noon,go
-百,hundred,hyaku
-書,write,ka(ku) / sho
-先,previous,saki / sen
-名,name,na / mei
-川,river,kawa / sen
-千,thousand,sen
-水,water,mizu / sui
-半,half,han
-男,man,otoko / dan
-西,west,nishi / sei
-電,electricity,den
-校,school,kou
-語,"language, word",go
-土,"soil, earth",tsuchi / do
-木,tree,ki / moku
-聞,hear,ki(ku) / bun
-食,eat,ta(beru) / shoku
-車,car,kuruma / sha
-何,what,nani / ka
-南,south,minami / nan
-万,ten thousand,man
-毎,every,mai
-白,white,shiro(i) / haku
-天,heaven,ten
-母,mother,haha / bo
-火,fire,hi / ka
-右,right,migi / u
-読,read,yo(mu) / doku
-友,friend,tomo / yuu
-左,left,hidari / sa
-休,rest,yasu(mu) / kyuu
-父,father,chichi / fu
-雨,rain,ame / u
-駅,station,eki
-店,shop,mise / ten
-強,strong,tsuyo(i) / kyou
-会,meet,a(u) / kai
-道,road,michi / dou
-買,buy,ka(u) / bai
-話,speech,hanashi / wa
-朝,morning,asa / chou
-海,sea,umi / kai
-空,"sky, empty",sora / kuu
-家,house,ie / ka
-読,read,yo(mu) / doku
-曜,weekday,you
-駅,station,eki
-体,body,karada / tai
-色,color,iro / shoku
-犬,dog,inu / ken
-魚,fish,sakana / gyo
-鳥,bird,tori / chou
-走,run,hashi(ru) / sou
-切,cut,ki(ru) / setsu
-音,sound,oto / on
-新,new,atara(shii) / shin
-古,old,furu(i) / ko
-言,say,i(u) / gen
-楽,"fun, music",tano(shii) / gaku
-黒,black,kuro / koku
+一つ,ひとつ,"one thing"
+一人,ひとり,"one person"
+一日,ついたち,"first day of the month"
+一日,いちにち,"one day"
+一緒に,いっしょに,"together"
+二つ,ふたつ,"two things"
+二人,ふたり,"two people"
+二日,ふつか,"second day of the month"
+二月,にがつ,"February"
+三つ,みっつ,"three things"
+三日,みっか,"third day of the month"
+三月,さんがつ,"March"
+三年,さんねん,"three years"
+山,やま,"mountain"
+川,かわ,"river"
+ナイル川,ナイルがわ,"Nile River"
+目,め,"eye"
+一つ目,ひとつめ,"first"
+目上,めうえ,"superior"
+目下,めした,"subordinate, inferior"
+目的,もくてき,"purpose"
+口,くち,"mouth"
+入口,いりぐち,"entrance"
+出口,でぐち,"exit"
+東口,ひがしぐち,"east exit"
+人口,じんこう,"population"
+人,ひと,"person"
+三人,さんにん,"three people"
+人形,にんぎょう,"doll"
+大人,おとな,"adult"
+木,き,"tree"
+木曜日,もくようび,"Thursday"
+木綿,もめん,"cotton"
+休み,やすみ,"rest, holiday, absence"
+休む,やすむ,"to rest, to be absent"
+休日,きゅうじつ,"holiday"
+有休,ゆうきゅう,"paid holiday"
+定休日,ていきゅうび,"regular holiday"
+本,ほん,"book"
+日本,にほん,"Japan"
+日本人,にほんじん,"Japanese person"
+本当,ほんとう,"truth, reality, real"
+本棚,ほんだな,"bookshelf"
+体,からだ,"body"
+体力,たいりょく,"physical strength"
+山田さん,やまださん,"Mr./Ms. Yamada"
+田中さん,たなかさん,"Mr./Ms. Tanaka"
+田んぼ,たんぼ,"rice field"
+力,ちから,"power, strength"
+男,おとこ,"man"
+男の人,おとこのひと,"man"
+男の子,おとこのこ,"boy"
+男性,だんせい,"male"
+長男,ちょうなん,"eldest son"
+女,おんな,"woman"
+女の子,おんなのこ,"girl"
+彼女,かのじょ,"she, girlfriend"
+女房,にょうぼう,"my wife"
+安い,やすい,"cheap, inexpensive"
+円安,えんやす,"weak yen"
+安全な,あんぜんな,"safe"
+安心する,あんしんする,"to be relieved"
+不安な,ふあんな,"anxious, uneasy"
