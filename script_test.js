@@ -738,21 +738,28 @@ async function fetchAndParseCSV(url, deckName = "") {
     );
   };
 
+  // ✅ define rowsRaw before using it
+  const rowsRaw = (table.length && looksLikeHeader(table[0]) ? table.slice(1) : table);
+
+  // Kanji deck? (filename contains "kanji")
   const isKanji = /(^|[-_ ])kanji([-_ ]|$)/i.test(deckName);
+
   const rows = rowsRaw.map(cols => {
     const a = (cols[0] || "").trim();
     const b = (cols[1] || "").trim();
     const c = (cols[2] || "").trim();
+
     if (isKanji) {
-      // CSV: kanji_word, hiragana_word, meaning
+      // CSV format: kanji_word, hiragana_word, meaning
       return { front: a, romaji: b, back: c, _type: "kanji" };
     }
-    // default CSV: word, meaning, romaji/notes
+    // Default decks: word, meaning, romaji/notes
     return { front: a, back: b, romaji: c };
   }).filter(r => r.front && r.back);
 
   return rows;
 }
+
 
 function renderDeckButtons() {
   const container = $("deck-buttons");
