@@ -78,6 +78,49 @@ let markedWordsList = [];       // Array of marked word objects ({front, back, r
 let markedMap = {};             // Lookup map for quick check of marked words (keys are "front|back")
 
 // ---------------- DOM helpers ----------------
+// ===== Kanji deck helpers =====
+function isKanjiDeckName(name = currentDeckName) {
+  return /(^|[-_ ])kanji([-_ ]|$)/i.test(name);
+}
+/** For kanji decks we store:
+ *   - item.front   = Kanji
+ *   - item.romaji  = Hiragana (so it fits "details"/TTS fields)
+ *   - item.back    = Meaning
+ */
+function kFields(item){
+  return { kanji: item.front, hira: item.romaji, meaning: item.back };
+}
+
+/** Replace the Mode section buttons based on deck type (keeps index.html untouched) */
+function renderModeButtons() {
+  const sec = document.getElementById('mode-select');
+  if (!sec) return;
+
+  if (!isKanjiDeckName()) {
+    sec.innerHTML = `
+      <h2>Select Mode</h2>
+      <button onclick="startLearnMode()">🧠 Learn</button>
+      <button onclick="startPractice('jp-en')">Japanese → English</button>
+      <button onclick="startPractice('en-jp')">English → Japanese</button>
+      <button onclick="startWriteWords()">✍️ Write Words</button>
+      <button onclick="startMakeSentence()">📝 Make Sentence</button>
+    `;
+    return;
+  }
+
+  // Kanji-specific modes
+  sec.innerHTML = `
+    <h2>Select Mode (Kanji)</h2>
+    <button onclick="startLearnMode()">🧠 Learn</button>
+    <button onclick="startPractice('k2h')">Kanji → Hiragana</button>
+    <button onclick="startPractice('h2k')">Hiragana → Kanji</button>
+    <button onclick="startPractice('k2m')">Kanji → Meaning</button>
+    <button onclick="startPractice('m2k')">Meaning → Kanji</button>
+    <button onclick="startPractice('k2hm')">Kanji → Hira & Meaning (6 options)</button>
+    <button onclick="startWriteWords()">✍️ Write Words</button>
+  `;
+}
+
 // ===== AI Grammar Review (serverless endpoint) =====
 const AI_REVIEW_ENDPOINT = '/api/grammar-review';  // change if you host elsewhere
 
@@ -454,7 +497,7 @@ async function loadDeckManifest() {
       const name = file.replace(".csv", "");
       const url = `load_vocab_decks/${file}`;
       statusLine("deck-status", `Loading ${file}…`);
-      const deck = await fetchAndParseCSV(url);
+      const deck = await fetchAndParseCSV(url, name);
       allDecks[name] = deck;
     }
 
@@ -495,14 +538,29 @@ function writeRender() {
   const card = $("write-card");
   if (card) {
     card.className = "flashcard";
-    card.innerHTML = item ? `
-      <div class="learn-word-row">
-        <div class="learn-word">${item.back || "(no meaning)"}</div>
-        <button class="icon-btn" aria-label="Play pronunciation"
-                onclick="(function(){ const idx = writeState.order[writeState.i]; playWordAudioByIndex(idx); })()"
-                onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); const idx = writeState.order[writeState.i]; playWordAudioByIndex(idx);}">🔊</button>
-      </div>
-    ` : "(finished)";
+    if (!item) {
+      card.innerHTML = "(finished)";
+    } else if (isKanjiDeckName()) {
+      // Kanji on the card; user types Hiragana
+      card.innerHTML = `
+        <div class="learn-word-row">
+          <div class="learn-word">${item.front}</div>
+          <button class="icon-btn" aria-label="Play pronunciation"
+            onclick="(function(){ const idx = writeState.order[writeState.i]; playWordAudioByIndex(idx); })()"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); const idx = writeState.order[writeState.i]; playWordAudioByIndex(idx);}">🔊</button>
+        </div>
+      `;
+    } else {
+      // default: show meaning, user types JP
+      card.innerHTML = `
+        <div class="learn-word-row">
+          <div class="learn-word">${item.back || "(no meaning)"}</div>
+          <button class="icon-btn" aria-label="Play pronunciation"
+            onclick="(function(){ const idx = writeState.order[writeState.i]; playWordAudioByIndex(idx); })()"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); const idx = writeState.order[writeState.i]; playWordAudioByIndex(idx);}">🔊</button>
+        </div>
+      `;
+    }
 
   }
 
@@ -549,14 +607,16 @@ window.writeSubmit = function () {
   const fb = $("write-feedback");
   const userAnsRaw = input ? input.value : "";
 
-  const ok = normalizeAnswer(userAnsRaw) === normalizeAnswer(item.front);
+  // Kanji decks expect hiragana; others expect JP word (front)
+  const target = isKanjiDeckName() ? (kFields(item).hira || "") : item.front;
+  const ok = normalizeAnswer(userAnsRaw) === normalizeAnswer(target);
 
   // Feedback with diff on wrong
   if (fb) {
-    const userDiffHtml = highlightDiff(userAnsRaw, item.front);
+    const userDiffHtml = highlightDiff(userAnsRaw, target);
     fb.innerHTML = ok
-      ? `✅ Correct!<br><b>Answer:</b> ${escapeHtml(item.front)}<br><b>Your answer:</b> ${escapeHtml(userAnsRaw)}`
-      : `❌ Wrong.<br><b>Answer:</b> ${escapeHtml(item.front)}<br><b>Your answer:</b> ${userDiffHtml}`;
+      ? `✅ Correct!<br><b>Answer:</b> ${escapeHtml(target)}<br><b>Your answer:</b> ${escapeHtml(userAnsRaw)}`
+      : `❌ Wrong.<br><b>Answer:</b> ${escapeHtml(target)}<br><b>Your answer:</b> ${userDiffHtml}`;
   }
 
   // Update score + session buffer
@@ -662,7 +722,7 @@ function parseCSV(text){
   return rows.filter(r => r.some(c => c && c.length));
 }
 
-async function fetchAndParseCSV(url) {
+async function fetchAndParseCSV(url, deckName = "") {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
   const text = (await res.text()).replace(/^\uFEFF/, "");
@@ -678,16 +738,18 @@ async function fetchAndParseCSV(url) {
     );
   };
 
-  const rows = (table.length && looksLikeHeader(table[0]) ? table.slice(1) : table)
-    .map(cols => {
-      const [word = "", meaning = "", romaji = ""] = cols;
-      return {
-        front:  (word    || "").trim(),
-        back:   (meaning || "").trim(),
-        romaji: (romaji  || "").trim(),
-      };
-    })
-    .filter(r => r.front && r.back);
+  const isKanji = /(^|[-_ ])kanji([-_ ]|$)/i.test(deckName);
+  const rows = rowsRaw.map(cols => {
+    const a = (cols[0] || "").trim();
+    const b = (cols[1] || "").trim();
+    const c = (cols[2] || "").trim();
+    if (isKanji) {
+      // CSV: kanji_word, hiragana_word, meaning
+      return { front: a, romaji: b, back: c, _type: "kanji" };
+    }
+    // default CSV: word, meaning, romaji/notes
+    return { front: a, back: b, romaji: c };
+  }).filter(r => r.front && r.back);
 
   return rows;
 }
@@ -734,6 +796,7 @@ function selectDeck(name) {
     grammarCorrect: 0
   };
   persistSession();
+  renderModeButtons(); // 🆕 swap the buttons for kanji decks if needed
   showSection("mode-select");
 }
 
@@ -767,47 +830,132 @@ function showQuestion() {
   const q = currentDeck[currentIndex];
   if (!q) return nextQuestion();
 
-  const front  = (mode === "jp-en") ? q.front : q.back;
-  const answer = (mode === "jp-en") ? q.back  : q.front;
-  const options = generateOptions(answer);
+  const isKanji = isKanjiDeckName();
+  const optionsList = document.getElementById("options");
+  const qb = document.getElementById("question-box");
+  if (!optionsList || !qb) return;
 
-  const qb = $("question-box");
-  if (qb) {
+  optionsList.innerHTML = "";
   qb.className = "flashcard";
-  qb.innerHTML = `
-    <div class="learn-word-row">
-      <div class="learn-word">${front || "—"}</div>
-      <button class="icon-btn" aria-label="Play pronunciation"
-              onclick="playWordAudioByIndex(currentIndex)"
-              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); playWordAudioByIndex(currentIndex);}">🔊</button>
-    </div>
-  `;
+
+  // --- Standard decks: reuse original behavior
+  if (!isKanji || (mode !== 'k2h' && mode !== 'h2k' && mode !== 'k2m' && mode !== 'm2k' && mode !== 'k2hm')) {
+    const front  = (mode === "jp-en") ? q.front : q.back;
+    const answer = (mode === "jp-en") ? q.back  : q.front;
+    const options = generateOptions(answer);
+
+    qb.innerHTML = `
+      <div class="learn-word-row">
+        <div class="learn-word">${front || "—"}</div>
+        <button class="icon-btn" aria-label="Play pronunciation"
+                onclick="playWordAudioByIndex(currentIndex)"
+                onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); playWordAudioByIndex(currentIndex);}">🔊</button>
+      </div>
+    `;
+
+    options.forEach((opt) => {
+      const li = document.createElement("li");
+      li.textContent = opt;
+      li.onclick = () => checkAnswer(opt, answer, q);
+      optionsList.appendChild(li);
+    });
+    updateDeckProgress();
+    return;
   }
 
-  setText("extra-info", "");
-  const optionsList = $("options");
-  if (!optionsList) return;
-  optionsList.innerHTML = "";
+  // --- Kanji decks: specialized modes
+  const { kanji, hira, meaning } = kFields(q);
 
-  options.forEach((opt) => {
-    const li = document.createElement("li");
-    li.textContent = opt;
-    li.onclick = () => checkAnswer(opt, answer, q);
-    optionsList.appendChild(li);
-  });
+  // Helper: sample N items from a pool excluding a value
+  function pick(pool, correct, n=3){
+    const uniq = [...new Set(pool.filter(x => x && x !== correct))];
+    shuffleArray(uniq);
+    return [correct, ...uniq.slice(0, n-1)];
+  }
 
-  // script.js (inside showQuestion, after setting question and options)
-  const markBtn = $("practice-mark-btn");
-    if (markBtn) {
-      const qKey = q.front + "|" + q.back;
-      markBtn.disabled = false;
-      markBtn.classList.toggle("hidden", !!markedMap[qKey]);
+  // Pools
+  const allHira = currentDeck.map(x => kFields(x).hira).filter(Boolean);
+  const allKanji = currentDeck.map(x => kFields(x).kanji).filter(Boolean);
+  const allMeaning = currentDeck.map(x => kFields(x).meaning).filter(Boolean);
+
+  if (mode === 'k2h') {
+    qb.innerHTML = kanji;
+    const opts = shuffleArray(pick(allHira, hira));
+    opts.forEach(opt => {
+      const li = document.createElement('li');
+      li.textContent = opt;
+      li.onclick = () => checkAnswer(opt, hira, q);
+      optionsList.appendChild(li);
+    });
+  } else if (mode === 'h2k') {
+    qb.innerHTML = hira;
+    const opts = shuffleArray(pick(allKanji, kanji));
+    opts.forEach(opt => {
+      const li = document.createElement('li');
+      li.textContent = opt;
+      li.onclick = () => checkAnswer(opt, kanji, q);
+      optionsList.appendChild(li);
+    });
+  } else if (mode === 'k2m') {
+    qb.innerHTML = kanji;
+    const opts = shuffleArray(pick(allMeaning, meaning));
+    opts.forEach(opt => {
+      const li = document.createElement('li');
+      li.textContent = opt;
+      li.onclick = () => checkAnswer(opt, meaning, q);
+      optionsList.appendChild(li);
+    });
+  } else if (mode === 'm2k') {
+    qb.innerHTML = meaning;
+    const opts = shuffleArray(pick(allKanji, kanji));
+    opts.forEach(opt => {
+      const li = document.createElement('li');
+      li.textContent = opt;
+      li.onclick = () => checkAnswer(opt, kanji, q);
+      optionsList.appendChild(li);
+    });
+  } else if (mode === 'k2hm') {
+    // 6 options: 3 hira, 3 meaning — user must pick both correctly
+    qb.innerHTML = kanji;
+
+    let chosenH = null, chosenM = null;
+
+    // headers (non-clickable)
+    const headH = document.createElement('li'); headH.textContent = "— Hiragana —"; headH.style.cursor='default';
+    const headM = document.createElement('li'); headM.textContent = "— Meaning —";  headM.style.cursor='default';
+    headH.onclick = headM.onclick = () => {};
+
+    const hiraOpts = shuffleArray(pick(allHira, hira));
+    const meanOpts = shuffleArray(pick(allMeaning, meaning));
+
+    optionsList.appendChild(headH);
+    hiraOpts.forEach(opt => {
+      const li = document.createElement('li');
+      li.textContent = opt;
+      li.onclick = () => { chosenH = opt; li.classList.add('correct'); maybeFinish(); };
+      optionsList.appendChild(li);
+    });
+
+    optionsList.appendChild(headM);
+    meanOpts.forEach(opt => {
+      const li = document.createElement('li');
+      li.textContent = opt;
+      li.onclick = () => { chosenM = opt; li.classList.add('correct'); maybeFinish(); };
+      optionsList.appendChild(li);
+    });
+
+    function maybeFinish(){
+      if (chosenH == null || chosenM == null) return;
+      const ok = (chosenH === hira) && (chosenM === meaning);
+      // reuse normal scorer:
+      checkAnswer(ok ? "both" : "miss", "both", q);
     }
+  }
 
   updateDeckProgress();
-
 }
 
+// Default generator kept for non-kanji modes
 function generateOptions(correct) {
   const pool = currentDeck.map((q) => (mode === "jp-en" ? q.back : q.front)).filter(Boolean);
   const unique = [...new Set(pool.filter((opt) => opt !== correct))];
@@ -917,17 +1065,30 @@ function showLearnCard() {
     const aria = `aria-label="Play pronunciation"`;
     const kb = `onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); playLearnAudio();}"`;
     
-    // Show word + meaning inside the flashcard (meaning always shown by default)
     box.className = "flashcard";
-    box.innerHTML = `
-      <div class="learn-word-row">
-        <div class="learn-word">${word.front || "—"}</div>
-        <button class="icon-btn" aria-label="Play pronunciation"
-        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); playWordAudioByIndex(currentIndex);}"
-        onclick="playWordAudioByIndex(currentIndex)" ${disabledAttr}>🔊</button>
-      </div>
-      <div class="learn-meaning muted">Meaning: ${word.back || "(no meaning)"} </div>
-    `;
+    if (isKanjiDeckName()) {
+      const { kanji, hira, meaning } = kFields(word);
+      box.innerHTML = `
+        <div class="learn-word-row">
+          <div class="learn-word">${kanji || "—"}</div>
+          <button class="icon-btn" aria-label="Play pronunciation"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); playWordAudioByIndex(currentIndex);}"
+            onclick="playWordAudioByIndex(currentIndex)" ${disabledAttr}>🔊</button>
+        </div>
+        <div class="learn-meaning muted">Hiragana: ${hira || "(—)"} </div>
+        <div class="learn-meaning muted">Meaning: ${meaning || "(—)"} </div>
+      `;
+    } else {
+      box.innerHTML = `
+        <div class="learn-word-row">
+          <div class="learn-word">${word.front || "—"}</div>
+          <button class="icon-btn" aria-label="Play pronunciation"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); playWordAudioByIndex(currentIndex);}"
+            onclick="playWordAudioByIndex(currentIndex)" ${disabledAttr}>🔊</button>
+        </div>
+        <div class="learn-meaning muted">Meaning: ${word.back || "(no meaning)"} </div>
+      `;
+    }
   }
 
   // Clear romaji line under the card
