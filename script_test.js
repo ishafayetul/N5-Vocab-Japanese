@@ -78,17 +78,6 @@ let markedWordsList = [];       // Array of marked word objects ({front, back, r
 let markedMap = {};             // Lookup map for quick check of marked words (keys are "front|back")
 
 // ---------------- DOM helpers ----------------
-function setContextBar(deck = currentDeckName, m = mode){
-  const el = document.getElementById('context-bar');
-  if (!el) return;
-  const niceMode = (
-    isKanjiDeckName()
-      ? ({'k2h':'Kanji → Hiragana','h2k':'Hiragana → Kanji','k2m':'Kanji → Meaning','m2k':'Meaning → Kanji','k2hm':'Kanji → (Hira & Meaning)','learn':'Learn','write':'Write','jp-en':'JP → EN','en-jp':'EN → JP'}[m] || m)
-      : ({'learn':'Learn', 'write':'Write', 'jp-en':'JP → EN', 'en-jp':'EN → JP', 'make-sentence':'Make Sentence'}[m] || m)
-  );
-  el.textContent = `${deck ? deck : ''}  —  Mode: ${niceMode}`;
-}
-
 // ===== Kanji deck helpers =====
 function isKanjiDeckName(name = currentDeckName) {
   return /(^|[-_ ])kanji([-_ ]|$)/i.test(name);
@@ -577,7 +566,11 @@ function writeRender() {
 
   // script.js (inside writeRender, after setting up the card and resetting input)
   const markBtn = $("write-mark-btn");
-  if (markBtn) { markBtn.disabled = false; markBtn.classList.remove('hidden'); }
+  if (markBtn) {
+    const key = item ? item.front + "|" + item.back : "";
+    markBtn.disabled = false;
+    markBtn.classList.toggle("hidden", key && !!markedMap[key]);
+  }
 
   const input = $("write-input");
   if (input) {
@@ -812,7 +805,6 @@ function selectDeck(name) {
   persistSession();
   renderModeButtons(); // 🆕 swap the buttons for kanji decks if needed
   showSection("mode-select");
-  setContextBar(name, '—');
 }
 
 // Map "Lesson-01" → "Vocab-Lesson-01"; "kanji" → "kanji"; otherwise pass through.
@@ -931,77 +923,75 @@ function showQuestion() {
       optionsList.appendChild(li);
     });
   } else if (mode === 'k2hm') {
-    qb.innerHTML = `
-    <div>
-      <div style="font-size:1.8em; margin-bottom:10px;">${kanji}</div>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; text-align:left;">
-        <div>
-          <div class="muted" style="margin:6px 0 4px;">Hiragana</div>
-          <ul id="k2hm-h-list" class="k2hm-col"></ul>
-        </div>
-        <div>
-          <div class="muted" style="margin:6px 0 4px;">Meaning</div>
-          <ul id="k2hm-m-list" class="k2hm-col"></ul>
-        </div>
+// --- Kanji → Hiragana & Meaning (side-by-side; pick one from each, then judge)
+qb.innerHTML = `
+  <div>
+    <div style="font-size:1.8em; margin-bottom:10px;">${kanji}</div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; text-align:left;">
+      <div>
+        <div class="muted" style="margin:6px 0 4px;">Hiragana</div>
+        <ul id="k2hm-h-list" class="k2hm-col"></ul>
+      </div>
+      <div>
+        <div class="muted" style="margin:6px 0 4px;">Meaning</div>
+        <ul id="k2hm-m-list" class="k2hm-col"></ul>
       </div>
     </div>
-  `;
+  </div>
+`;
 
-  let chosenH = null, chosenM = null, lockedH = null, lockedM = null;
+let chosenH = null, chosenM = null, lockedH = null, lockedM = null;
 
-  const hiraOpts = shuffleArray(pick(allHira, hira));
-  const meanOpts = shuffleArray(pick(allMeaning, meaning));
+const hiraOpts = shuffleArray(pick(allHira, hira));
+const meanOpts = shuffleArray(pick(allMeaning, meaning));
 
-  const hUL = document.getElementById('k2hm-h-list');
-  const mUL = document.getElementById('k2hm-m-list');
+const hUL = document.getElementById('k2hm-h-list');
+const mUL = document.getElementById('k2hm-m-list');
 
-  function renderCol(ul, opts, kind){
-    ul.innerHTML = '';
-    opts.forEach(opt => {
-      const li = document.createElement('li');
-      li.textContent = opt;
-      li.onclick = () => {
-        if (kind === 'h') {
-          if (lockedH) { /* already judged */ return; }
-          // exclusive select inside this column
-          [...ul.children].forEach(x => x.classList.remove('selected'));
-          li.classList.add('selected');
-          chosenH = opt;
-        } else {
-          if (lockedM) { return; }
-          [...ul.children].forEach(x => x.classList.remove('selected'));
-          li.classList.add('selected');
-          chosenM = opt;
-        }
-        maybeJudge();
-      };
-      ul.appendChild(li);
-    });
-  }
+function renderCol(ul, opts, kind){
+  ul.innerHTML = '';
+  opts.forEach(opt => {
+    const li = document.createElement('li');
+    li.textContent = opt;
+    li.onclick = () => {
+      if (kind === 'h') {
+        if (lockedH) { return; }
+        [...ul.children].forEach(x => x.classList.remove('selected'));
+        li.classList.add('selected');
+        chosenH = opt;
+      } else {
+        if (lockedM) { return; }
+        [...ul.children].forEach(x => x.classList.remove('selected'));
+        li.classList.add('selected');
+        chosenM = opt;
+      }
+      maybeJudge();
+    };
+    ul.appendChild(li);
+  });
+}
 
-  function maybeJudge(){
-    if (chosenH == null || chosenM == null) return;
-    const ok = (chosenH === hira) && (chosenM === meaning);
+function maybeJudge(){
+  if (chosenH == null || chosenM == null) return;
+  const ok = (chosenH === hira) && (chosenM === meaning);
 
-    // freeze columns and color
-    lockedH = chosenH; lockedM = chosenM;
+  lockedH = chosenH; lockedM = chosenM;
 
-    [...hUL.children].forEach(li => {
-      if (li.textContent === chosenH) li.classList.add(ok && chosenH===hira ? 'correct' : (chosenH!==hira ? 'wrong' : ''));
-      li.style.pointerEvents = 'none';
-    });
-    [...mUL.children].forEach(li => {
-      if (li.textContent === chosenM) li.classList.add(ok && chosenM===meaning ? 'correct' : (chosenM!==meaning ? 'wrong' : ''));
-      li.style.pointerEvents = 'none';
-    });
+  [...hUL.children].forEach(li => {
+    if (li.textContent === chosenH) li.classList.add(ok && chosenH===hira ? 'correct' : (chosenH!==hira ? 'wrong' : ''));
+    li.style.pointerEvents = 'none';
+  });
+  [...mUL.children].forEach(li => {
+    if (li.textContent === chosenM) li.classList.add(ok && chosenM===meaning ? 'correct' : (chosenM!==meaning ? 'wrong' : ''));
+    li.style.pointerEvents = 'none';
+  });
 
-    // feed the scorer so progress/points work like other modes
-    checkAnswer(ok ? "both" : "miss", "both", q);
-  }
+  checkAnswer(ok ? "both" : "miss", "both", q);
+}
 
-  renderCol(hUL, hiraOpts, 'h');
-  renderCol(mUL, meanOpts, 'm');
-  }
+renderCol(hUL, hiraOpts, 'h');
+renderCol(mUL, meanOpts, 'm');
+}
 
   updateDeckProgress();
 }
@@ -1156,20 +1146,14 @@ function nextLearn() {
 
   if (!currentDeck.length) return;
   currentIndex = Math.min(currentIndex + 1, currentDeck.length - 1);
-  showLearnCard();
-  if (learnNotesOpen) learnNoteBindForCurrent();
-
-}
+  showLearnCard();  }
 window.nextLearn = nextLearn;
 
 function prevLearn() {
   if (learnNoteTimer){ clearTimeout(learnNoteTimer); learnNoteTimer = null; learnNoteSaveNow(); }
   if (!currentDeck.length) return;
   currentIndex = Math.max(currentIndex - 1, 0);
-  showLearnCard();
-  if (learnNotesOpen) learnNoteBindForCurrent();
-
-}
+  showLearnCard();  }
 window.prevLearn = prevLearn;
 
 function showLearnRomaji() {
@@ -1204,11 +1188,8 @@ window.startLearnMode = async function(){
   mode = "learn";
   sessionBuf.mode = "learn"; // not scored, but keep mode label
   currentIndex = 0;
-  score = { correct: 0, wrong: 0, skipped: 0 }; // Learn doesn’t change these
-
-  showSection("learn");
-  showLearnCard(); // your existing function that shows word + meaning
-  setContextBar(currentDeckName, 'learn');
+  score = { correct: 0, wrong: 0, skipped: 0 }; // Learn doesn’t change these  showSection("learn");
+  showLearnCard(); // your existing function that shows word + meaning  // NEW: bind note for current word
 };
 
 function learnNoteBindForCurrent(){
@@ -1396,7 +1377,7 @@ async function pgStartSet(fileName) {
 
     if (statusEl) statusEl.textContent = `Loaded ${rows.length} questions.`;
     showSection("practice-grammar");
-    setContextBar(`Grammar: ${fileName.replace(/\.csv$/i,'')}`, 'grammar');
+  setContextBar(`Grammar: ${fileName.replace(/\.csv$/i,'')}`, 'grammar');
   } catch (e) {
     alert("Failed to start set: " + (e?.message || e));
   }
@@ -2171,14 +2152,16 @@ window.markCurrentWord = async function () {
 
   const key = word.front + "|" + word.back;
   if (markedMap[key]) {
-   const toast = $("toast");
-   if (toast) {
-     toast.textContent = "Already marked.";
-     toast.classList.add("show");
-     setTimeout(() => toast.classList.remove("show"), 2000);
-   }
-   return;
- }
+    const toast = (typeof $ === 'function') ? $("toast") : document.getElementById("toast");
+    if (toast) {
+      toast.textContent = "Already marked.";
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2000);
+    } else {
+      try { alert("Already marked."); } catch(_) {}
+    }
+    return;
+  }
 
   // pick the active Mark button by current section
   let activeBtn = null;
@@ -2268,12 +2251,8 @@ window.startMarkedLearn = async function() {
   persistSession();
   // (Optional: disable audio for mixed deck, since audio folder cannot be resolved)
   currentAudioFolder = null;
-  // Start Learn mode similar to a normal deck
-  await ensureDeckNotesLoaded(currentDeckName);
-  showSection("learn");
-  showLearnCard();
-  learnNoteBindForCurrent();
-};
+  // Start Learn mode similar to a normal deck  showSection("learn");
+  showLearnCard();  };
 
 window.startMarkedPractice = function(selectedMode) {
   if (markedWordsList.length === 0) {
@@ -2329,12 +2308,8 @@ window.startMistakeLearn = async function () {
     jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
   };
   persistSession();
-  currentAudioFolder = null; // mixed deck → disable per-deck audio
-  await ensureDeckNotesLoaded(currentDeckName);
-  showSection("learn");
-  showLearnCard();
-  learnNoteBindForCurrent();
-};
+  currentAudioFolder = null; // mixed deck → disable per-deck audio  showSection("learn");
+  showLearnCard();  };
 
 window.startMistakePractice = function (selectedMode) {
   if (mistakes.length === 0) return alert("No mistakes yet!");
@@ -2487,12 +2462,8 @@ window.startMixedLearn = async function(){
     jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
   };
   persistSession();
-  currentAudioFolder = null; // mixed → disable per-deck audio mapping
-  await ensureDeckNotesLoaded(currentDeckName);
-  showSection("learn");
-  showLearnCard();
-  learnNoteBindForCurrent();
-};
+  currentAudioFolder = null; // mixed → disable per-deck audio mapping  showSection("learn");
+  showLearnCard();  };
 
 window.startMixedPractice = function(selectedMode){
   if (multiSelectedDecks.size === 0) return alert("Pick at least one deck.");
@@ -2772,31 +2743,40 @@ window.makeNext = function () {
   }
 };
 
+
+function setContextBar(deck = (typeof currentDeckName !== 'undefined' ? currentDeckName : ''), m = (typeof mode !== 'undefined' ? mode : '')){
+  const el = document.getElementById('context-bar');
+  if (!el) return;
+  const kanjiModes = {'k2h':'Kanji → Hiragana','h2k':'Hiragana → Kanji','k2m':'Kanji → Meaning','m2k':'Meaning → Kanji','k2hm':'Kanji → (Hira & Meaning)','learn':'Learn','write':'Write','jp-en':'JP → EN','en-jp':'EN → JP'};
+  const genModes = {'learn':'Learn','write':'Write','jp-en':'JP → EN','en-jp':'EN → JP','make-sentence':'Make Sentence'};
+  let niceMode = m;
+  try {
+    niceMode = (typeof isKanjiDeckName === 'function' && isKanjiDeckName()) ? (kanjiModes[m] || m) : (genModes[m] || m);
+  } catch(_) {}
+  el.textContent = `${deck ? deck : ''}  —  Mode: ${niceMode}`;
+}
+
 window.goBack = function(){
-  if (currentSectionId === 'practice') { showSection('mode-select'); return; }
-  if (currentSectionId === 'learn') { showSection('mode-select'); return; }
-  if (currentSectionId === 'practice-grammar') {
-    // show files again for grammar
-    const filesBox = $("pg-file-buttons"); if (filesBox) filesBox.classList.remove('hidden');
-    const area = $("pg-area"); if (area) area.classList.add('hidden');
-    showSection('practice-grammar'); return;
-  }
-  // default fallback
+  try {
+    if (typeof currentSectionId !== 'undefined' && currentSectionId === 'practice') { showSection('mode-select'); return; }
+    if (typeof currentSectionId !== 'undefined' && currentSectionId === 'learn') { showSection('mode-select'); return; }
+    if (typeof currentSectionId !== 'undefined' && currentSectionId === 'practice-grammar') {
+      const filesBox = document.getElementById("pg-file-buttons"); if (filesBox) filesBox.classList.remove('hidden');
+      const area = document.getElementById("pg-area"); if (area) area.classList.add('hidden');
+      showSection('practice-grammar'); return;
+    }
+  } catch(_) {}
   showSection('deck-select');
 };
 
 let learnNotesOpen = false;
-
 window.toggleLearnNote = async function(){
   const card = document.querySelector('.learn-note-card');
   if (!card) return;
-  // first open → fetch deck notes once
-  if (!learnNotesOpen) {
+  if (!learnNotesOpen && typeof ensureDeckNotesLoaded === 'function' && typeof currentDeckName !== 'undefined') {
     await ensureDeckNotesLoaded(currentDeckName);
   }
   learnNotesOpen = !learnNotesOpen;
   card.classList.toggle('hidden', !learnNotesOpen);
-  if (learnNotesOpen) {
-    learnNoteBindForCurrent();
-  }
+  if (learnNotesOpen && typeof learnNoteBindForCurrent === 'function') learnNoteBindForCurrent();
 };

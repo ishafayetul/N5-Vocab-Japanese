@@ -57,7 +57,6 @@
           ➖ Skipped: <span id="skipped">0</span>
         </div>
       </header>
-  <div id="context-bar" class="muted" style="margin:6px 0 10px;"></div>
 
       <main>
         <!-- Vocab -->
@@ -71,14 +70,11 @@
               <summary><b>🧩 Mix multiple vocab decks</b></summary>
               <div id="deck-multi-list" style="margin:10px 0;"></div>
               <div class="practice-actions">
-                <button onclick="goBack()">⬅️ Back</button>
-                <button onclick="goBack()">⬅️ Back</button>
                 <button onclick="multiSelectDeckAll()">Select All</button>
                 <button onclick="multiSelectDeckNone()">Clear</button>
               </div>
               <div class="practice-actions" style="margin-top:6px;">
-                <button onclick="goBack()">⬅️ Back</button>
-<button onclick="startMixedLearn()">🧠 Learn (mixed)</button>
+                <button onclick="startMixedLearn()">🧠 Learn (mixed)</button>
                 <button onclick="startMixedPractice('jp-en')">JP → EN (mixed)</button>
                 <button onclick="startMixedPractice('en-jp')">EN → JP (mixed)</button>
                 <button onclick="startMixedWrite()">✍️ Write Words (mixed)</button>
@@ -103,7 +99,7 @@
         <!-- Learn (flashcard + prev/next + romaji in middle) -->
         <section id="learn" class="hidden">
           <div class="flashcard" id="learn-box"></div>
-          <div class="card learn-note-card hidden">
+          <div class="card learn-note-card">
           <div class="learn-note-row">
             <label for="learn-note-text" class="learn-note-label">📝 Note for this word</label>
             <span id="learn-note-status" class="learn-note-status muted">—</span>
@@ -115,8 +111,7 @@
         </div>
           <div class="practice-actions">
             <button onclick="prevLearn()">⬅️ Previous</button>
-            <button onclick="toggleLearnNote()">📝 Add Note</button>
-    <button onclick="showLearnRomaji()">👁 Show Details</button>
+            <button onclick="showLearnRomaji()">👁 Show Details</button>
             <button onclick="nextLearn()">➡️ Next</button>
             <button id="learn-mark-btn" onclick="markCurrentWord()">📌 Mark</button>
           </div>
@@ -177,8 +172,7 @@
             <div class="flashcard" id="pg-card"></div>
 
             <div class="pg-input-row">
-              <button onclick="goBack()">⬅️ Back</button>
-<input id="pg-input" class="pg-input" placeholder="Type your answer…" />
+              <input id="pg-input" class="pg-input" placeholder="Type your answer…" />
               <button id="pg-submit" onclick="pgSubmit()">Submit</button>
               <button id="pg-show-answer" onclick="pgShowAnswer()">Show Answer</button>
               <button id="pg-next" onclick="pgNext()">Next ➡️</button>
