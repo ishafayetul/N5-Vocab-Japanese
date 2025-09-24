@@ -114,6 +114,7 @@
           </div>
         </div>
           <div class="practice-actions">
+            <button onclick="goBack()">⬅️ Back</button>
             <button onclick="prevLearn()">⬅️ Previous</button>
             <button onclick="toggleLearnNote()">📝 Add Note</button>
     <button onclick="showLearnRomaji()">👁 Show Details</button>
@@ -133,6 +134,7 @@
           <div class="flashcard" id="question-box"></div>
           <ul id="options"></ul>
           <div class="practice-actions">
+            <button onclick="goBack()">⬅️ Back</button>
             <button onclick="skipQuestion()">Skip</button>
             <button onclick="showRomaji()">👁 Show Details</button>
             <button onclick="showMeaning()">💡 Show Meaning</button>
@@ -177,8 +179,9 @@
             <div class="flashcard" id="pg-card"></div>
 
             <div class="pg-input-row">
+            <button onclick="goBack()">⬅️ Back</button>
               <button onclick="goBack()">⬅️ Back</button>
-              <input id="pg-input" class="pg-input" placeholder="Type your answer…" />
+<input id="pg-input" class="pg-input" placeholder="Type your answer…" />
               <button id="pg-submit" onclick="pgSubmit()">Submit</button>
               <button id="pg-show-answer" onclick="pgShowAnswer()">Show Answer</button>
               <button id="pg-next" onclick="pgNext()">Next ➡️</button>
@@ -196,7 +199,8 @@
 
           <div class="flashcard" id="write-card"></div>
 
-          <div class="pg-input-row"> <!-- reuse existing styles -->
+          <div class="pg-input-row">
+            <button onclick="goBack()">⬅️ Back</button> <!-- reuse existing styles -->
             <input id="write-input" class="pg-input" placeholder="Type the Japanese word…" />
             <button id="write-submit" onclick="writeSubmit()">Submit</button>
             <button id="write-skip" onclick="writeSkip()">Skip</button>
@@ -216,6 +220,7 @@
           <div class="flashcard" id="make-card"></div>
 
           <div class="pg-input-row">
+            <button onclick="goBack()">⬅️ Back</button>
             <textarea id="make-input" class="pg-input make-textarea" rows="3"
               placeholder="Write a Japanese sentence using ALL shown word(s)…"></textarea>
             <button id="make-submit" onclick="makeSubmit()">Submit</button>
