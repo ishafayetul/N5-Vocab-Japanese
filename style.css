@@ -498,3 +498,9 @@ button.unmark-btn:hover {
 }
 /* Optional AI loading tint */
 .pg-feedback.loading { background: var(--warning); color: #7c2d12; }
+
+/* Neutral selection before judgement */
+.k2hm-col li.selected{ outline: 2px solid #a5b4fc; background:#eef2ff; }
+.k2hm-col{ list-style:none; padding:0; margin:0; }
+.k2hm-col li{ margin: 6px 0; padding: 10px; background: var(--card); border:1px solid var(--border); border-radius:10px; cursor:pointer; }
+.k2hm-col li:hover{ background:#f2f4f7; }

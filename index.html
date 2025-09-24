@@ -55,6 +55,7 @@
           ✅ Correct: <span id="correct">0</span>
           ❌ Wrong: <span id="wrong">0</span>
           ➖ Skipped: <span id="skipped">0</span>
+          <div id="context-bar" class="muted" style="margin:6px 0 10px;"></div>
         </div>
       </header>
 
@@ -99,7 +100,9 @@
         <!-- Learn (flashcard + prev/next + romaji in middle) -->
         <section id="learn" class="hidden">
           <div class="flashcard" id="learn-box"></div>
-          <div class="card learn-note-card">
+          <div class="card learn-note-card hidden">
+            ...
+          </div>
           <div class="learn-note-row">
             <label for="learn-note-text" class="learn-note-label">📝 Note for this word</label>
             <span id="learn-note-status" class="learn-note-status muted">—</span>
@@ -110,6 +113,7 @@
           </div>
         </div>
           <div class="practice-actions">
+            <button onclick="goBack()">⬅️ Back</button>
             <button onclick="prevLearn()">⬅️ Previous</button>
             <button onclick="showLearnRomaji()">👁 Show Details</button>
             <button onclick="nextLearn()">➡️ Next</button>
@@ -128,6 +132,7 @@
           <div class="flashcard" id="question-box"></div>
           <ul id="options"></ul>
           <div class="practice-actions">
+            <button onclick="goBack()">⬅️ Back</button>
             <button onclick="skipQuestion()">Skip</button>
             <button onclick="showRomaji()">👁 Show Details</button>
             <button onclick="showMeaning()">💡 Show Meaning</button>
@@ -172,6 +177,7 @@
             <div class="flashcard" id="pg-card"></div>
 
             <div class="pg-input-row">
+              <button onclick="goBack()">⬅️ Back</button>
               <input id="pg-input" class="pg-input" placeholder="Type your answer…" />
               <button id="pg-submit" onclick="pgSubmit()">Submit</button>
               <button id="pg-show-answer" onclick="pgShowAnswer()">Show Answer</button>
