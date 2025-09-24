@@ -17,6 +17,7 @@
       <button id="auth-btn">🔐 Sign in with Google</button>
       <p id="auth-error" class="error" style="display:none;"></p>
     </div>
+  <div id="context-bar" class="muted" style="margin:6px 0 10px;"></div>
   </div>
 
   <!-- App (hidden until signed in) -->
@@ -57,7 +58,8 @@
           ➖ Skipped: <span id="skipped">0</span>
         </div>
       </header>
-  <div id="context-bar" class="muted" style="margin:6px 0 10px;"></div>
+  <div id="top-controls" class="top-controls">
+  <button id="global-back" class="back-btn hidden" onclick="goBack()">⬅️ Back</button></div>
 
       <main>
         <!-- Vocab -->
@@ -71,14 +73,11 @@
               <summary><b>🧩 Mix multiple vocab decks</b></summary>
               <div id="deck-multi-list" style="margin:10px 0;"></div>
               <div class="practice-actions">
-                <button onclick="goBack()">⬅️ Back</button>
-<button onclick="goBack()">⬅️ Back</button>
-<button onclick="multiSelectDeckAll()">Select All</button>
+                <button onclick="multiSelectDeckAll()">Select All</button>
                 <button onclick="multiSelectDeckNone()">Clear</button>
               </div>
               <div class="practice-actions" style="margin-top:6px;">
-                <button onclick="goBack()">⬅️ Back</button>
-<button onclick="startMixedLearn()">🧠 Learn (mixed)</button>
+                <button onclick="startMixedLearn()">🧠 Learn (mixed)</button>
                 <button onclick="startMixedPractice('jp-en')">JP → EN (mixed)</button>
                 <button onclick="startMixedPractice('en-jp')">EN → JP (mixed)</button>
                 <button onclick="startMixedWrite()">✍️ Write Words (mixed)</button>
@@ -114,10 +113,8 @@
           </div>
         </div>
           <div class="practice-actions">
-            <button onclick="goBack()">⬅️ Back</button>
             <button onclick="prevLearn()">⬅️ Previous</button>
-            <button onclick="toggleLearnNote()">📝 Add Note</button>
-    <button onclick="showLearnRomaji()">👁 Show Details</button>
+            <button onclick="showLearnRomaji()">👁 Show Details</button>
             <button onclick="nextLearn()">➡️ Next</button>
             <button id="learn-mark-btn" onclick="markCurrentWord()">📌 Mark</button>
           </div>
@@ -134,7 +131,6 @@
           <div class="flashcard" id="question-box"></div>
           <ul id="options"></ul>
           <div class="practice-actions">
-            <button onclick="goBack()">⬅️ Back</button>
             <button onclick="skipQuestion()">Skip</button>
             <button onclick="showRomaji()">👁 Show Details</button>
             <button onclick="showMeaning()">💡 Show Meaning</button>
@@ -179,9 +175,7 @@
             <div class="flashcard" id="pg-card"></div>
 
             <div class="pg-input-row">
-            <button onclick="goBack()">⬅️ Back</button>
-              <button onclick="goBack()">⬅️ Back</button>
-<input id="pg-input" class="pg-input" placeholder="Type your answer…" />
+              <input id="pg-input" class="pg-input" placeholder="Type your answer…" />
               <button id="pg-submit" onclick="pgSubmit()">Submit</button>
               <button id="pg-show-answer" onclick="pgShowAnswer()">Show Answer</button>
               <button id="pg-next" onclick="pgNext()">Next ➡️</button>
@@ -199,8 +193,7 @@
 
           <div class="flashcard" id="write-card"></div>
 
-          <div class="pg-input-row">
-            <button onclick="goBack()">⬅️ Back</button> <!-- reuse existing styles -->
+          <div class="pg-input-row"> <!-- reuse existing styles -->
             <input id="write-input" class="pg-input" placeholder="Type the Japanese word…" />
             <button id="write-submit" onclick="writeSubmit()">Submit</button>
             <button id="write-skip" onclick="writeSkip()">Skip</button>
@@ -220,7 +213,6 @@
           <div class="flashcard" id="make-card"></div>
 
           <div class="pg-input-row">
-            <button onclick="goBack()">⬅️ Back</button>
             <textarea id="make-input" class="pg-input make-textarea" rows="3"
               placeholder="Write a Japanese sentence using ALL shown word(s)…"></textarea>
             <button id="make-submit" onclick="makeSubmit()">Submit</button>

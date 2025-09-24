@@ -761,7 +761,7 @@ async function fetchAndParseCSV(url, deckName = "") {
 }
 
 
-function renderDeckButtons() {
+async function renderDeckButtons() {
   const container = $("deck-buttons");
   if (!container) return;
   container.innerHTML = "";
@@ -827,7 +827,6 @@ function startPractice(selectedMode) {
   score = { correct: 0, wrong: 0, skipped: 0 };
   shuffleArray(currentDeck);
   showSection("practice");
-  setContextBar(currentDeckName, selectedMode);
   updateScore();
   updateDeckProgress();
   showQuestion();
@@ -923,80 +922,52 @@ function showQuestion() {
       optionsList.appendChild(li);
     });
   } else if (mode === 'k2hm') {
-// --- Kanji → Hiragana & Meaning (side-by-side; pick one from each, then judge)
-qb.innerHTML = `
-  <div>
-    <div style="font-size:1.8em; margin-bottom:10px;">${kanji}</div>
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; text-align:left;">
-      <div>
-        <div class="muted" style="margin:6px 0 4px;">Hiragana</div>
-        <ul id="k2hm-h-list" class="k2hm-col"></ul>
-      </div>
-      <div>
-        <div class="muted" style="margin:6px 0 4px;">Meaning</div>
-        <ul id="k2hm-m-list" class="k2hm-col"></ul>
-      </div>
-    </div>
-  </div>
-`;
+    // 6 options: 3 hira, 3 meaning — user must pick both correctly
+    qb.innerHTML = kanji;
 
-let chosenH = null, chosenM = null, lockedH = null, lockedM = null;
+    let chosenH = null, chosenM = null;
 
-const hiraOpts = shuffleArray(pick(allHira, hira));
-const meanOpts = shuffleArray(pick(allMeaning, meaning));
+    // headers (non-clickable)
+    const headH = document.createElement('li'); headH.textContent = "— Hiragana —"; headH.style.cursor='default';
+    const headM = document.createElement('li'); headM.textContent = "— Meaning —";  headM.style.cursor='default';
+    headH.onclick = headM.onclick = () => {};
 
-const hUL = document.getElementById('k2hm-h-list');
-const mUL = document.getElementById('k2hm-m-list');
+    const hiraOpts = shuffleArray(pick(allHira, hira));
+    const meanOpts = shuffleArray(pick(allMeaning, meaning));
 
-function renderCol(ul, opts, kind){
-  ul.innerHTML = '';
-  opts.forEach(opt => {
-    const li = document.createElement('li');
-    li.textContent = opt;
-    li.onclick = () => {
-      if (kind === 'h') {
-        if (lockedH) { return; }
-        [...ul.children].forEach(x => x.classList.remove('selected'));
-        li.classList.add('selected');
-        chosenH = opt;
-      } else {
-        if (lockedM) { return; }
-        [...ul.children].forEach(x => x.classList.remove('selected'));
-        li.classList.add('selected');
-        chosenM = opt;
-      }
-      maybeJudge();
-    };
-    ul.appendChild(li);
-  });
-}
+    optionsList.appendChild(headH);
+    hiraOpts.forEach(opt => {
+      const li = document.createElement('li');
+      li.textContent = opt;
+      li.onclick = () => { chosenH = opt; li.classList.add('correct'); maybeFinish(); };
+      optionsList.appendChild(li);
+    });
 
-function maybeJudge(){
-  if (chosenH == null || chosenM == null) return;
-  const ok = (chosenH === hira) && (chosenM === meaning);
+    optionsList.appendChild(headM);
+    meanOpts.forEach(opt => {
+      const li = document.createElement('li');
+      li.textContent = opt;
+      li.onclick = () => { chosenM = opt; li.classList.add('correct'); maybeFinish(); };
+      optionsList.appendChild(li);
+    });
 
-  lockedH = chosenH; lockedM = chosenM;
-
-  [...hUL.children].forEach(li => {
-    if (li.textContent === chosenH) li.classList.add(ok && chosenH===hira ? 'correct' : (chosenH!==hira ? 'wrong' : ''));
-    li.style.pointerEvents = 'none';
-  });
-  [...mUL.children].forEach(li => {
-    if (li.textContent === chosenM) li.classList.add(ok && chosenM===meaning ? 'correct' : (chosenM!==meaning ? 'wrong' : ''));
-    li.style.pointerEvents = 'none';
-  });
-
-  checkAnswer(ok ? "both" : "miss", "both", q);
-}
-
-renderCol(hUL, hiraOpts, 'h');
-renderCol(mUL, meanOpts, 'm');
-}
+    function maybeFinish(){
+      if (chosenH == null || chosenM == null) return;
+      const ok = (chosenH === hira) && (chosenM === meaning);
+      // reuse normal scorer:
+      checkAnswer(ok ? "both" : "miss", "both", q);
+    }
+  }
 
   updateDeckProgress();
 }
 
-// Default generator kept for non-kanji modes
+  // Pools
+  const allHira = currentDeck.map(x => kFields(x).hira).filter(Boolean);
+  const allKanji = currentDeck.map(x => kFields(x).kanji).filter(Boolean);
+  const allMeaning = currentDeck.map(x => kFields(x).meaning).filter(Boolean);
+
+  
 function generateOptions(correct) {
   const pool = currentDeck.map((q) => (mode === "jp-en" ? q.back : q.front)).filter(Boolean);
   const unique = [...new Set(pool.filter((opt) => opt !== correct))];
@@ -1039,7 +1010,7 @@ function checkAnswer(selected, correct, wordObj) {
 
   localStorage.setItem("mistakes", JSON.stringify(mistakes));
   localStorage.setItem("masteryMap", JSON.stringify(masteryMap));
-  renderMistakesUI(); 
+  renderMistakesUI();
   persistSession();
   updateScore();
   setTimeout(() => {
@@ -1087,11 +1058,10 @@ function updateScore() {
 }
 
 // ---------------- LEARN mode (Flashcard + Prev/Next + Show Romaji) ----------------
-function startLearnMode() {
+async function startLearnMode() {
   currentIndex = 0;
   if (!currentDeck.length) return alert("Pick a deck first!");
   showSection("learn");
-  setContextBar(currentDeckName, 'learn');
   showLearnCard();
 }
 window.startLearnMode = startLearnMode;
@@ -1106,7 +1076,7 @@ function showLearnCard() {
     const disabledAttr = audioEnabled ? "" : "disabled title='Audio not available on this device'";
     const aria = `aria-label="Play pronunciation"`;
     const kb = `onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); playLearnAudio();}"`;
-    
+
     box.className = "flashcard";
     if (isKanjiDeckName()) {
       const { kanji, hira, meaning } = kFields(word);
@@ -1138,7 +1108,11 @@ function showLearnCard() {
   if (extra) extra.textContent = "";
 
   const markBtn = $("learn-mark-btn");
-  if (markBtn) { markBtn.disabled = false; markBtn.classList.remove('hidden'); }
+  if (markBtn) {
+    const key = word.front + "|" + word.back;
+    markBtn.disabled = false;
+    markBtn.classList.toggle("hidden", !!markedMap[key]);
+  }
 }
 
 function nextLearn() {
@@ -1146,14 +1120,20 @@ function nextLearn() {
 
   if (!currentDeck.length) return;
   currentIndex = Math.min(currentIndex + 1, currentDeck.length - 1);
-  showLearnCard();  }
+  showLearnCard();
+  learnNoteBindForCurrent();
+
+}
 window.nextLearn = nextLearn;
 
 function prevLearn() {
   if (learnNoteTimer){ clearTimeout(learnNoteTimer); learnNoteTimer = null; learnNoteSaveNow(); }
   if (!currentDeck.length) return;
   currentIndex = Math.max(currentIndex - 1, 0);
-  showLearnCard();  }
+  showLearnCard();
+  learnNoteBindForCurrent();
+
+}
 window.prevLearn = prevLearn;
 
 function showLearnRomaji() {
@@ -1188,8 +1168,12 @@ window.startLearnMode = async function(){
   mode = "learn";
   sessionBuf.mode = "learn"; // not scored, but keep mode label
   currentIndex = 0;
-  score = { correct: 0, wrong: 0, skipped: 0 }; // Learn doesn’t change these  showSection("learn");
-  showLearnCard(); // your existing function that shows word + meaning  // NEW: bind note for current word
+  score = { correct: 0, wrong: 0, skipped: 0 }; // Learn doesn’t change these
+
+  await ensureDeckNotesLoaded(currentDeckName);
+  showSection("learn");
+  showLearnCard(); // your existing function that shows word + meaning
+  learnNoteBindForCurrent(); // NEW: bind note for current word
 };
 
 function learnNoteBindForCurrent(){
@@ -1377,7 +1361,6 @@ async function pgStartSet(fileName) {
 
     if (statusEl) statusEl.textContent = `Loaded ${rows.length} questions.`;
     showSection("practice-grammar");
-  setContextBar(`Grammar: ${fileName.replace(/\.csv$/i,'')}`, 'grammar');
   } catch (e) {
     alert("Failed to start set: " + (e?.message || e));
   }
@@ -1502,11 +1485,6 @@ function highlightDiff(userRaw, correctRaw) {
     }
   }
   return out;
-}
-
-
-function escapeHtml(s) {
-  return (s || "").replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
 }
 
 function pgSubmit() {
@@ -1926,19 +1904,6 @@ function showMeaning() {
 }
 window.showMeaning = showMeaning;
 
-function pad2(n){ return String(n).padStart(2, '0'); }
-
-function ensureAudioElement() {
-  let a = document.getElementById("__learn_audio");
-  if (!a) {
-    a = document.createElement("audio");
-    a.id = "__learn_audio";
-    a.preload = "auto";
-    document.body.appendChild(a);
-  }
-  return a;
-}
-
 function showToast(msg, ms = 2200) {
   let t = document.getElementById("__toast");
   if (!t) {
@@ -2013,41 +1978,6 @@ window.playLearnAudio = function () {
 };
 
 // ---- Simple ja-JP TTS helper (fallback)
-function ttsSpeak(text) {
-  if (!('speechSynthesis' in window)) {
-    showToast("Audio not available on this device.");
-    return;
-  }
-  // Try to pick a Japanese voice once and cache it
-  if (!ttsSpeak._voice) {
-    const voices = speechSynthesis.getVoices() || [];
-    ttsSpeak._voice =
-      voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ja')) ||
-      voices.find(v => /japanese/i.test(v.name)) ||
-      null;
-  }
-
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'ja-JP';
-  u.rate = 0.95;   // slightly slower for clarity
-  u.pitch = 1.0;
-  if (ttsSpeak._voice) u.voice = ttsSpeak._voice;
-
-  // Some browsers load voices asynchronously — retry once if empty
-  if (!ttsSpeak._voice && (speechSynthesis.getVoices() || []).length === 0) {
-    speechSynthesis.onvoiceschanged = () => {
-      const voices = speechSynthesis.getVoices() || [];
-      ttsSpeak._voice =
-        voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ja')) ||
-        voices.find(v => /japanese/i.test(v.name)) ||
-        null;
-      speechSynthesis.speak(u);
-      speechSynthesis.onvoiceschanged = null;
-    };
-  } else {
-    speechSynthesis.speak(u);
-  }
-}
 
 // ---------------- Navbar actions ----------------
 window.saveCurrentScore = async function () {
@@ -2110,7 +2040,7 @@ function renderMarkedList() {
   const statusEl = $("marked-status");
   const modeSelectEl = $("marked-mode-select");
   if (!container || !statusEl) return;
-  
+
   container.innerHTML = "";  // clear current list
   if (markedWordsList.length === 0) {
     // No marked words
@@ -2118,10 +2048,10 @@ function renderMarkedList() {
     if (modeSelectEl) modeSelectEl.classList.add("hidden");
     return;
   }
-  
+
   statusEl.textContent = `You have ${markedWordsList.length} marked word(s).`;
   if (modeSelectEl) modeSelectEl.classList.remove("hidden");
-  
+
   // Create a card for each marked word
   markedWordsList.forEach(word => {
     const wordKey = word.front + "|" + word.back;
@@ -2151,17 +2081,7 @@ window.markCurrentWord = async function () {
   if (!word) return;
 
   const key = word.front + "|" + word.back;
-  if (markedMap[key]) {
-    const toast = (typeof $ === 'function') ? $("toast") : document.getElementById("toast");
-    if (toast) {
-      toast.textContent = "Already marked.";
-      toast.classList.add("show");
-      setTimeout(() => toast.classList.remove("show"), 2000);
-    } else {
-      try { alert("Already marked."); } catch(_) {}
-    }
-    return;
-  }
+  if (markedMap[key]) return; // already marked
 
   // pick the active Mark button by current section
   let activeBtn = null;
@@ -2251,8 +2171,12 @@ window.startMarkedLearn = async function() {
   persistSession();
   // (Optional: disable audio for mixed deck, since audio folder cannot be resolved)
   currentAudioFolder = null;
-  // Start Learn mode similar to a normal deck  showSection("learn");
-  showLearnCard();  };
+  // Start Learn mode similar to a normal deck
+  await ensureDeckNotesLoaded(currentDeckName);
+  showSection("learn");
+  showLearnCard();
+  learnNoteBindForCurrent();
+};
 
 window.startMarkedPractice = function(selectedMode) {
   if (markedWordsList.length === 0) {
@@ -2308,8 +2232,12 @@ window.startMistakeLearn = async function () {
     jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
   };
   persistSession();
-  currentAudioFolder = null; // mixed deck → disable per-deck audio  showSection("learn");
-  showLearnCard();  };
+  currentAudioFolder = null; // mixed deck → disable per-deck audio
+  await ensureDeckNotesLoaded(currentDeckName);
+  showSection("learn");
+  showLearnCard();
+  learnNoteBindForCurrent();
+};
 
 window.startMistakePractice = function (selectedMode) {
   if (mistakes.length === 0) return alert("No mistakes yet!");
@@ -2462,8 +2390,12 @@ window.startMixedLearn = async function(){
     jpEnCorrect: 0, enJpCorrect: 0, grammarCorrect: 0
   };
   persistSession();
-  currentAudioFolder = null; // mixed → disable per-deck audio mapping  showSection("learn");
-  showLearnCard();  };
+  currentAudioFolder = null; // mixed → disable per-deck audio mapping
+  await ensureDeckNotesLoaded(currentDeckName);
+  showSection("learn");
+  showLearnCard();
+  learnNoteBindForCurrent();
+};
 
 window.startMixedPractice = function(selectedMode){
   if (multiSelectedDecks.size === 0) return alert("Pick at least one deck.");
@@ -2743,40 +2675,59 @@ window.makeNext = function () {
   }
 };
 
-
-function setContextBar(deck = (typeof currentDeckName !== 'undefined' ? currentDeckName : ''), m = (typeof mode !== 'undefined' ? mode : '')){
-  const el = document.getElementById('context-bar');
-  if (!el) return;
-  const kanjiModes = {'k2h':'Kanji → Hiragana','h2k':'Hiragana → Kanji','k2m':'Kanji → Meaning','m2k':'Meaning → Kanji','k2hm':'Kanji → (Hira & Meaning)','learn':'Learn','write':'Write','jp-en':'JP → EN','en-jp':'EN → JP'};
-  const genModes = {'learn':'Learn','write':'Write','jp-en':'JP → EN','en-jp':'EN → JP','make-sentence':'Make Sentence'};
-  let niceMode = m;
+(function wireLearnButton(){
   try {
-    niceMode = (typeof isKanjiDeckName === 'function' && isKanjiDeckName()) ? (kanjiModes[m] || m) : (genModes[m] || m);
-  } catch(_) {}
-  el.textContent = `${deck ? deck : ''}  —  Mode: ${niceMode}`;
-}
+    const byId = document.getElementById('btn-mode-learn');
+    if (byId) byId.onclick = () => startLearnMode();
+    document.querySelectorAll('[data-mode="learn"]').forEach(el => {
+      el.onclick = () => startLearnMode();
+    });
+  } catch(e){ console.warn('wireLearnButton err', e); }
+})();
 
-window.goBack = function(){
-  try {
-    if (typeof currentSectionId !== 'undefined' && currentSectionId === 'practice') { showSection('mode-select'); return; }
-    if (typeof currentSectionId !== 'undefined' && currentSectionId === 'learn') { showSection('mode-select'); return; }
-    if (typeof currentSectionId !== 'undefined' && currentSectionId === 'practice-grammar') {
-      const filesBox = document.getElementById("pg-file-buttons"); if (filesBox) filesBox.classList.remove('hidden');
-      const area = document.getElementById("pg-area"); if (area) area.classList.add('hidden');
-      showSection('practice-grammar'); return;
-    }
-  } catch(_) {}
-  showSection('deck-select');
-};
-
-let learnNotesOpen = false;
-window.toggleLearnNote = async function(){
-  const card = document.querySelector('.learn-note-card');
-  if (!card) return;
-  if (!learnNotesOpen && typeof ensureDeckNotesLoaded === 'function' && typeof currentDeckName !== 'undefined') {
-    await ensureDeckNotesLoaded(currentDeckName);
-  }
-  learnNotesOpen = !learnNotesOpen;
-  card.classList.toggle('hidden', !learnNotesOpen);
-  if (learnNotesOpen && typeof learnNoteBindForCurrent === 'function') learnNoteBindForCurrent();
-};
+(function wrapShowSectionOnce(){
+  try{
+    if (window._showSectionWrapped) return;
+    if (typeof showSection !== 'function') return;
+    window._showSectionWrapped = true;
+    const originalShow = showSection;
+    window.sectionHistory = [];
+    window.showSection = function(id){
+      try{
+        if (typeof currentSectionId !== 'undefined' && currentSectionId && currentSectionId !== id){
+          // push previous
+          window.sectionHistory.push(currentSectionId);
+        }
+      }catch(_){}
+      originalShow(id);
+      try{
+        currentSectionId = id;
+      }catch(_){}
+      const backBtn = document.getElementById('global-back');
+      if (backBtn){
+        const hideOn = (id === 'deck-select' || window.sectionHistory.length === 0);
+        backBtn.classList.toggle('hidden', hideOn);
+      }
+      const ctx = document.getElementById('context-bar');
+      if (ctx && typeof setContextBar === 'function'){
+        // do nothing here; specific screens already call setContextBar
+      }
+    };
+    window.goBack = function(){
+      const backBtn = document.getElementById('global-back');
+      if (!window.sectionHistory || window.sectionHistory.length === 0){
+        if (backBtn) backBtn.classList.add('hidden');
+        if (typeof originalShow === 'function') originalShow('deck-select');
+        try{ currentSectionId = 'deck-select'; }catch(_){}
+        return;
+      }
+      const prev = window.sectionHistory.pop();
+      originalShow(prev);
+      try{ currentSectionId = prev; }catch(_){}
+      if (backBtn){
+        const hideOn = (prev === 'deck-select' || window.sectionHistory.length === 0);
+        backBtn.classList.toggle('hidden', hideOn);
+      }
+    };
+  }catch(e){ console.warn('wrapShowSectionOnce err', e); }
+})();
